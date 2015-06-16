@@ -4,4 +4,6 @@
 
 Install through bower:
 
-        bower install angular-jwt-auth
+```sh
+bower install angular-jwt-auth
+```
