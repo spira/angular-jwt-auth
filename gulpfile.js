@@ -14,6 +14,7 @@ var gulp = require('gulp'),
     inquirer = require('inquirer'),
     mocha = require('gulp-mocha'),
     tap = require('gulp-tap'),
+    clean = require('gulp-clean'),
     _ = require('lodash');
 
 var tsDefinitions = ['./typings/**/*.d.ts'];
@@ -28,7 +29,7 @@ var sources = {
 
 var destinations = {
     app: './dist/',
-    test: './test/js'
+    tmp: './tmp'
 };
 
 var tsProject = ts.createProject({
@@ -43,9 +44,10 @@ gulp.task('test', function () {
         .pipe(ts(tsProject));
 
     tsStream.js
-        .pipe(gulp.dest(destinations.test))
-        .pipe(mocha({reporter: 'nyan'}));
-    //tsStream.js.pipe(gulp.dest('./test/js'));
+        .pipe(gulp.dest(destinations.tmp))
+        .pipe(mocha({reporter: 'spec'}))
+        .pipe(clean()) //delete the created js test files when done with them
+    ;
 });
 
 gulp.task('js:app', function () {
