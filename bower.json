@@ -1,0 +1,9 @@
+{
+  "name": "angular-jwt-auth",
+  "version": "0.0.0",
+  "description": "Angular JSON Web Token Authentication Module",
+  "main": "dist/main.js",
+  "dependencies": {},
+  "devDependencies": {}
+}
+
