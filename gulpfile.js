@@ -15,7 +15,11 @@ var gulp = require('gulp'),
     mocha = require('gulp-mocha'),
     tap = require('gulp-tap'),
     clean = require('gulp-clean'),
-    _ = require('lodash');
+    _ = require('lodash'),
+    path = require('path'),
+    bowerJson = require('./bower.json'),
+    packageJson = require('./package.json')
+;
 
 var tsDefinitions = ['./typings/**/*.d.ts'];
 var sources = {
@@ -57,10 +61,10 @@ gulp.task('js:app', function () {
 
 
     es.merge(
-        tsStream.dts.pipe(gulp.dest(destinations.js.app)),
+        tsStream.dts.pipe(gulp.dest(destinations.app)),
         tsStream.js
-            .pipe(concat('main.js'))
-            .pipe(gulp.dest(destinations.js.app))
+            .pipe(concat(path.basename(bowerJson.main)))
+            .pipe(gulp.dest(destinations.app))
     );
 });
 
