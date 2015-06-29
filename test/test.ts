@@ -1,34 +1,42 @@
-/// <reference path="../typings/mocha/mocha.d.ts" />
-/// <reference path="../typings/chai/chai.d.ts" />
-/// <reference path="../typings/lodash/lodash.d.ts" />
-/// <reference path="../typings/angularjs/angular.d.ts" />
+/// <reference path="../typings/tsd.d.ts" />
 
-
-/**
- * Module dependencies.
- */
-import chai = require('chai');
-
-/**
- * Globals
- */
 
 var expect = chai.expect;
 
 describe('Service Provider Tests', () => {
 
-  describe('Api Endpoints', () => {
-    it('should have default endpoints', (done) => {
-      expect(2+4).to.equals(6);
-      done();
+  var ngJwtAuthServiceProviderObj;
+
+  describe('Configuration', () => {
+
+
+    beforeEach(function () {
+
+      angular.module("providers", ['ngJwtAuth']); //require the module as dependency
+      module("providers"); //mock the depending module
+
+      module((ngJwtAuthServiceProvider) => {
+        ngJwtAuthServiceProviderObj = ngJwtAuthServiceProvider; //register injection of service provider
+      });
+
+      inject(); //complete injection
     });
 
-    it('should not be 7', (done) => {
-      expect(2+4).to.not.equals(7);
-      done();
+
+    it('should configure api endpoints', function () {
+
+      ngJwtAuthServiceProviderObj.setApiEndpoints({
+        base: 'mock/base/path/',
+        login: 'mock/login',
+        refresh: 'mock/refresh'
+      });
+
+      expect(ngJwtAuthServiceProviderObj.apiEndpoints.base).to.equal('mock/base/path/');
+      expect(ngJwtAuthServiceProviderObj.apiEndpoints.login).to.equal('mock/login');
+      expect(ngJwtAuthServiceProviderObj.apiEndpoints.refresh).to.equal('mock/refresh');
     });
+
   });
+
+
 });
-
-
-

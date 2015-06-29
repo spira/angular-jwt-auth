@@ -19,6 +19,15 @@
     },
     "jquery/jquery.d.ts": {
       "commit": "6f04d25ad38982d372cc3cda62fa4c0eef9e24d7"
+    },
+    "angularjs/angular-mocks.d.ts": {
+      "commit": "6f04d25ad38982d372cc3cda62fa4c0eef9e24d7"
+    },
+    "sinon-chai/sinon-chai.d.ts": {
+      "commit": "6f04d25ad38982d372cc3cda62fa4c0eef9e24d7"
+    },
+    "sinon/sinon.d.ts": {
+      "commit": "6f04d25ad38982d372cc3cda62fa4c0eef9e24d7"
     }
   }
 }

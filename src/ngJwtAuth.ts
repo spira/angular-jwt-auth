@@ -6,15 +6,9 @@ module NgJwtAuth {
 
     export class NgJwtAuthServiceProvider implements ng.IServiceProvider, INgJwtAuthServiceProvider {
 
-        private apiEndpoints : IEndpointDefinition;
+        public apiEndpoints : IEndpointDefinition;
 
-        //bind injected dependencies
-        private $http: ng.IHttpService;
-
-        static $inject = ['$http'];
-        constructor($http:ng.IHttpService) {
-
-            _.assign(this, $http); //bind injected dependencies
+        constructor() {
 
             this.apiEndpoints = {
                 base: '/api/auth',
@@ -35,22 +29,10 @@ module NgJwtAuth {
             return this;
         }
 
-        private getRemoteData(url:string) : ng.IPromise<Object>{
-
-            var requestConfig : ng.IRequestConfig = {
-                method: 'GET',
-                url:  url,
-                responseType: 'json'
-            };
-
-            return this.$http(requestConfig);
-
-        }
-
 
         public $get(): INgJwtAuthService {
 
-            return new NgJwtAuthService(this.$http);
+            return new NgJwtAuthService(null);
         }
 
     }
@@ -59,10 +41,11 @@ module NgJwtAuth {
 
         //list injected dependencies
         private $http: ng.IHttpService;
+
+        static $inject = ['$http'];
         constructor($http: ng.IHttpService) {
 
-            //bind injected dependencies
-            this.$http = $http;
+            _.assign(this, $http); //bind injected dependencies
 
         }
 
@@ -95,6 +78,18 @@ module NgJwtAuth {
 
         public requireLogin():ng.IPromise<Object>{
             return this.$http.get('/');
+        }
+
+        private getRemoteData(url:string) : ng.IPromise<Object>{
+
+          var requestConfig : ng.IRequestConfig = {
+            method: 'GET',
+            url:  url,
+            responseType: 'json'
+          };
+
+          return this.$http(requestConfig);
+
         }
 
     }

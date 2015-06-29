@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "description": "Angular JSON Web Token Authentication Module",
   "main": "dist/ngJwtAuth.js",
-  "dependencies": {},
+  "dependencies": {
+    "lodash": "~3.9.3"
+  },
   "devDependencies": {
     "angular": "~1.4.1",
     "angular-mocks": "~1.4.1"
