@@ -4,6 +4,8 @@
   "description": "Angular JSON Web Token Authentication Module",
   "main": "dist/angular-jwt-auth.js",
   "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "angular": "~1.4.1",
+    "angular-mocks": "~1.4.1"
+  }
 }
-

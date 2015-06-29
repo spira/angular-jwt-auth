@@ -6,19 +6,19 @@
   "bundle": "typings/tsd.d.ts",
   "installed": {
     "mocha/mocha.d.ts": {
-      "commit": "e18e130e2188348070f98d92b98c0ea481c4a086"
+      "commit": "6f04d25ad38982d372cc3cda62fa4c0eef9e24d7"
     },
     "chai/chai.d.ts": {
-      "commit": "e18e130e2188348070f98d92b98c0ea481c4a086"
+      "commit": "6f04d25ad38982d372cc3cda62fa4c0eef9e24d7"
     },
     "angularjs/angular.d.ts": {
-      "commit": "e18e130e2188348070f98d92b98c0ea481c4a086"
+      "commit": "6f04d25ad38982d372cc3cda62fa4c0eef9e24d7"
     },
     "lodash/lodash.d.ts": {
-      "commit": "e18e130e2188348070f98d92b98c0ea481c4a086"
+      "commit": "6f04d25ad38982d372cc3cda62fa4c0eef9e24d7"
     },
     "jquery/jquery.d.ts": {
-      "commit": "e18e130e2188348070f98d92b98c0ea481c4a086"
+      "commit": "6f04d25ad38982d372cc3cda62fa4c0eef9e24d7"
     }
   }
 }

@@ -4,12 +4,12 @@ declare module AngularJwtAuth {
     interface IAngularJwtAuthService {
         isLoginMethod(url: string, subString: string): boolean;
         getUser(): Object;
-        getPromisedUser(): angular.IPromise<Object>;
+        getPromisedUser(): ng.IPromise<Object>;
         processNewToken(rawToken: string): boolean;
         clearToken(): boolean;
-        authenticate(username: string, password: string): any;
-        exchangeToken(token: string): angular.IPromise<Object>;
-        requireLogin(): angular.IPromise<Object>;
+        authenticate(username: string, password: string): ng.IPromise<Object>;
+        exchangeToken(token: string): ng.IPromise<Object>;
+        requireLogin(): ng.IPromise<Object>;
     }
     interface IAngularJwtAuthServiceProvider {
         setApiEndpoints(config: IEndpointDefinition): AngularJwtAuthServiceProvider;
@@ -20,18 +20,18 @@ declare module AngularJwtAuth {
         tokenExchange?: string;
         refresh?: string;
     }
-    class AngularJwtAuthServiceProvider implements angular.IServiceProvider, IAngularJwtAuthServiceProvider {
+    class AngularJwtAuthServiceProvider implements ng.IServiceProvider, IAngularJwtAuthServiceProvider {
         private apiEndpoints;
-        $http: angular.IHttpService;
+        private $http;
         static $inject: string[];
-        constructor($http: angular.IHttpService);
+        constructor($http: ng.IHttpService);
         /**
          * Set the API endpoints for the auth service to call
          * @param config
-         * @returns {AngularJwtAuth.AngularJwtAuthService}
+         * @returns {AngularJwtAuth.AngularJwtAuthServiceProvider}
          */
         setApiEndpoints(config: IEndpointDefinition): AngularJwtAuthServiceProvider;
         private getRemoteData(url);
-        $get(): void;
+        $get(): IAngularJwtAuthService;
     }
 }
