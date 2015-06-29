@@ -1,31 +1,10 @@
 /// <reference path="../typings/lodash/lodash.d.ts" />
 /// <reference path="../typings/angularjs/angular.d.ts" />
+/// <reference path="ngJwtAuthInterfaces.ts" />
 
-module AngularJwtAuth {
+module NgJwtAuth {
 
-    export interface IAngularJwtAuthService {
-        isLoginMethod(url: string, subString: string): boolean;
-        getUser():Object;
-        getPromisedUser():ng.IPromise<Object>;
-        processNewToken(rawToken:string): boolean;
-        clearToken():boolean;
-        authenticate(username:string, password:string):ng.IPromise<Object>;
-        exchangeToken(token:string):ng.IPromise<Object>;
-        requireLogin():ng.IPromise<Object>;
-    }
-
-    export interface IAngularJwtAuthServiceProvider {
-        setApiEndpoints(config:IEndpointDefinition): AngularJwtAuthServiceProvider;
-    }
-
-    export interface IEndpointDefinition {
-        base?: string;
-        login?: string;
-        tokenExchange?: string;
-        refresh?: string;
-    }
-
-    export class AngularJwtAuthServiceProvider implements ng.IServiceProvider, IAngularJwtAuthServiceProvider {
+    export class NgJwtAuthServiceProvider implements ng.IServiceProvider, INgJwtAuthServiceProvider {
 
         private apiEndpoints : IEndpointDefinition;
 
@@ -49,9 +28,9 @@ module AngularJwtAuth {
         /**
          * Set the API endpoints for the auth service to call
          * @param config
-         * @returns {AngularJwtAuth.AngularJwtAuthServiceProvider}
+         * @returns {NgJwtAuth.NgJwtAuthServiceProvider}
          */
-        public setApiEndpoints(config:IEndpointDefinition) : AngularJwtAuthServiceProvider {
+        public setApiEndpoints(config:IEndpointDefinition) : NgJwtAuthServiceProvider {
             this.apiEndpoints = _.defaults(config, this.apiEndpoints);
             return this;
         }
@@ -69,14 +48,14 @@ module AngularJwtAuth {
         }
 
 
-        public $get(): IAngularJwtAuthService {
+        public $get(): INgJwtAuthService {
 
-            return new AngularJwtAuthService(this.$http);
+            return new NgJwtAuthService(this.$http);
         }
 
     }
 
-    class AngularJwtAuthService implements IAngularJwtAuthService {
+    class NgJwtAuthService implements INgJwtAuthService {
 
         //list injected dependencies
         private $http: ng.IHttpService;
@@ -120,8 +99,8 @@ module AngularJwtAuth {
 
     }
 
-    angular.module('angularJwtAuth', [])
-        .provider('angularJwtAuthService', AngularJwtAuthServiceProvider)
+    angular.module('ngJwtAuth', [])
+        .provider('ngJwtAuthService', NgJwtAuthServiceProvider)
     ;
 
 }
