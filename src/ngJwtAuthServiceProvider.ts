@@ -7,12 +7,12 @@ module NgJwtAuth {
 
     export class NgJwtAuthServiceProvider implements ng.IServiceProvider, INgJwtAuthServiceProvider {
 
-        private serviceConfig: INgJwtAuthServiceConfig;
+        private config: INgJwtAuthServiceConfig;
 
         constructor() {
 
             //initialise service config
-            this.serviceConfig = {
+            this.config = {
                 tokenLocation: 'token',
                 tokenUser: '#user',
                 loginController: 'app.public.login',
@@ -32,14 +32,14 @@ module NgJwtAuth {
          * @returns {NgJwtAuth.NgJwtAuthServiceProvider}
          */
         public setApiEndpoints(config:IEndpointDefinition) : NgJwtAuthServiceProvider {
-            this.serviceConfig.apiEndpoints = _.defaults(config, this.serviceConfig.apiEndpoints);
+            this.config.apiEndpoints = _.defaults(config, this.config.apiEndpoints);
             return this;
         }
 
 
         public $get(): INgJwtAuthService {
 
-            return new NgJwtAuthService(null, this.serviceConfig);
+            return new NgJwtAuthService(null, this.config);
         }
 
     }

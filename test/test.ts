@@ -31,9 +31,9 @@ describe('Service Provider Tests', () => {
                 refresh: 'mock/refresh'
             });
 
-            expect(ngJwtAuthServiceProviderObj.apiEndpoints.base).to.equal('mock/base/path/');
-            expect(ngJwtAuthServiceProviderObj.apiEndpoints.login).to.equal('mock/login');
-            expect(ngJwtAuthServiceProviderObj.apiEndpoints.refresh).to.equal('mock/refresh');
+            expect(ngJwtAuthServiceProviderObj.config.apiEndpoints.base).to.equal('mock/base/path/');
+            expect(ngJwtAuthServiceProviderObj.config.apiEndpoints.login).to.equal('mock/login');
+            expect(ngJwtAuthServiceProviderObj.config.apiEndpoints.refresh).to.equal('mock/refresh');
         });
 
     });

@@ -4,9 +4,21 @@
 var NgJwtAuth;
 (function (NgJwtAuth) {
     var NgJwtAuthService = (function () {
-        function NgJwtAuthService($http) {
-            _.assign(this, $http); //bind injected dependencies
+        function NgJwtAuthService($http, config) {
+            _.assign(this, $http, config); //bind injected dependencies
         }
+        NgJwtAuthService.prototype.getLoginEndpoint = function () {
+            return this.config.apiEndpoints.base + this.config.apiEndpoints.login;
+        };
+        NgJwtAuthService.prototype.getTokenExchangeEndpoint = function () {
+            return this.config.apiEndpoints.base + this.config.apiEndpoints.tokenExchange;
+        };
+        NgJwtAuthService.prototype.getRefreshEndpoint = function () {
+            return this.config.apiEndpoints.base + this.config.apiEndpoints.refresh;
+        };
+        NgJwtAuthService.getAuthHeader = function (username, password) {
+            return 'Basic ' + btoa(username + ':' + password); //note btoa is NOT supported <= IE9
+        };
         NgJwtAuthService.prototype.isLoginMethod = function (url, subString) {
             return true;
         };
@@ -23,7 +35,16 @@ var NgJwtAuth;
             return true;
         };
         NgJwtAuthService.prototype.authenticate = function (username, password) {
-            return this.$http.get('/');
+            var authHeader = NgJwtAuthService.getAuthHeader(username, password);
+            var requestConfig = {
+                method: 'GET',
+                url: this.getLoginEndpoint(),
+                headers: {
+                    Authorization: authHeader
+                },
+                responseType: 'json'
+            };
+            return this.$http(requestConfig);
         };
         NgJwtAuthService.prototype.exchangeToken = function (token) {
             return this.$http.get('/');
@@ -52,11 +73,17 @@ var NgJwtAuth;
 (function (NgJwtAuth) {
     var NgJwtAuthServiceProvider = (function () {
         function NgJwtAuthServiceProvider() {
-            this.apiEndpoints = {
-                base: '/api/auth',
-                login: '/login',
-                tokenExchange: '/token',
-                refresh: '/refresh'
+            //initialise service config
+            this.config = {
+                tokenLocation: 'token',
+                tokenUser: '#user',
+                loginController: 'app.public.login',
+                apiEndpoints: {
+                    base: '/api/auth',
+                    login: '/login',
+                    tokenExchange: '/token',
+                    refresh: '/refresh'
+                }
             };
         }
         /**
@@ -65,11 +92,11 @@ var NgJwtAuth;
          * @returns {NgJwtAuth.NgJwtAuthServiceProvider}
          */
         NgJwtAuthServiceProvider.prototype.setApiEndpoints = function (config) {
-            this.apiEndpoints = _.defaults(config, this.apiEndpoints);
+            this.config.apiEndpoints = _.defaults(config, this.config.apiEndpoints);
             return this;
         };
         NgJwtAuthServiceProvider.prototype.$get = function () {
-            return new NgJwtAuth.NgJwtAuthService(null);
+            return new NgJwtAuth.NgJwtAuthService(null, this.config);
         };
         return NgJwtAuthServiceProvider;
     })();

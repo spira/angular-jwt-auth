@@ -20,12 +20,23 @@ declare module NgJwtAuth {
         tokenExchange?: string;
         refresh?: string;
     }
+    interface INgJwtAuthServiceConfig {
+        tokenLocation: string;
+        tokenUser: string;
+        loginController: string;
+        apiEndpoints: IEndpointDefinition;
+    }
 }
 declare module NgJwtAuth {
     class NgJwtAuthService implements INgJwtAuthService {
         private $http;
+        private config;
         static $inject: string[];
-        constructor($http: ng.IHttpService);
+        constructor($http: ng.IHttpService, config: any);
+        private getLoginEndpoint();
+        private getTokenExchangeEndpoint();
+        private getRefreshEndpoint();
+        private static getAuthHeader(username, password);
         isLoginMethod(url: string, subString: string): boolean;
         getUser(): Object;
         getPromisedUser(): ng.IPromise<Object>;
@@ -39,7 +50,7 @@ declare module NgJwtAuth {
 }
 declare module NgJwtAuth {
     class NgJwtAuthServiceProvider implements ng.IServiceProvider, INgJwtAuthServiceProvider {
-        apiEndpoints: IEndpointDefinition;
+        private config;
         constructor();
         /**
          * Set the API endpoints for the auth service to call
