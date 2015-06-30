@@ -7,15 +7,21 @@ module NgJwtAuth {
 
     export class NgJwtAuthServiceProvider implements ng.IServiceProvider, INgJwtAuthServiceProvider {
 
-        public apiEndpoints : IEndpointDefinition;
+        private serviceConfig: INgJwtAuthServiceConfig;
 
         constructor() {
 
-            this.apiEndpoints = {
-                base: '/api/auth',
-                login: '/login',
-                tokenExchange: '/token',
-                refresh: '/refresh'
+            //initialise service config
+            this.serviceConfig = {
+                tokenLocation: 'token',
+                tokenUser: '#user',
+                loginController: 'app.public.login',
+                apiEndpoints: {
+                    base: '/api/auth',
+                    login: '/login',
+                    tokenExchange: '/token',
+                    refresh: '/refresh'
+                }
             };
 
         }
@@ -26,14 +32,14 @@ module NgJwtAuth {
          * @returns {NgJwtAuth.NgJwtAuthServiceProvider}
          */
         public setApiEndpoints(config:IEndpointDefinition) : NgJwtAuthServiceProvider {
-            this.apiEndpoints = _.defaults(config, this.apiEndpoints);
+            this.serviceConfig.apiEndpoints = _.defaults(config, this.serviceConfig.apiEndpoints);
             return this;
         }
 
 
         public $get(): INgJwtAuthService {
 
-            return new NgJwtAuthService(null);
+            return new NgJwtAuthService(null, this.serviceConfig);
         }
 
     }

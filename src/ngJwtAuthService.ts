@@ -8,12 +8,29 @@ module NgJwtAuth {
 
         //list injected dependencies
         private $http: ng.IHttpService;
+        private config: INgJwtAuthServiceConfig;
 
         static $inject = ['$http'];
-        constructor($http: ng.IHttpService) {
+        constructor($http: ng.IHttpService, config) {
 
-            _.assign(this, $http); //bind injected dependencies
+            _.assign(this, $http, config); //bind injected dependencies
 
+        }
+
+        private getLoginEndpoint():string {
+            return this.config.apiEndpoints.base + this.config.apiEndpoints.login;
+        }
+
+        private getTokenExchangeEndpoint():string {
+            return this.config.apiEndpoints.base + this.config.apiEndpoints.tokenExchange;
+        }
+
+        private getRefreshEndpoint():string{
+            return this.config.apiEndpoints.base + this.config.apiEndpoints.refresh;
+        }
+
+        private static getAuthHeader(username:string, password:string):string{
+            return 'Basic ' + btoa(username + ':' + password); //note btoa is NOT supported <= IE9
         }
 
         public isLoginMethod(url: string, subString: string) : boolean{
@@ -23,6 +40,7 @@ module NgJwtAuth {
         public getUser() : Object{
             return {};
         }
+
         public getPromisedUser(): ng.IPromise<Object>{
             return this.$http.get('/');
         }
@@ -36,7 +54,19 @@ module NgJwtAuth {
         }
 
         public authenticate(username:string, password:string): ng.IPromise<Object>{
-            return this.$http.get('/');
+
+            var authHeader = NgJwtAuthService.getAuthHeader(username, password);
+
+            var requestConfig:ng.IRequestConfig = {
+                method: 'GET',
+                url:  this.getLoginEndpoint(),
+                headers: {
+                    Authorization : authHeader
+                },
+                responseType: 'json'
+            };
+
+            return this.$http(requestConfig);
         }
 
         public exchangeToken(token:string):ng.IPromise<Object> {
