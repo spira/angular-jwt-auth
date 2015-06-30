@@ -90,7 +90,12 @@ gulp.task('js:app', function () {
 
 
     return gulp.src(sources.app.ts)
-        .pipe(plugins.tsc({ sourceMap: true, declaration: true, keepTree: false}))
+        .pipe(plugins.tsc({
+            sourceMap: true,
+            declaration: true,
+            keepTree: false,
+            out: path.basename(bowerJson.main)
+        }))
         .pipe(gulp.dest(destinations.app))
     ;
 
