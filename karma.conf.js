@@ -8,7 +8,7 @@ module.exports = function(config) {
             'dist/**/*.js': ['coverage']
         },
 
-        reporters: ['progress', 'coverage'],
+        reporters: ['mocha', 'coverage'],
 
         port: 9018,
         runnerPort: 9100,

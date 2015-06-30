@@ -11,10 +11,11 @@ module NgJwtAuth {
         private config: INgJwtAuthServiceConfig;
 
         static $inject = ['$http'];
-        constructor($http: ng.IHttpService, config) {
+        constructor(_$http: ng.IHttpService, _config) {
 
-            _.assign(this, $http, config); //bind injected dependencies
-
+            //_.assign(this, $http); //bind injected dependencies
+            this.$http = _$http;
+            this.config = _config;
         }
 
         private getLoginEndpoint():string {

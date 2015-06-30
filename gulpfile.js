@@ -44,13 +44,13 @@ var destinations = {
 };
 
 gulp.task('test', 'runs test sequence for frontend', function (cb){
-    plugins.runSequence('clean', ['js:app', 'js:test'], 'test:karma', cb);
+    return plugins.runSequence('clean', 'js:app', 'js:test', 'test:karma', cb);
 });
 
 gulp.task('js:test', function(){
 
     return gulp.src(sources.test.ts)
-        .pipe(plugins.tsc({keepTree: false}))
+        .pipe(plugins.tsc({sourceMap:true, keepTree: false}))
         .pipe(gulp.dest(destinations.testTmp))
     ;
 
@@ -103,7 +103,7 @@ gulp.task('js:app', function () {
 
 // deletes the dist folder for a clean build
 gulp.task('clean', function () {
-    plugins.del(['./dist', destinations.testTmp], function (err, deletedFiles) {
+    return plugins.del(['./dist', destinations.testTmp], function (err, deletedFiles) {
         if (deletedFiles.length) {
             plugins.util.log('Deleted', plugins.util.colors.red(deletedFiles.join(' ,')));
         } else {

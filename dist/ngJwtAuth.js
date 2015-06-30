@@ -4,8 +4,10 @@
 var NgJwtAuth;
 (function (NgJwtAuth) {
     var NgJwtAuthService = (function () {
-        function NgJwtAuthService($http, config) {
-            _.assign(this, $http, config); //bind injected dependencies
+        function NgJwtAuthService(_$http, _config) {
+            //_.assign(this, $http); //bind injected dependencies
+            this.$http = _$http;
+            this.config = _config;
         }
         NgJwtAuthService.prototype.getLoginEndpoint = function () {
             return this.config.apiEndpoints.base + this.config.apiEndpoints.login;

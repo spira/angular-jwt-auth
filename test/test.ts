@@ -1,11 +1,13 @@
 /// <reference path="../typings/tsd.d.ts" />
+/// <reference path="../dist/ngJwtAuth.d.ts" />
 
 
 var expect = chai.expect;
 
 describe('Service Provider Tests', () => {
 
-    var ngJwtAuthServiceProviderObj;
+    var ngJwtAuthServiceProviderObj:NgJwtAuth.NgJwtAuthServiceProvider;
+    var defaultAuthServiceObj:NgJwtAuth.NgJwtAuthService;
 
     describe('Configuration', () => {
 
@@ -19,7 +21,9 @@ describe('Service Provider Tests', () => {
                 ngJwtAuthServiceProviderObj = ngJwtAuthServiceProvider; //register injection of service provider
             });
 
-            inject(); //complete injection
+            inject(function(_ngJwtAuthService_){
+                defaultAuthServiceObj = _ngJwtAuthService_;
+            }); //complete injection
         });
 
 
@@ -27,13 +31,17 @@ describe('Service Provider Tests', () => {
 
             ngJwtAuthServiceProviderObj.setApiEndpoints({
                 base: 'mock/base/path/',
-                login: 'mock/login',
-                refresh: 'mock/refresh'
+                login: 'to/login',
+                refresh: 'to/refresh'
             });
 
-            expect(ngJwtAuthServiceProviderObj.config.apiEndpoints.base).to.equal('mock/base/path/');
-            expect(ngJwtAuthServiceProviderObj.config.apiEndpoints.login).to.equal('mock/login');
-            expect(ngJwtAuthServiceProviderObj.config.apiEndpoints.refresh).to.equal('mock/refresh');
+            expect((<any>ngJwtAuthServiceProviderObj).config.apiEndpoints.base).to.equal('mock/base/path/');
+            expect((<any>ngJwtAuthServiceProviderObj).config.apiEndpoints.login).to.equal('to/login');
+            expect((<any>ngJwtAuthServiceProviderObj).config.apiEndpoints.refresh).to.equal('to/refresh');
+        });
+
+        it('should have the default endpoints', function() {
+            expect((<any>defaultAuthServiceObj).getLoginEndpoint()).to.equal('/api/auth/login');
         });
 
     });
