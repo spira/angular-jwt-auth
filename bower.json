@@ -9,5 +9,8 @@
   "devDependencies": {
     "angular": "~1.4.1",
     "angular-mocks": "~1.4.1"
+  },
+  "resolutions": {
+    "angular": "~1.4.1"
   }
 }

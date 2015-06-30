@@ -63,7 +63,7 @@ describe('Custom configuration', function () {
     });
 
     beforeEach(()=>{
-        inject(function(_ngJwtAuthService_){
+        inject((_ngJwtAuthService_) => {
             customAuthService = _ngJwtAuthService_;
         })
     });
@@ -81,23 +81,21 @@ describe('Service tests', () => {
     var $httpBackend:ng.IHttpBackendService;
     var authRequestHandler:ng.mock.IRequestHandler;
 
-    beforeEach(() => {
+    beforeEach(()=>{
 
         module('ngJwtAuth');
 
-        inject(($injector) => {
+        inject((_ngJwtAuthService_, _$httpBackend_) => {
+            $httpBackend = _$httpBackend_;
+
+            $httpBackend
+                .when('GET', '/api/auth/login')
+                .respond({token: 'abc-123'}, {'A-Token': 'xxx'});
+
             if (!ngJwtAuthService){ //dont rebind, so each test gets the singleton
-                ngJwtAuthService = $injector.get('ngJwtAuthService');
+                ngJwtAuthService = _ngJwtAuthService_; //register injected of service provider
             }
-
-            $httpBackend = $injector.get('$httpBackend');
-
-        });
-
-        $httpBackend
-            .when('GET', '/api/auth/login')
-            .respond({token: 'abc-123'}, {'A-Token': 'xxx'});
-
+        })
     });
 
     afterEach(() => {
@@ -121,6 +119,8 @@ describe('Service tests', () => {
 
             console.log('res', res);
         });
+
+        $httpBackend.flush();
 
     });
 
