@@ -32,7 +32,7 @@ declare module NgJwtAuth {
         private $http;
         private config;
         static $inject: string[];
-        constructor($http: ng.IHttpService, config: any);
+        constructor(_$http: ng.IHttpService, _config: any);
         private getLoginEndpoint();
         private getTokenExchangeEndpoint();
         private getRefreshEndpoint();
