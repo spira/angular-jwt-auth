@@ -52,7 +52,6 @@ var NgJwtAuth;
         NgJwtAuthService.prototype.processNewToken = function (rawToken) {
             try {
                 var tokenData = NgJwtAuthService.readToken(rawToken);
-                console.log('token data', tokenData);
                 var expiryDate = moment(tokenData.data.exp * 1000);
                 var expiryInSeconds = expiryDate.diff(moment(), 'seconds');
                 //this.saveTokenToStorage(rawToken, expiryInSeconds);
@@ -102,8 +101,14 @@ var NgJwtAuth;
             };
             return this.$http(requestConfig);
         };
+        /**
+         * Find the user object within the path
+         * @todo resolve the return type assignment with _.get
+         * @param tokenData
+         * @returns {T}
+         */
         NgJwtAuthService.prototype.getUserFromTokenData = function (tokenData) {
-            return _.get(tokenData, this.config.tokenUser);
+            return _.get(tokenData.data, this.config.tokenUser);
         };
         return NgJwtAuthService;
     })();

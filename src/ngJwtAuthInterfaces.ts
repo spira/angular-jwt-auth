@@ -48,7 +48,7 @@ module NgJwtAuth {
     }
 
     export interface IUser {
-        userId: any;
+        userId?: any;
         email?: string,
         firstName?: string,
         lastName?: string,

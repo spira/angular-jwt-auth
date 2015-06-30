@@ -75,8 +75,6 @@ module NgJwtAuth {
 
                 var tokenData = NgJwtAuthService.readToken(rawToken);
 
-                console.log('token data', tokenData);
-
                 var expiryDate = moment(tokenData.data.exp * 1000);
 
                 var expiryInSeconds = expiryDate.diff(moment(), 'seconds');
@@ -153,7 +151,7 @@ module NgJwtAuth {
          */
         private getUserFromTokenData(tokenData:IJwtToken):IUser {
 
-            return _.get(tokenData, this.config.tokenUser);
+            return _.get(tokenData.data, this.config.tokenUser);
         }
     }
 

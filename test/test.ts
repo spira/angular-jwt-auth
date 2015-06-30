@@ -10,8 +10,8 @@ var fixtures = {
         _self: '/users/1',
         userId: 1,
         email: 'joe.bloggs@example.com',
-        firstName: seededChance.first,
-        lastName: seededChance.last,
+        firstName: seededChance.first(),
+        lastName: seededChance.last(),
         password: 'password',
         phone: seededChance.phone()
     },
@@ -160,7 +160,6 @@ describe('Service tests', () => {
         $httpBackend.flush();
 
         return expect(result).to.equal(fixtures.token);
-
     });
 
     it('should process a token and return a user', () => {
@@ -174,8 +173,7 @@ describe('Service tests', () => {
 
         $httpBackend.flush();
 
-        return expect(user).to.equal(fixtures.user);
-
+        return expect(user).to.deep.equal(_.omit(fixtures.user, 'password'));
     });
 
 
