@@ -144,6 +144,6 @@ gulp.task('watch', function () {
 gulp.task('default', ['build', 'watch']);
 
 gulp.task('coveralls', 'submits code coverage to coveralls', [], function(){
-    gulp.src(paths.dest.coverage)
+    gulp.src(destinations.coverage)
         .pipe(plugins.coveralls());
 });
