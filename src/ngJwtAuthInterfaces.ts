@@ -4,7 +4,7 @@ module NgJwtAuth {
         isLoginMethod(url:string, subString:string): boolean;
         getUser():Object;
         getPromisedUser():ng.IPromise<Object>;
-        processNewToken(rawToken:string): boolean;
+        processNewToken(rawToken:string): IUser;
         clearToken():boolean;
         authenticate(username:string, password:string):ng.IPromise<Object>;
         exchangeToken(token:string):ng.IPromise<Object>;
@@ -45,6 +45,13 @@ module NgJwtAuth {
             jti: string;
         },
         signature: string
+    }
+
+    export interface IUser {
+        userId: any;
+        email?: string,
+        firstName?: string,
+        lastName?: string,
     }
 
 }

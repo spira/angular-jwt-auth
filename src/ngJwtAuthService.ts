@@ -58,23 +58,24 @@ module NgJwtAuth {
          */
         private static readToken(rawToken:string):IJwtToken {
 
-            var jwt:IJwtToken = null;
-
             var pieces = rawToken.split('.');
 
-            jwt.signature = pieces[2];
-
-            jwt.header = angular.fromJson(atob(pieces[0]));
-            jwt.data = angular.fromJson(atob(pieces[1]));
+            var jwt:IJwtToken = {
+                header : angular.fromJson(atob(pieces[0])),
+                data : angular.fromJson(atob(pieces[1])),
+                signature : pieces[2],
+            };
 
             return jwt;
         }
 
-        public processNewToken(rawToken:string) : boolean{
+        public processNewToken(rawToken:string) : IUser{
 
             try {
 
                 var tokenData = NgJwtAuthService.readToken(rawToken);
+
+                console.log('token data', tokenData);
 
                 var expiryDate = moment(tokenData.data.exp * 1000);
 
@@ -84,12 +85,11 @@ module NgJwtAuth {
 
                 //this.setJWTHeader(rawToken);
 
-            }catch(err){
-                console.error(err);
-                return false;
-            }
+                return this.getUserFromTokenData(tokenData);
 
-            return true;
+            }catch(err){
+                throw new Error(err);
+            }
 
         }
 
@@ -145,6 +145,16 @@ module NgJwtAuth {
 
         }
 
+        /**
+         * Find the user object within the path
+         * @todo resolve the return type assignment with _.get
+         * @param tokenData
+         * @returns {T}
+         */
+        private getUserFromTokenData(tokenData:IJwtToken):IUser {
+
+            return _.get(tokenData, this.config.tokenUser);
+        }
     }
 
 }

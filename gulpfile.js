@@ -75,7 +75,7 @@ gulp.task('test:karma', function(){
     });
 
     var testFiles = [].concat(
-        destinations.testTmp+'**/*.js', vendorFiles, destinations.app+'**/*.js'
+        vendorFiles, destinations.testTmp+'**/*.js', destinations.app+'**/*.js'
     );
 
     gulp.src(testFiles)

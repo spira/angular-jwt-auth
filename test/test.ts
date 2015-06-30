@@ -4,17 +4,47 @@
 
 var expect = chai.expect;
 
+var seededChance = new Chance(1);
 var fixtures = {
     user : {
+        _self: '/users/1',
+        userId: 1,
         email: 'joe.bloggs@example.com',
-        password: 'password'
+        firstName: seededChance.first,
+        lastName: seededChance.last,
+        password: 'password',
+        phone: seededChance.phone()
     },
+
     get authBasic(){
         return 'Basic '+btoa(fixtures.user.email+':'+fixtures.user.password)
     },
+
     get token(){
 
-        return 'abc-123';
+        var token:NgJwtAuth.IJwtToken;
+        token = {
+            header: {
+                alg: 'RS256',
+                typ: 'JWT'
+            },
+            data: {
+                iss: 'api.spira.io',
+                aud: 'spira.io',
+                sub: fixtures.user.userId,
+                iat: Number(moment().format('X')),
+                exp: Number(moment().add(1, 'hours').format('X')),
+                jti: 'random-hash',
+                '#user': _.omit(fixtures.user, 'password')
+            },
+            signature: 'this-is-the-signed-hash'
+        };
+
+        return btoa(JSON.stringify(token.data))
+            + '.' + btoa(JSON.stringify(token.data))
+            + '.' + token.signature
+        ;
+
     }
 };
 
@@ -133,10 +163,18 @@ describe('Service tests', () => {
 
     });
 
-    it('should process a token', () => {
+    it('should process a token and return a user', () => {
 
+        $httpBackend.expectGET('/api/auth/login').respond({token: fixtures.token});
 
+        var user;
+        ngJwtAuthService.authenticate(fixtures.user.email, fixtures.user.password).then((res) => {
+            user = res;
+        });
 
+        $httpBackend.flush();
+
+        return expect(user).to.equal(fixtures.user);
 
     });
 

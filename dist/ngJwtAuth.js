@@ -41,24 +41,27 @@ var NgJwtAuth;
          * @returns {IJwtToken}
          */
         NgJwtAuthService.readToken = function (rawToken) {
-            var jwt = null;
             var pieces = rawToken.split('.');
-            jwt.signature = pieces[2];
-            jwt.header = angular.fromJson(atob(pieces[0]));
-            jwt.data = angular.fromJson(atob(pieces[1]));
+            var jwt = {
+                header: angular.fromJson(atob(pieces[0])),
+                data: angular.fromJson(atob(pieces[1])),
+                signature: pieces[2],
+            };
             return jwt;
         };
         NgJwtAuthService.prototype.processNewToken = function (rawToken) {
             try {
                 var tokenData = NgJwtAuthService.readToken(rawToken);
+                console.log('token data', tokenData);
                 var expiryDate = moment(tokenData.data.exp * 1000);
                 var expiryInSeconds = expiryDate.diff(moment(), 'seconds');
+                //this.saveTokenToStorage(rawToken, expiryInSeconds);
+                //this.setJWTHeader(rawToken);
+                return this.getUserFromTokenData(tokenData);
             }
             catch (err) {
-                console.error(err);
-                return false;
+                throw new Error(err);
             }
-            return true;
         };
         NgJwtAuthService.prototype.isLoginMethod = function (url, subString) {
             return true;
@@ -98,6 +101,9 @@ var NgJwtAuth;
                 responseType: 'json'
             };
             return this.$http(requestConfig);
+        };
+        NgJwtAuthService.prototype.getUserFromTokenData = function (tokenData) {
+            return _.get(tokenData, this.config.tokenUser);
         };
         return NgJwtAuthService;
     })();
