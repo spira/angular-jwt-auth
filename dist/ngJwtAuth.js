@@ -4,8 +4,7 @@
 var NgJwtAuth;
 (function (NgJwtAuth) {
     var NgJwtAuthService = (function () {
-        function NgJwtAuthService(_$http, _config) {
-            //_.assign(this, $http); //bind injected dependencies
+        function NgJwtAuthService(_config, _$http) {
             this.$http = _$http;
             this.config = _config;
         }
@@ -62,7 +61,6 @@ var NgJwtAuth;
             };
             return this.$http(requestConfig);
         };
-        NgJwtAuthService.$inject = ['$http'];
         return NgJwtAuthService;
     })();
     NgJwtAuth.NgJwtAuthService = NgJwtAuthService;
@@ -75,6 +73,13 @@ var NgJwtAuth;
 (function (NgJwtAuth) {
     var NgJwtAuthServiceProvider = (function () {
         function NgJwtAuthServiceProvider() {
+            //public $get(): INgJwtAuthService {
+            //
+            //    return new NgJwtAuthService();
+            //}
+            this.$get = ["$http", function NgJwtAuthServiceFactory($http) {
+                    return new NgJwtAuth.NgJwtAuthService(this.config, $http);
+                }];
             //initialise service config
             this.config = {
                 tokenLocation: 'token',
@@ -96,9 +101,6 @@ var NgJwtAuth;
         NgJwtAuthServiceProvider.prototype.setApiEndpoints = function (config) {
             this.config.apiEndpoints = _.defaults(config, this.config.apiEndpoints);
             return this;
-        };
-        NgJwtAuthServiceProvider.prototype.$get = function () {
-            return new NgJwtAuth.NgJwtAuthService(null, this.config);
         };
         return NgJwtAuthServiceProvider;
     })();

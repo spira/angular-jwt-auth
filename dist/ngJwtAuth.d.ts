@@ -31,8 +31,7 @@ declare module NgJwtAuth {
     class NgJwtAuthService implements INgJwtAuthService {
         private $http;
         private config;
-        static $inject: string[];
-        constructor(_$http: ng.IHttpService, _config: any);
+        constructor(_config: any, _$http: ng.IHttpService);
         private getLoginEndpoint();
         private getTokenExchangeEndpoint();
         private getRefreshEndpoint();
@@ -58,6 +57,6 @@ declare module NgJwtAuth {
          * @returns {NgJwtAuth.NgJwtAuthServiceProvider}
          */
         setApiEndpoints(config: IEndpointDefinition): NgJwtAuthServiceProvider;
-        $get(): INgJwtAuthService;
+        $get: (string | (($http: any) => NgJwtAuthService))[];
     }
 }

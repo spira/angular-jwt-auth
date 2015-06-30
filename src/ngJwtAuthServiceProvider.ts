@@ -37,10 +37,14 @@ module NgJwtAuth {
         }
 
 
-        public $get(): INgJwtAuthService {
+        //public $get(): INgJwtAuthService {
+        //
+        //    return new NgJwtAuthService();
+        //}
 
-            return new NgJwtAuthService(null, this.config);
-        }
+        public $get = ["$http", function NgJwtAuthServiceFactory($http) {
+            return new NgJwtAuthService(this.config, $http);
+        }];
 
     }
 

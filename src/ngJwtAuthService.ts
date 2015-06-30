@@ -10,10 +10,8 @@ module NgJwtAuth {
         private $http: ng.IHttpService;
         private config: INgJwtAuthServiceConfig;
 
-        static $inject = ['$http'];
-        constructor(_$http: ng.IHttpService, _config) {
+        constructor(_config, _$http: ng.IHttpService) {
 
-            //_.assign(this, $http); //bind injected dependencies
             this.$http = _$http;
             this.config = _config;
         }
