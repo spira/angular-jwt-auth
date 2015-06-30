@@ -20,21 +20,6 @@ var NgJwtAuth;
         NgJwtAuthService.getAuthHeader = function (username, password) {
             return 'Basic ' + btoa(username + ':' + password); //note btoa is NOT supported <= IE9
         };
-        NgJwtAuthService.prototype.isLoginMethod = function (url, subString) {
-            return true;
-        };
-        NgJwtAuthService.prototype.getUser = function () {
-            return {};
-        };
-        NgJwtAuthService.prototype.getPromisedUser = function () {
-            return this.$http.get('/');
-        };
-        NgJwtAuthService.prototype.processNewToken = function (rawToken) {
-            return true;
-        };
-        NgJwtAuthService.prototype.clearToken = function () {
-            return true;
-        };
         NgJwtAuthService.prototype.getToken = function (username, password) {
             var _this = this;
             var authHeader = NgJwtAuthService.getAuthHeader(username, password);
@@ -48,6 +33,56 @@ var NgJwtAuth;
             };
             return this.$http(requestConfig).then(function (result) {
                 return _.get(result.data, _this.config.tokenLocation);
+            });
+        };
+        /**
+         * Parse the raw token
+         * @param rawToken
+         * @returns {IJwtToken}
+         */
+        NgJwtAuthService.readToken = function (rawToken) {
+            var jwt = null;
+            var pieces = rawToken.split('.');
+            jwt.signature = pieces[2];
+            jwt.header = angular.fromJson(atob(pieces[0]));
+            jwt.data = angular.fromJson(atob(pieces[1]));
+            return jwt;
+        };
+        NgJwtAuthService.prototype.processNewToken = function (rawToken) {
+            try {
+                var tokenData = NgJwtAuthService.readToken(rawToken);
+                var expiryDate = moment(tokenData.data.exp * 1000);
+                var expiryInSeconds = expiryDate.diff(moment(), 'seconds');
+            }
+            catch (err) {
+                console.error(err);
+                return false;
+            }
+            return true;
+        };
+        NgJwtAuthService.prototype.isLoginMethod = function (url, subString) {
+            return true;
+        };
+        NgJwtAuthService.prototype.getUser = function () {
+            return {};
+        };
+        NgJwtAuthService.prototype.getPromisedUser = function () {
+            return this.$http.get('/');
+        };
+        NgJwtAuthService.prototype.clearToken = function () {
+            return true;
+        };
+        /**
+         * Attempt to log in with username and password
+         * @param username
+         * @param password
+         * @returns {IPromise<boolean>}
+         */
+        NgJwtAuthService.prototype.authenticate = function (username, password) {
+            var _this = this;
+            return this.getToken(username, password)
+                .then(function (token) {
+                return _this.processNewToken(token);
             });
         };
         NgJwtAuthService.prototype.exchangeToken = function (token) {

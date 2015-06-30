@@ -50,7 +50,11 @@ gulp.task('test', 'runs test sequence for frontend', function (cb){
 gulp.task('js:test', function(){
 
     return gulp.src(sources.test.ts)
-        .pipe(plugins.tsc({sourceMap:true, keepTree: false}))
+        .pipe(plugins.tsc({
+            sourceMap:true,
+            keepTree: false,
+            target: "ES5"
+        }))
         .pipe(gulp.dest(destinations.testTmp))
     ;
 
@@ -94,7 +98,8 @@ gulp.task('js:app', function () {
             sourceMap: true,
             declaration: true,
             keepTree: false,
-            out: path.basename(bowerJson.main)
+            out: path.basename(bowerJson.main),
+            target: "ES5"
         }))
         .pipe(gulp.dest(destinations.app))
     ;

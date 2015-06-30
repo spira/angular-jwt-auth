@@ -6,3 +6,5 @@
 /// <reference path="angularjs/angular-mocks.d.ts" />
 /// <reference path="sinon-chai/sinon-chai.d.ts" />
 /// <reference path="sinon/sinon.d.ts" />
+/// <reference path="moment/moment.d.ts" />
+/// <reference path="moment/moment-node.d.ts" />

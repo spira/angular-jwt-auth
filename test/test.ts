@@ -4,6 +4,19 @@
 
 var expect = chai.expect;
 
+var fixtures = {
+    user : {
+        email: 'joe.bloggs@example.com',
+        password: 'password'
+    },
+    get authBasic(){
+        return 'Basic '+btoa(fixtures.user.email+':'+fixtures.user.password)
+    },
+    get token(){
+
+        return 'abc-123';
+    }
+};
 
 describe('Default configuration', function () {
 
@@ -105,23 +118,24 @@ describe('Service tests', () => {
 
     it('should retrieve a json web token', () => {
 
-        var user = {
-            email: 'joe.bloggs@example.com',
-            password: 'password'
-        };
-
         $httpBackend.expectGET('/api/auth/login', (headers) => {
-            return headers['Authorization'] == 'Basic '+btoa(user.email+':'+user.password);
-        }).respond({token: "abc-123"});
+            return headers['Authorization'] == fixtures.authBasic;
+        }).respond({token: fixtures.token});
 
         var result;
-        ngJwtAuthService.getToken(user.email, user.password).then((res) => {
+        (<any>ngJwtAuthService).getToken(fixtures.user.email, fixtures.user.password).then((res) => {
             result = res;
         });
 
         $httpBackend.flush();
 
-        return expect(result).to.equal("abc-123");
+        return expect(result).to.equal(fixtures.token);
+
+    });
+
+    it('should process a token', () => {
+
+
 
     });
 

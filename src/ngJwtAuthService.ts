@@ -33,27 +33,7 @@ module NgJwtAuth {
             return 'Basic ' + btoa(username + ':' + password); //note btoa is NOT supported <= IE9
         }
 
-        public isLoginMethod(url: string, subString: string) : boolean{
-            return true;
-        }
-
-        public getUser() : Object{
-            return {};
-        }
-
-        public getPromisedUser(): ng.IPromise<Object>{
-            return this.$http.get('/');
-        }
-
-        public processNewToken(rawToken:string) : boolean{
-            return true;
-        }
-
-        public clearToken():boolean {
-            return true;
-        }
-
-        public getToken(username:string, password:string): ng.IPromise<Object>{
+        private getToken(username:string, password:string): ng.IPromise<string>{
 
             var authHeader = NgJwtAuthService.getAuthHeader(username, password);
 
@@ -69,6 +49,80 @@ module NgJwtAuth {
             return this.$http(requestConfig).then((result) => {
                 return _.get(result.data, this.config.tokenLocation);
             });
+        }
+
+        /**
+         * Parse the raw token
+         * @param rawToken
+         * @returns {IJwtToken}
+         */
+        private static readToken(rawToken:string):IJwtToken {
+
+            var jwt:IJwtToken = null;
+
+            var pieces = rawToken.split('.');
+
+            jwt.signature = pieces[2];
+
+            jwt.header = angular.fromJson(atob(pieces[0]));
+            jwt.data = angular.fromJson(atob(pieces[1]));
+
+            return jwt;
+        }
+
+        public processNewToken(rawToken:string) : boolean{
+
+            try {
+
+                var tokenData = NgJwtAuthService.readToken(rawToken);
+
+                var expiryDate = moment(tokenData.data.exp * 1000);
+
+                var expiryInSeconds = expiryDate.diff(moment(), 'seconds');
+
+                //this.saveTokenToStorage(rawToken, expiryInSeconds);
+
+                //this.setJWTHeader(rawToken);
+
+            }catch(err){
+                console.error(err);
+                return false;
+            }
+
+            return true;
+
+        }
+
+        public isLoginMethod(url: string, subString: string) : boolean{
+            return true;
+        }
+
+        public getUser() : Object{
+            return {};
+        }
+
+        public getPromisedUser(): ng.IPromise<Object>{
+            return this.$http.get('/');
+        }
+
+        public clearToken():boolean {
+            return true;
+        }
+
+        /**
+         * Attempt to log in with username and password
+         * @param username
+         * @param password
+         * @returns {IPromise<boolean>}
+         */
+        public authenticate(username:string, password:string):ng.IPromise<Object> {
+
+            return this.getToken(username, password)
+                .then((token) => {
+                    return this.processNewToken(token);
+                })
+            ;
+
         }
 
         public exchangeToken(token:string):ng.IPromise<Object> {

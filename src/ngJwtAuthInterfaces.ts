@@ -6,7 +6,7 @@ module NgJwtAuth {
         getPromisedUser():ng.IPromise<Object>;
         processNewToken(rawToken:string): boolean;
         clearToken():boolean;
-        getToken(username:string, password:string):ng.IPromise<string>;
+        authenticate(username:string, password:string):ng.IPromise<Object>;
         exchangeToken(token:string):ng.IPromise<Object>;
         requireLogin():ng.IPromise<Object>;
     }
@@ -29,5 +29,22 @@ module NgJwtAuth {
         apiEndpoints: IEndpointDefinition;
     }
 
+    export interface IJwtToken {
+
+        header: {
+            alg: string,
+            typ: string
+        },
+        data: {
+            iss: string;
+            aud: string;
+            sub: string;
+            nbf?: number;
+            iat: number;
+            exp: number;
+            jti: string;
+        },
+        signature: string
+    }
 
 }
