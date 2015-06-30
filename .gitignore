@@ -1,4 +1,5 @@
 bower_components
 example/bower_components
 node_modules
-
+reports
+tmp

@@ -2,10 +2,10 @@ module.exports = function(config) {
     config.set({
 
         frameworks: ['mocha', 'sinon-chai'],
-        //plugins: ['karma-mocha', 'karma-phantomjs-launcher', 'karma-coverage'],
+        //plugins: ['karma-mocha', 'karma-phantomjs-launcher', 'karma-coverage', 'karma-sinon-chai'],
 
         preprocessors: {
-            'src/**/*.js': ['coverage']
+            'dist/**/*.js': ['coverage']
         },
 
         reporters: ['progress', 'coverage'],
@@ -19,7 +19,7 @@ module.exports = function(config) {
             'PhantomJS'
         ],
 
-        logLevel: config.LOG_DEBUG,
+        logLevel: config.LOG_INFO,
 
         coverageReporter: {
             // specify a common output directory

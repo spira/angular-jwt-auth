@@ -38,41 +38,26 @@ var sources = {
 };
 
 var destinations = {
-    app: './dist/',
-    tmp: './tmp'
+    app: './dist',
+    testTmp: './test/tmp'
 };
 
-var tsProject = plugins.typescript.createProject({
-    declarationFiles: true,
-    noExternalResolve: true,
-    module: 'commonjs'
+gulp.task('test', 'runs test sequence for frontend', function (cb){
+    plugins.runSequence('clean', ['js:app', 'js:test'], 'test:karma', cb);
 });
 
-gulp.task('test', function () {
+gulp.task('js:test', function(){
 
-    var tsStream = gulp.src(sources.test.ts)
-        .pipe(plugins.typescript(tsProject));
-
-
-    var dependencies = plugins.mainBowerFiles({
-        includeDev: true,
-        paths: {
-            bowerDirectory: 'bower_components',
-            bowerJson: 'bower.json'
-        }
-    });
-
-    tsStream.js
-        .pipe(gulp.dest(destinations.tmp))
-        .pipe(plugins.addSrc(dependencies))
-        .pipe(plugins.mocha({reporter: 'spec'}))
-        //.pipe(plugins.clean()) //delete the created js test files when done with them
+    return gulp.src(sources.test.ts)
+        .pipe(plugins.tsc({keepTree: false}))
+        .pipe(gulp.dest(destinations.testTmp))
     ;
+
 });
 
 gulp.task('test:karma', function(){
 
-  var dependencies = plugins.mainBowerFiles({
+  var vendorFiles = plugins.mainBowerFiles({
     includeDev: true,
     paths: {
       bowerDirectory: 'bower_components',
@@ -80,13 +65,15 @@ gulp.task('test:karma', function(){
     }
   });
 
-  var tsStream = gulp.src(sources.test.ts)
-    .pipe(plugins.addSrc(sources.app.ts))
-    .pipe(plugins.typescript(tsProject));
+    vendorFiles = vendorFiles.map(function(path){
+        return path.replace(/\\/g, "\/").replace(/^.+bower_components\//i, './bower_components/');
+    });
 
-  tsStream.js
-    .pipe(gulp.dest(destinations.tmp))
-    .pipe(plugins.addSrc(dependencies))
+    var testFiles = [].concat(
+        destinations.testTmp+'**/*.js', vendorFiles, destinations.app+'**/*.js'
+    );
+
+    gulp.src(testFiles)
     .pipe(plugins.karma({
       configFile: 'karma.conf.js',
       action: 'run'
@@ -100,21 +87,17 @@ gulp.task('test:karma', function(){
 
 gulp.task('js:app', function () {
 
-    var tsStream = gulp.src(sources.app.ts)
-        .pipe(plugins.typescript(tsProject));
 
+    gulp.src(sources.app.ts)
+        .pipe(plugins.tsc({ sourceMap: true, declaration: true, keepTree: false}))
+        .pipe(gulp.dest(destinations.app))
+    ;
 
-    plugins.eventStream.merge(
-        tsStream.dts.pipe(gulp.dest(destinations.app)),
-        tsStream.js
-            .pipe(plugins.concat(path.basename(bowerJson.main)))
-            .pipe(gulp.dest(destinations.app))
-    );
 });
 
 // deletes the dist folder for a clean build
 gulp.task('clean', function () {
-    plugins.del(['./dist'], function (err, deletedFiles) {
+    plugins.del(['./dist', destinations.testTmp], function (err, deletedFiles) {
         if (deletedFiles.length) {
             plugins.util.log('Deleted', plugins.util.colors.red(deletedFiles.join(' ,')));
         } else {
