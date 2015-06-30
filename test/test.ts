@@ -77,18 +77,17 @@ describe('Custom configuration', function () {
 
 describe('Service tests', () => {
 
-    var ngJwtAuthService:NgJwtAuth.NgJwtAuthService;
     var $httpBackend:ng.IHttpBackendService;
-    var authRequestHandler:ng.mock.IRequestHandler;
+    var ngJwtAuthService:NgJwtAuth.NgJwtAuthService;
 
     beforeEach(()=>{
 
         module('ngJwtAuth');
 
         inject((_$httpBackend_, _ngJwtAuthService_) => {
-            $httpBackend = _$httpBackend_;
 
             if (!ngJwtAuthService){ //dont rebind, so each test gets the singleton
+                $httpBackend = _$httpBackend_;
                 ngJwtAuthService = _ngJwtAuthService_; //register injected of service provider
             }
         })
@@ -102,25 +101,27 @@ describe('Service tests', () => {
     it('should be an injectable service', () => {
 
         return expect(ngJwtAuthService).to.be.an('object');
-
     });
 
     it('should retrieve a json web token', () => {
 
-        $httpBackend
-            .when('GET', '/api/auth/login')
-            .respond({token: 'abc-123'}, {'A-Token': 'xxx'});
+        var user = {
+            email: 'joe.bloggs@example.com',
+            password: 'password'
+        };
 
-        $httpBackend.expectGET('/api/auth/login');
+        $httpBackend.expectGET('/api/auth/login', (headers) => {
+            return headers['Authorization'] == 'Basic '+btoa(user.email+':'+user.password);
+        }).respond({token: "abc-123"});
 
-        var promisedToken = ngJwtAuthService.authenticate('joe.bloggs@example.com', 'password');
-
-        promisedToken.then((res) => {
-
-            console.log('res', res);
+        var result;
+        ngJwtAuthService.getToken(user.email, user.password).then((res) => {
+            result = res;
         });
 
         $httpBackend.flush();
+
+        return expect(result).to.equal("abc-123");
 
     });
 

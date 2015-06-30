@@ -53,7 +53,7 @@ module NgJwtAuth {
             return true;
         }
 
-        public authenticate(username:string, password:string): ng.IPromise<Object>{
+        public getToken(username:string, password:string): ng.IPromise<Object>{
 
             var authHeader = NgJwtAuthService.getAuthHeader(username, password);
 
@@ -66,7 +66,9 @@ module NgJwtAuth {
                 responseType: 'json'
             };
 
-            return this.$http(requestConfig);
+            return this.$http(requestConfig).then((result) => {
+                return _.get(result.data, this.config.tokenLocation);
+            });
         }
 
         public exchangeToken(token:string):ng.IPromise<Object> {

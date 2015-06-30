@@ -35,7 +35,8 @@ var NgJwtAuth;
         NgJwtAuthService.prototype.clearToken = function () {
             return true;
         };
-        NgJwtAuthService.prototype.authenticate = function (username, password) {
+        NgJwtAuthService.prototype.getToken = function (username, password) {
+            var _this = this;
             var authHeader = NgJwtAuthService.getAuthHeader(username, password);
             var requestConfig = {
                 method: 'GET',
@@ -45,7 +46,9 @@ var NgJwtAuth;
                 },
                 responseType: 'json'
             };
-            return this.$http(requestConfig);
+            return this.$http(requestConfig).then(function (result) {
+                return _.get(result.data, _this.config.tokenLocation);
+            });
         };
         NgJwtAuthService.prototype.exchangeToken = function (token) {
             return this.$http.get('/');

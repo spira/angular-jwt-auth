@@ -6,7 +6,7 @@ module NgJwtAuth {
         getPromisedUser():ng.IPromise<Object>;
         processNewToken(rawToken:string): boolean;
         clearToken():boolean;
-        authenticate(username:string, password:string):ng.IPromise<Object>;
+        getToken(username:string, password:string):ng.IPromise<string>;
         exchangeToken(token:string):ng.IPromise<Object>;
         requireLogin():ng.IPromise<Object>;
     }
