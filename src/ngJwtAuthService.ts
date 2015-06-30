@@ -12,8 +12,9 @@ module NgJwtAuth {
 
         constructor(_config, _$http: ng.IHttpService) {
 
-            this.$http = _$http;
             this.config = _config;
+            this.$http = _$http;
+
         }
 
         private getLoginEndpoint():string {

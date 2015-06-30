@@ -85,12 +85,8 @@ describe('Service tests', () => {
 
         module('ngJwtAuth');
 
-        inject((_ngJwtAuthService_, _$httpBackend_) => {
+        inject((_$httpBackend_, _ngJwtAuthService_) => {
             $httpBackend = _$httpBackend_;
-
-            $httpBackend
-                .when('GET', '/api/auth/login')
-                .respond({token: 'abc-123'}, {'A-Token': 'xxx'});
 
             if (!ngJwtAuthService){ //dont rebind, so each test gets the singleton
                 ngJwtAuthService = _ngJwtAuthService_; //register injected of service provider
@@ -110,6 +106,10 @@ describe('Service tests', () => {
     });
 
     it('should retrieve a json web token', () => {
+
+        $httpBackend
+            .when('GET', '/api/auth/login')
+            .respond({token: 'abc-123'}, {'A-Token': 'xxx'});
 
         $httpBackend.expectGET('/api/auth/login');
 

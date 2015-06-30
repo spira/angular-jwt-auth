@@ -16,8 +16,15 @@ module.exports = function(config) {
 
         autoWatch: false,
         browsers: [
-            'PhantomJS'
+            'Chrome'
         ],
+
+        client: {
+            captureConsole: true,
+            mocha: {
+                bail: true
+            }
+        },
 
         logLevel: config.LOG_INFO,
 
