@@ -89,7 +89,7 @@ gulp.task('test:karma', function(){
 gulp.task('js:app', function () {
 
 
-    gulp.src(sources.app.ts)
+    return gulp.src(sources.app.ts)
         .pipe(plugins.tsc({ sourceMap: true, declaration: true, keepTree: false}))
         .pipe(gulp.dest(destinations.app))
     ;
