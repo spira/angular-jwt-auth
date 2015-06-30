@@ -39,7 +39,8 @@ var sources = {
 
 var destinations = {
     app: './dist',
-    testTmp: './test/tmp'
+    testTmp: './test/tmp',
+    coverage: 'reports/**/lcov.info'
 };
 
 gulp.task('test', 'runs test sequence for frontend', function (cb){
@@ -141,3 +142,8 @@ gulp.task('watch', function () {
 
 // default
 gulp.task('default', ['build', 'watch']);
+
+gulp.task('coveralls', 'submits code coverage to coveralls', [], function(){
+    gulp.src(paths.dest.coverage)
+        .pipe(plugins.coveralls());
+});

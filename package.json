@@ -15,6 +15,7 @@
     "gulp-bump": "^0.3.1",
     "gulp-clean": "^0.3.1",
     "gulp-concat": "^2.5.2",
+    "gulp-coveralls": "^0.1.4",
     "gulp-filter": "^2.0.2",
     "gulp-git": "^1.2.4",
     "gulp-help": "^1.6.0",
