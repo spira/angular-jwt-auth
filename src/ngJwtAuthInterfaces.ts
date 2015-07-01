@@ -1,7 +1,7 @@
 module NgJwtAuth {
 
     export interface INgJwtAuthService {
-        isLoginMethod(url:string, subString:string): boolean;
+        isLoginMethod(url:string): boolean;
         getUser():Object;
         getPromisedUser():ng.IPromise<Object>;
         processNewToken(rawToken:string): IUser;

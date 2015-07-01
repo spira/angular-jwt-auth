@@ -4,23 +4,54 @@
 var NgJwtAuth;
 (function (NgJwtAuth) {
     var NgJwtAuthService = (function () {
+        /**
+         * Construct the service with dependencies injected
+         * @param _config
+         * @param _$http
+         * @param _$q
+         */
         function NgJwtAuthService(_config, _$http, _$q) {
+            this.loggedIn = false;
             this.config = _config;
             this.$http = _$http;
             this.$q = _$q;
         }
+        /**
+         * Get the endpoint for login
+         * @returns {string}
+         */
         NgJwtAuthService.prototype.getLoginEndpoint = function () {
             return this.config.apiEndpoints.base + this.config.apiEndpoints.login;
         };
+        /**
+         * Get the endpoint for exchanging a token
+         * @returns {string}
+         */
         NgJwtAuthService.prototype.getTokenExchangeEndpoint = function () {
             return this.config.apiEndpoints.base + this.config.apiEndpoints.tokenExchange;
         };
+        /**
+         * Get the endpoint for refreshing a token
+         * @returns {string}
+         */
         NgJwtAuthService.prototype.getRefreshEndpoint = function () {
             return this.config.apiEndpoints.base + this.config.apiEndpoints.refresh;
         };
+        /**
+         * Build a authentication basic header string
+         * @param username
+         * @param password
+         * @returns {string}
+         */
         NgJwtAuthService.getAuthHeader = function (username, password) {
             return 'Basic ' + btoa(username + ':' + password); //note btoa is NOT supported <= IE9
         };
+        /**
+         * Retrieve the token from the remote API
+         * @param username
+         * @param password
+         * @returns {IPromise<TResult>}
+         */
         NgJwtAuthService.prototype.getToken = function (username, password) {
             var _this = this;
             var authHeader = NgJwtAuthService.getAuthHeader(username, password);
@@ -50,6 +81,9 @@ var NgJwtAuth;
          * @returns {IJwtToken}
          */
         NgJwtAuthService.readToken = function (rawToken) {
+            if ((rawToken.match(/\./g) || []).length !== 2) {
+                throw new NgJwtAuth.NgJwtAuthException("Raw token is has incorrect format. Format must be of form \"[header].[data].[signature]\"");
+            }
             var pieces = rawToken.split('.');
             var jwt = {
                 header: angular.fromJson(atob(pieces[0])),
@@ -58,27 +92,48 @@ var NgJwtAuth;
             };
             return jwt;
         };
+        /**
+         * Read and save the raw token to storage, kick off timer to attempt refresh
+         * @param rawToken
+         * @returns {IUser}
+         */
         NgJwtAuthService.prototype.processNewToken = function (rawToken) {
-            try {
-                var tokenData = NgJwtAuthService.readToken(rawToken);
-                var expiryDate = moment(tokenData.data.exp * 1000);
-                var expiryInSeconds = expiryDate.diff(moment(), 'seconds');
-                //this.saveTokenToStorage(rawToken, expiryInSeconds);
-                //this.setJWTHeader(rawToken);
-                return this.getUserFromTokenData(tokenData);
-            }
-            catch (err) {
-                throw new NgJwtAuth.Error(err);
-            }
+            var tokenData = NgJwtAuthService.readToken(rawToken);
+            var expiryDate = moment(tokenData.data.exp * 1000);
+            var expiryInSeconds = expiryDate.diff(moment(), 'seconds');
+            //this.saveTokenToStorage(rawToken, expiryInSeconds);
+            //this.setJWTHeader(rawToken);
+            return this.getUserFromTokenData(tokenData);
         };
-        NgJwtAuthService.prototype.isLoginMethod = function (url, subString) {
-            return true;
+        /**
+         * Check if the endpoint is a login method (used for skipping the authentication error interceptor)
+         * @param url
+         * @returns {boolean}
+         */
+        NgJwtAuthService.prototype.isLoginMethod = function (url) {
+            var loginMethods = [
+                this.getLoginEndpoint(),
+                this.getTokenExchangeEndpoint(),
+            ];
+            return _.contains(loginMethods, url);
         };
         NgJwtAuthService.prototype.getUser = function () {
-            return {};
+            return this.user;
         };
+        /**
+         *
+         * @returns {IHttpPromise<T>}
+         */
         NgJwtAuthService.prototype.getPromisedUser = function () {
-            return this.$http.get('/');
+            if (this.loggedIn) {
+                return this.$q.when(this.getUser());
+            }
+            else {
+                return this.requireLogin()
+                    .then(function () {
+                    return this.getUser();
+                });
+            }
         };
         NgJwtAuthService.prototype.clearToken = function () {
             return true;
@@ -93,7 +148,12 @@ var NgJwtAuth;
             var _this = this;
             return this.getToken(username, password)
                 .then(function (token) {
-                return _this.processNewToken(token);
+                try {
+                    return _this.processNewToken(token);
+                }
+                catch (error) {
+                    return _this.$q.reject(error);
+                }
             });
         };
         NgJwtAuthService.prototype.exchangeToken = function (token) {
@@ -101,14 +161,6 @@ var NgJwtAuth;
         };
         NgJwtAuthService.prototype.requireLogin = function () {
             return this.$http.get('/');
-        };
-        NgJwtAuthService.prototype.getRemoteData = function (url) {
-            var requestConfig = {
-                method: 'GET',
-                url: url,
-                responseType: 'json'
-            };
-            return this.$http(requestConfig);
         };
         /**
          * Find the user object within the path

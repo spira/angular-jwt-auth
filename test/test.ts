@@ -77,6 +77,14 @@ describe('Default configuration', function () {
         expect((<any>defaultAuthService).getLoginEndpoint()).to.equal('/api/auth/login');
     });
 
+    it('should have the default token exchange endpoint', function() {
+        expect((<any>defaultAuthService).getTokenExchangeEndpoint()).to.equal('/api/auth/token');
+    });
+
+    it('should have the default refresh endpoint', function() {
+        expect((<any>defaultAuthService).getRefreshEndpoint()).to.equal('/api/auth/refresh');
+    });
+
 });
 
 describe('Custom configuration', function () {
@@ -174,6 +182,18 @@ describe('Service tests', () => {
     it('should fail promise when authentication fails', () => {
 
         $httpBackend.expectGET('/api/auth/login').respond(401);
+
+        let authPromise = ngJwtAuthService.authenticate(fixtures.user.email, fixtures.user.password);
+
+        expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+
+        $httpBackend.flush();
+
+    });
+
+    it('should fail promise when returned token is invalid', () => {
+
+        $httpBackend.expectGET('/api/auth/login').respond({token: 'invalid_token'});
 
         let authPromise = ngJwtAuthService.authenticate(fixtures.user.email, fixtures.user.password);
 

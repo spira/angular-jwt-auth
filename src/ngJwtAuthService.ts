@@ -11,6 +11,15 @@ module NgJwtAuth {
         private $q: ng.IQService;
         private config: INgJwtAuthServiceConfig;
 
+        private loggedIn:boolean = false;
+        private user:IUser;
+
+        /**
+         * Construct the service with dependencies injected
+         * @param _config
+         * @param _$http
+         * @param _$q
+         */
         constructor(_config, _$http: ng.IHttpService, _$q: ng.IQService) {
 
             this.config = _config;
@@ -19,22 +28,46 @@ module NgJwtAuth {
 
         }
 
+        /**
+         * Get the endpoint for login
+         * @returns {string}
+         */
         private getLoginEndpoint():string {
             return this.config.apiEndpoints.base + this.config.apiEndpoints.login;
         }
 
+        /**
+         * Get the endpoint for exchanging a token
+         * @returns {string}
+         */
         private getTokenExchangeEndpoint():string {
             return this.config.apiEndpoints.base + this.config.apiEndpoints.tokenExchange;
         }
 
+        /**
+         * Get the endpoint for refreshing a token
+         * @returns {string}
+         */
         private getRefreshEndpoint():string{
             return this.config.apiEndpoints.base + this.config.apiEndpoints.refresh;
         }
 
+        /**
+         * Build a authentication basic header string
+         * @param username
+         * @param password
+         * @returns {string}
+         */
         private static getAuthHeader(username:string, password:string):string{
             return 'Basic ' + btoa(username + ':' + password); //note btoa is NOT supported <= IE9
         }
 
+        /**
+         * Retrieve the token from the remote API
+         * @param username
+         * @param password
+         * @returns {IPromise<TResult>}
+         */
         private getToken(username:string, password:string): ng.IPromise<any>{
 
             var authHeader = NgJwtAuthService.getAuthHeader(username, password);
@@ -70,6 +103,10 @@ module NgJwtAuth {
          */
         private static readToken(rawToken:string):IJwtToken {
 
+            if ((rawToken.match(/\./g) || []).length !== 2){
+                throw new NgJwtAuthException("Raw token is has incorrect format. Format must be of form \"[header].[data].[signature]\"");
+            }
+
             var pieces = rawToken.split('.');
 
             var jwt:IJwtToken = {
@@ -81,39 +118,67 @@ module NgJwtAuth {
             return jwt;
         }
 
+        /**
+         * Read and save the raw token to storage, kick off timer to attempt refresh
+         * @param rawToken
+         * @returns {IUser}
+         */
         public processNewToken(rawToken:string) : IUser{
 
-            try {
 
-                var tokenData = NgJwtAuthService.readToken(rawToken);
+            var tokenData = NgJwtAuthService.readToken(rawToken);
 
-                var expiryDate = moment(tokenData.data.exp * 1000);
+            var expiryDate = moment(tokenData.data.exp * 1000);
 
-                var expiryInSeconds = expiryDate.diff(moment(), 'seconds');
+            var expiryInSeconds = expiryDate.diff(moment(), 'seconds');
 
-                //this.saveTokenToStorage(rawToken, expiryInSeconds);
+            //this.saveTokenToStorage(rawToken, expiryInSeconds);
 
-                //this.setJWTHeader(rawToken);
+            //this.setJWTHeader(rawToken);
 
-                return this.getUserFromTokenData(tokenData);
+            return this.getUserFromTokenData(tokenData);
 
-            }catch(err){
-                throw new Error(err);
+        }
+
+        /**
+         * Check if the endpoint is a login method (used for skipping the authentication error interceptor)
+         * @param url
+         * @returns {boolean}
+         */
+        public isLoginMethod(url: string) : boolean{
+
+            let loginMethods = [
+                this.getLoginEndpoint(),
+                this.getTokenExchangeEndpoint(),
+            ];
+
+            return _.contains(loginMethods, url);
+        }
+
+        public getUser() : IUser{
+            return this.user;
+        }
+
+        /**
+         *
+         * @returns {IHttpPromise<T>}
+         */
+        public getPromisedUser(): ng.IPromise<IUser>{
+
+            if (this.loggedIn){ //if we are already logged in, resolve the user immediately
+
+                return this.$q.when(this.getUser());
+            }else{ //otherwise require login then return the user
+                return this.requireLogin()
+                    .then(function(){
+                        return this.getUser();
+                    })
+                ;
             }
 
         }
 
-        public isLoginMethod(url: string, subString: string) : boolean{
-            return true;
-        }
 
-        public getUser() : Object{
-            return {};
-        }
-
-        public getPromisedUser(): ng.IPromise<Object>{
-            return this.$http.get('/');
-        }
 
         public clearToken():boolean {
             return true;
@@ -129,7 +194,13 @@ module NgJwtAuth {
 
             return this.getToken(username, password)
                 .then((token) => {
-                    return this.processNewToken(token);
+
+                    try {
+                        return this.processNewToken(token);
+                    }catch(error){
+                        return this.$q.reject(error);
+                    }
+
                 })
             ;
 
@@ -141,18 +212,6 @@ module NgJwtAuth {
 
         public requireLogin():ng.IPromise<Object>{
             return this.$http.get('/');
-        }
-
-        private getRemoteData(url:string) : ng.IPromise<Object>{
-
-          var requestConfig : ng.IRequestConfig = {
-            method: 'GET',
-            url:  url,
-            responseType: 'json'
-          };
-
-          return this.$http(requestConfig);
-
         }
 
         /**
