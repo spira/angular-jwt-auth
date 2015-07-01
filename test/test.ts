@@ -269,21 +269,62 @@ describe('Service tests', () => {
 
     });
 
-    //describe('Require login', () => {
-    //
-    //    it('should prompt a login promise to be resolved when a 401 occurs', () => {
-    //
-    //        $httpBackend.expectGET('/any').respond(401);
-    //
-    //        let authPromise = ngJwtAuthService.authenticate(fixtures.user.email, fixtures.user.password);
-    //
-    //        expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
-    //
-    //        $httpBackend.flush();
-    //
-    //    })
-    //
-    //});
+    describe('Require login', () => {
+
+        it('should be able to set a credential promise factory', () => {
+
+            let $q = (<any>ngJwtAuthService).$q;
+            //set credential promise factory
+            ngJwtAuthService.registerCredentialPromiseFactory((currentUser:NgJwtAuth.IUser) : ng.IPromise<NgJwtAuth.ICredentials> => {
+                let credentials:NgJwtAuth.ICredentials = {
+                    username: fixtures.user.email,
+                    password: fixtures.user.password,
+                };
+
+                return $q.when(credentials); //immediately resolve
+            });
+
+
+
+        });
+
+        it('should not be able to re-set a credential promise factory', () => {
+
+            let $q = (<any>ngJwtAuthService).$q;
+            //set credential promise factory
+            let setFactoryFn = () => {
+                ngJwtAuthService.registerCredentialPromiseFactory((currentUser:NgJwtAuth.IUser):ng.IPromise<NgJwtAuth.ICredentials> => {
+                    let credentials:NgJwtAuth.ICredentials = {
+                        username: fixtures.user.email,
+                        password: fixtures.user.password,
+                    };
+
+                    return $q.when(credentials); //immediately resolve
+                });
+            };
+
+
+            expect(setFactoryFn).to.throw(NgJwtAuth.NgJwtAuthException);
+
+        });
+
+        it('should prompt a login promise to be resolved when a 401 occurs, then retry the method', () => {
+            $httpBackend.expectGET('/any').respond(401);
+
+            let $http = (<any>ngJwtAuthService).$http; //get the injected http method
+
+            $http.get('/any'); //try to get a resource
+
+            $httpBackend.expectGET('/api/auth/login', (headers) => {
+                return headers['Authorization'] == fixtures.authBasic;
+            }).respond({token: fixtures.token});
+
+            $httpBackend.expectGET('/any').respond('ok');
+
+            $httpBackend.flush();
+        });
+
+    });
 
 
 });

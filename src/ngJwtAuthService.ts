@@ -14,6 +14,8 @@ module NgJwtAuth {
 
         public loggedIn:boolean = false;
         private user:IUser;
+        private credentialPromiseFactory:ICredentialPromiseFactory;
+        private currentCredentialPromise:ng.IPromise<ICredentials>;
 
         /**
          * Construct the service with dependencies injected
@@ -198,6 +200,9 @@ module NgJwtAuth {
                 .then((token) => {
 
                     try {
+
+
+
                         this.user = this.processNewToken(token);
 
                         this.loggedIn = true;
@@ -249,10 +254,42 @@ module NgJwtAuth {
             this.$http.defaults.headers.common.Authorization = 'Bearer '+rawToken;
         }
 
+        /**
+         * Handle a request that was rejected due to unauthorised response
+         * 1. Check if there is already credentials promised
+         * 2. If not, excecute the credential promise factory
+         * 3. Wait until the credentials are resolved
+         * 4. Then try to authenticate
+         * 5. Then retry the $http request
+         * @param rejection
+         */
         public handleInterceptedUnauthorisedResponse(rejection:any):void {
+            if (!this.currentCredentialPromise){
+                this.currentCredentialPromise = this.credentialPromiseFactory(this.user);
+            }
 
+            this.currentCredentialPromise.then((credentials:ICredentials) => {
 
+                if (this.currentCredentialPromise){ //if there are any credential promises outstanding, delete them
+                    this.currentCredentialPromise = null;
+                }
 
+                return this.authenticate(credentials.username, credentials.password);
+            }).then((user:IUser) => {
+                return this.$http(rejection.config);
+            });
+
+        }
+
+        /**
+         * Register the user provided credential promise factory
+         * @param promiseFactory
+         */
+        public registerCredentialPromiseFactory(promiseFactory:ICredentialPromiseFactory):void {
+            if (_.isFunction(this.credentialPromiseFactory)){
+                throw new NgJwtAuthException("You cannot redeclare the credential promise factory");
+            }
+            this.credentialPromiseFactory = promiseFactory;
         }
     }
 

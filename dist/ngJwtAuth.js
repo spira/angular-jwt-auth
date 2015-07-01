@@ -227,7 +227,38 @@ var NgJwtAuth;
         NgJwtAuthService.prototype.setJWTHeader = function (rawToken) {
             this.$http.defaults.headers.common.Authorization = 'Bearer ' + rawToken;
         };
+        /**
+         * Handle a request that was rejected due to unauthorised response
+         * 1. Check if there is already credentials promised
+         * 2. If not, excecute the credential promise factory
+         * 3. Wait until the credentials are resolved
+         * 4. Then try to authenticate
+         * 5. Then retry the $http request
+         * @param rejection
+         */
         NgJwtAuthService.prototype.handleInterceptedUnauthorisedResponse = function (rejection) {
+            var _this = this;
+            if (!this.currentCredentialPromise) {
+                this.currentCredentialPromise = this.credentialPromiseFactory(this.user);
+            }
+            this.currentCredentialPromise.then(function (credentials) {
+                if (_this.currentCredentialPromise) {
+                    _this.currentCredentialPromise = null;
+                }
+                return _this.authenticate(credentials.username, credentials.password);
+            }).then(function (user) {
+                return _this.$http(rejection.config);
+            });
+        };
+        /**
+         * Register the user provided credential promise factory
+         * @param promiseFactory
+         */
+        NgJwtAuthService.prototype.registerCredentialPromiseFactory = function (promiseFactory) {
+            if (_.isFunction(this.credentialPromiseFactory)) {
+                throw new NgJwtAuth.NgJwtAuthException("You cannot redeclare the credential promise factory");
+            }
+            this.credentialPromiseFactory = promiseFactory;
         };
         return NgJwtAuthService;
     })();
