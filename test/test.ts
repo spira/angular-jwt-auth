@@ -174,7 +174,10 @@ describe('Service tests', () => {
                 $httpBackend = _$httpBackend_;
                 ngJwtAuthService = _ngJwtAuthService_; //register injected of service provider
             }
-        })
+        });
+
+        ngJwtAuthService.init();
+
     });
 
     afterEach(() => {
