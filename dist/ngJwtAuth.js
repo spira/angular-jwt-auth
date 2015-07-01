@@ -3,6 +3,44 @@
 /// <reference path="./ngJwtAuthInterfaces.ts" />
 var NgJwtAuth;
 (function (NgJwtAuth) {
+    var NgJwtAuthInterceptor = (function () {
+        function NgJwtAuthInterceptor(_$q, _$injector) {
+            var _this = this;
+            this.getNgJwtAuthService = function () {
+                if (_this.ngJwtAuthService == null) {
+                    _this.ngJwtAuthService = _this.$injector.get('ngJwtAuthService');
+                }
+                return _this.ngJwtAuthService;
+            };
+            this.responseError = function (rejection) {
+                var ngJwtAuthService = _this.getNgJwtAuthService();
+                //if the response is on a login method, reject immediately
+                if (ngJwtAuthService.isLoginMethod(rejection.config.url)) {
+                    return _this.$q.reject(rejection);
+                }
+                if (401 === rejection.status) {
+                    return ngJwtAuthService.handleInterceptedUnauthorisedResponse(rejection);
+                }
+                return _this.$q.reject(rejection);
+            };
+            this.$q = _$q;
+            this.$injector = _$injector;
+        }
+        /**
+         * Construct the service with dependencies injected
+         * @param _$q
+         * @param _$injector
+         */
+        NgJwtAuthInterceptor.$inject = ['$q', '$injector'];
+        return NgJwtAuthInterceptor;
+    })();
+    NgJwtAuth.NgJwtAuthInterceptor = NgJwtAuthInterceptor;
+})(NgJwtAuth || (NgJwtAuth = {}));
+/// <reference path="../typings/lodash/lodash.d.ts" />
+/// <reference path="../typings/angularjs/angular.d.ts" />
+/// <reference path="./ngJwtAuthInterfaces.ts" />
+var NgJwtAuth;
+(function (NgJwtAuth) {
     var NgJwtAuthService = (function () {
         /**
          * Construct the service with dependencies injected
@@ -189,6 +227,8 @@ var NgJwtAuth;
         NgJwtAuthService.prototype.setJWTHeader = function (rawToken) {
             this.$http.defaults.headers.common.Authorization = 'Bearer ' + rawToken;
         };
+        NgJwtAuthService.prototype.handleInterceptedUnauthorisedResponse = function (rejection) {
+        };
         return NgJwtAuthService;
     })();
     NgJwtAuth.NgJwtAuthService = NgJwtAuthService;
@@ -197,6 +237,7 @@ var NgJwtAuth;
 /// <reference path="../typings/angularjs/angular.d.ts" />
 /// <reference path="./ngJwtAuthInterfaces.ts" />
 /// <reference path="./ngJwtAuthService.ts" />
+/// <reference path="./ngJwtAuthInterceptor.ts" />
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -252,6 +293,10 @@ var NgJwtAuth;
     })();
     NgJwtAuth.NgJwtAuthServiceProvider = NgJwtAuthServiceProvider;
     angular.module('ngJwtAuth', [])
-        .provider('ngJwtAuthService', NgJwtAuthServiceProvider);
+        .provider('ngJwtAuthService', NgJwtAuthServiceProvider)
+        .service('ngJwtAuthInterceptor', NgJwtAuth.NgJwtAuthInterceptor)
+        .config(['$httpProvider', '$injector', function ($httpProvider) {
+            $httpProvider.interceptors.push('ngJwtAuthInterceptor');
+        }]);
 })(NgJwtAuth || (NgJwtAuth = {}));
 //# sourceMappingURL=ngJwtAuth.js.map

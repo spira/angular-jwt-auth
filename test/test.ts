@@ -269,5 +269,21 @@ describe('Service tests', () => {
 
     });
 
+    //describe('Require login', () => {
+    //
+    //    it('should prompt a login promise to be resolved when a 401 occurs', () => {
+    //
+    //        $httpBackend.expectGET('/any').respond(401);
+    //
+    //        let authPromise = ngJwtAuthService.authenticate(fixtures.user.email, fixtures.user.password);
+    //
+    //        expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+    //
+    //        $httpBackend.flush();
+    //
+    //    })
+    //
+    //});
+
 
 });

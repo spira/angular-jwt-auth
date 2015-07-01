@@ -52,6 +52,23 @@ declare module NgJwtAuth {
     }
 }
 declare module NgJwtAuth {
+    class NgJwtAuthInterceptor {
+        private $http;
+        private $q;
+        private $injector;
+        private ngJwtAuthService;
+        /**
+         * Construct the service with dependencies injected
+         * @param _$q
+         * @param _$injector
+         */
+        static $inject: string[];
+        constructor(_$q: ng.IQService, _$injector: ng.auto.IInjectorService);
+        private getNgJwtAuthService;
+        responseError: (rejection: any) => any;
+    }
+}
+declare module NgJwtAuth {
     class NgJwtAuthService implements INgJwtAuthService {
         private config;
         private $http;
@@ -147,6 +164,7 @@ declare module NgJwtAuth {
          * @param rawToken
          */
         private setJWTHeader(rawToken);
+        handleInterceptedUnauthorisedResponse(rejection: any): void;
     }
 }
 declare module NgJwtAuth {

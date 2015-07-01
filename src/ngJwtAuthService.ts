@@ -248,6 +248,12 @@ module NgJwtAuth {
 
             this.$http.defaults.headers.common.Authorization = 'Bearer '+rawToken;
         }
+
+        public handleInterceptedUnauthorisedResponse(rejection:any):void {
+
+
+
+        }
     }
 
 }
