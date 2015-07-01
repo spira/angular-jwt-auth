@@ -147,6 +147,7 @@ declare module NgJwtAuth {
          * @returns {IUser}
          */
         processNewToken(rawToken: string): IUser;
+        private loadTokenFromStorage();
         /**
          * Check if the endpoint is a login method (used for skipping the authentication error interceptor)
          * @param url

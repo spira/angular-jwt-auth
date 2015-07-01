@@ -32,6 +32,9 @@ module NgJwtAuth {
             this.$q = _$q;
             this.$window = _$window;
 
+            //attempt to load the token from storage
+            this.loadTokenFromStorage();
+
         }
 
         /**
@@ -112,11 +115,8 @@ module NgJwtAuth {
 
                 try {
 
-                    this.user = this.processNewToken(token);
+                    return this.processNewToken(token);
 
-                    this.loggedIn = true;
-
-                    return this.user;
                 }catch(error){
                     return this.$q.reject(error);
                 }
@@ -176,7 +176,25 @@ module NgJwtAuth {
 
             this.setJWTHeader(rawToken);
 
-            return this.getUserFromTokenData(tokenData);
+            this.loggedIn = true;
+
+            this.user = this.getUserFromTokenData(tokenData);
+
+            return this.user;
+
+        }
+
+        private loadTokenFromStorage():boolean {
+
+            let rawToken = this.$window.localStorage.getItem(this.config.storageKeyName);
+
+            if (!rawToken){
+                return false;
+            }
+
+            this.processNewToken(rawToken);
+
+            return true;
 
         }
 
@@ -277,6 +295,10 @@ module NgJwtAuth {
          * @returns {IPromise<TResult>}
          */
         public requireCredentialsAndAuthenticate():ng.IPromise<IUser>{
+
+            if (!_.isFunction(this.credentialPromiseFactory)){
+                throw new NgJwtAuthException("You must set a credentialPromiseFactory with `ngJwtAuthService.registerCredentialPromiseFactory()` so the user can be prompted for their credentials");
+            }
 
             if (!this.currentCredentialPromise){
                 this.currentCredentialPromise = this.credentialPromiseFactory(this.user);

@@ -2,10 +2,10 @@
 /// <reference path="../dist/ngJwtAuth.d.ts" />
 
 
-var expect = chai.expect;
+let expect = chai.expect;
 
-var seededChance = new Chance(1);
-var fixtures = {
+let seededChance = new Chance(1);
+let fixtures = {
     user : {
         _self: '/users/1',
         userId: 1,
@@ -26,7 +26,7 @@ var fixtures = {
 
     get token(){
 
-        var token:NgJwtAuth.IJwtToken;
+        let token:NgJwtAuth.IJwtToken;
         token = {
             header: {
                 alg: 'RS256',
@@ -52,10 +52,11 @@ var fixtures = {
     }
 };
 
+let defaultAuthServiceProvider:NgJwtAuth.NgJwtAuthServiceProvider;
+
 describe('Default configuration', function () {
 
-    var defaultAuthServiceProvider:NgJwtAuth.NgJwtAuthServiceProvider;
-    var defaultAuthService:NgJwtAuth.NgJwtAuthService;
+    let defaultAuthService:NgJwtAuth.NgJwtAuthService;
 
     beforeEach(() => {
 
@@ -93,8 +94,8 @@ describe('Default configuration', function () {
 
 describe('Custom configuration', function () {
 
-    var authServiceProvider:NgJwtAuth.NgJwtAuthServiceProvider;
-    var customAuthService:NgJwtAuth.NgJwtAuthService;
+    let authServiceProvider:NgJwtAuth.NgJwtAuthServiceProvider;
+    let customAuthService:NgJwtAuth.NgJwtAuthService;
 
     beforeEach(() => {
 
@@ -132,8 +133,8 @@ describe('Custom configuration', function () {
 
 describe('Service tests', () => {
 
-    var $httpBackend:ng.IHttpBackendService;
-    var ngJwtAuthService:NgJwtAuth.NgJwtAuthService;
+    let $httpBackend:ng.IHttpBackendService;
+    let ngJwtAuthService:NgJwtAuth.NgJwtAuthService;
 
     beforeEach(()=>{
 
@@ -287,6 +288,16 @@ describe('Service tests', () => {
 
     describe('Require login', () => {
 
+        it('should throw an exception when a credential promise factory is not set', () => {
+
+            let testCredentialPromiseFactoryFn = () => {
+                ngJwtAuthService.getPromisedUser();
+            };
+
+            expect(testCredentialPromiseFactoryFn).to.throw(NgJwtAuth.NgJwtAuthException);
+
+        });
+
         it('should be able to set a credential promise factory', () => {
 
             let $q = (<any>ngJwtAuthService).$q;
@@ -416,5 +427,50 @@ describe('Service tests', () => {
 
     });
 
+});
+
+describe('Service Reloading', () => {
+
+    let $httpBackend:ng.IHttpBackendService;
+    let ngJwtAuthService:NgJwtAuth.NgJwtAuthService;
+
+    beforeEach(()=>{
+
+        window.localStorage.setItem((<any>defaultAuthServiceProvider).config.storageKeyName, fixtures.token);
+
+        module('ngJwtAuth');
+
+        inject((_$httpBackend_, _ngJwtAuthService_) => {
+
+            $httpBackend = _$httpBackend_;
+            ngJwtAuthService = _ngJwtAuthService_; //register injected of service provider
+
+        });
+
+        let $q = (<any>ngJwtAuthService).$q;
+
+        ngJwtAuthService.registerCredentialPromiseFactory((currentUser:NgJwtAuth.IUser):ng.IPromise<NgJwtAuth.ICredentials> => {
+            let credentials:NgJwtAuth.ICredentials = {
+                username: fixtures.user.email,
+                password: fixtures.user.password,
+            };
+
+            return $q.when(credentials); //immediately resolve
+        });
+
+    });
+
+    afterEach(() => {
+        $httpBackend.verifyNoOutstandingExpectation();
+        $httpBackend.verifyNoOutstandingRequest();
+    });
+
+    it('should use the token from storage on load', () => {
+
+        let userPromise = ngJwtAuthService.getPromisedUser();
+
+        expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
+
+    });
 
 });

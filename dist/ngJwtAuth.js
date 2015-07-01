@@ -55,6 +55,8 @@ var NgJwtAuth;
             this.$http = _$http;
             this.$q = _$q;
             this.$window = _$window;
+            //attempt to load the token from storage
+            this.loadTokenFromStorage();
         }
         /**
          * Get the endpoint for login
@@ -124,9 +126,7 @@ var NgJwtAuth;
             })
                 .then(function (token) {
                 try {
-                    _this.user = _this.processNewToken(token);
-                    _this.loggedIn = true;
-                    return _this.user;
+                    return _this.processNewToken(token);
                 }
                 catch (error) {
                     return _this.$q.reject(error);
@@ -170,7 +170,17 @@ var NgJwtAuth;
             var expiryInSeconds = expiryDate.diff(moment(), 'seconds');
             this.saveTokenToStorage(rawToken);
             this.setJWTHeader(rawToken);
-            return this.getUserFromTokenData(tokenData);
+            this.loggedIn = true;
+            this.user = this.getUserFromTokenData(tokenData);
+            return this.user;
+        };
+        NgJwtAuthService.prototype.loadTokenFromStorage = function () {
+            var rawToken = this.$window.localStorage.getItem(this.config.storageKeyName);
+            if (!rawToken) {
+                return false;
+            }
+            this.processNewToken(rawToken);
+            return true;
         };
         /**
          * Check if the endpoint is a login method (used for skipping the authentication error interceptor)
@@ -250,6 +260,9 @@ var NgJwtAuth;
          */
         NgJwtAuthService.prototype.requireCredentialsAndAuthenticate = function () {
             var _this = this;
+            if (!_.isFunction(this.credentialPromiseFactory)) {
+                throw new NgJwtAuth.NgJwtAuthException("You must set a credentialPromiseFactory with `ngJwtAuthService.registerCredentialPromiseFactory()` so the user can be prompted for their credentials");
+            }
             if (!this.currentCredentialPromise) {
                 this.currentCredentialPromise = this.credentialPromiseFactory(this.user);
             }
