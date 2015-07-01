@@ -4,9 +4,10 @@
 var NgJwtAuth;
 (function (NgJwtAuth) {
     var NgJwtAuthService = (function () {
-        function NgJwtAuthService(_config, _$http) {
+        function NgJwtAuthService(_config, _$http, _$q) {
             this.config = _config;
             this.$http = _$http;
+            this.$q = _$q;
         }
         NgJwtAuthService.prototype.getLoginEndpoint = function () {
             return this.config.apiEndpoints.base + this.config.apiEndpoints.login;
@@ -33,6 +34,14 @@ var NgJwtAuth;
             };
             return this.$http(requestConfig).then(function (result) {
                 return _.get(result.data, _this.config.tokenLocation);
+            })
+                .catch(function (result) {
+                if (result.status === 401) {
+                    //throw new NgJwtAuthException("Login attempt received unauthorised response");
+                    return _this.$q.reject(new NgJwtAuth.NgJwtAuthException("Login attempt received unauthorised response"));
+                }
+                //throw new NgJwtAuthException("The API reported an error");
+                return _this.$q.reject(new NgJwtAuth.NgJwtAuthException("The API reported an error"));
             });
         };
         /**
@@ -59,7 +68,7 @@ var NgJwtAuth;
                 return this.getUserFromTokenData(tokenData);
             }
             catch (err) {
-                throw new Error(err);
+                throw new NgJwtAuth.Error(err);
             }
         };
         NgJwtAuthService.prototype.isLoginMethod = function (url, subString) {
@@ -118,16 +127,37 @@ var NgJwtAuth;
 /// <reference path="../typings/angularjs/angular.d.ts" />
 /// <reference path="./ngJwtAuthInterfaces.ts" />
 /// <reference path="./ngJwtAuthService.ts" />
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
 var NgJwtAuth;
 (function (NgJwtAuth) {
+    var NgJwtAuthException = (function (_super) {
+        __extends(NgJwtAuthException, _super);
+        function NgJwtAuthException(message) {
+            _super.call(this, message);
+            this.message = message;
+            this.name = 'NgJwtAuthException';
+            this.message = message;
+            this.stack = (new Error()).stack;
+        }
+        NgJwtAuthException.prototype.toString = function () {
+            return this.name + ': ' + this.message;
+        };
+        return NgJwtAuthException;
+    })(Error);
+    NgJwtAuth.NgJwtAuthException = NgJwtAuthException;
     var NgJwtAuthServiceProvider = (function () {
         function NgJwtAuthServiceProvider() {
             //public $get(): INgJwtAuthService {
             //
             //    return new NgJwtAuthService();
             //}
-            this.$get = ["$http", function NgJwtAuthServiceFactory($http) {
-                    return new NgJwtAuth.NgJwtAuthService(this.config, $http);
+            this.$get = ['$http', '$q', function NgJwtAuthServiceFactory($http, $q) {
+                    return new NgJwtAuth.NgJwtAuthService(this.config, $http, $q);
                 }];
             //initialise service config
             this.config = {

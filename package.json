@@ -6,7 +6,6 @@
   "dependencies": {},
   "devDependencies": {
     "bower": "^1.4.1",
-    "chai": "^3.0.0",
     "del": "^1.2.0",
     "event-stream": "^3.3.1",
     "globby": "^2.1.0",
@@ -31,6 +30,9 @@
     "inquirer": "^0.8.5",
     "jasmine-core": "^2.3.4",
     "karma": "^0.12.31",
+    "karma-chai": "^0.1.0",
+    "karma-chai-as-promised": "^0.1.2",
+    "karma-chai-plugins": "^0.6.0",
     "karma-chrome-launcher": "^0.2.0",
     "karma-coverage": "^0.4.2",
     "karma-mocha": "^0.2.0",

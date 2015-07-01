@@ -5,6 +5,26 @@
 
 module NgJwtAuth {
 
+    export declare class Error {
+        public name: string;
+        public message: string;
+        public stack: string;
+        constructor(message?: string);
+    }
+
+    export class NgJwtAuthException extends Error {
+
+        constructor(public message: string) {
+            super(message);
+            this.name = 'NgJwtAuthException';
+            this.message = message;
+            this.stack = (<any>new Error()).stack;
+        }
+        toString() {
+            return this.name + ': ' + this.message;
+        }
+    }
+
     export class NgJwtAuthServiceProvider implements ng.IServiceProvider, INgJwtAuthServiceProvider {
 
         private config: INgJwtAuthServiceConfig;
@@ -42,8 +62,8 @@ module NgJwtAuth {
         //    return new NgJwtAuthService();
         //}
 
-        public $get = ["$http", function NgJwtAuthServiceFactory($http) {
-            return new NgJwtAuthService(this.config, $http);
+        public $get = ['$http', '$q', function NgJwtAuthServiceFactory($http, $q) {
+            return new NgJwtAuthService(this.config, $http, $q);
         }];
 
     }

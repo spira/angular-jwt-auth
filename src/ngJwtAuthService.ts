@@ -8,12 +8,14 @@ module NgJwtAuth {
 
         //list injected dependencies
         private $http: ng.IHttpService;
+        private $q: ng.IQService;
         private config: INgJwtAuthServiceConfig;
 
-        constructor(_config, _$http: ng.IHttpService) {
+        constructor(_config, _$http: ng.IHttpService, _$q: ng.IQService) {
 
             this.config = _config;
             this.$http = _$http;
+            this.$q = _$q;
 
         }
 
@@ -33,7 +35,7 @@ module NgJwtAuth {
             return 'Basic ' + btoa(username + ':' + password); //note btoa is NOT supported <= IE9
         }
 
-        private getToken(username:string, password:string): ng.IPromise<string>{
+        private getToken(username:string, password:string): ng.IPromise<any>{
 
             var authHeader = NgJwtAuthService.getAuthHeader(username, password);
 
@@ -48,6 +50,16 @@ module NgJwtAuth {
 
             return this.$http(requestConfig).then((result) => {
                 return _.get(result.data, this.config.tokenLocation);
+            })
+            .catch((result) => {
+
+                if (result.status === 401){
+                    //throw new NgJwtAuthException("Login attempt received unauthorised response");
+                    return this.$q.reject(new NgJwtAuthException("Login attempt received unauthorised response"));
+                }
+
+                //throw new NgJwtAuthException("The API reported an error");
+                return this.$q.reject(new NgJwtAuthException("The API reported an error"));
             });
         }
 
@@ -113,7 +125,7 @@ module NgJwtAuth {
          * @param password
          * @returns {IPromise<boolean>}
          */
-        public authenticate(username:string, password:string):ng.IPromise<Object> {
+        public authenticate(username:string, password:string):ng.IPromise<any> {
 
             return this.getToken(username, password)
                 .then((token) => {
