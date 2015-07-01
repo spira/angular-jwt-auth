@@ -7,9 +7,10 @@ module NgJwtAuth {
     export class NgJwtAuthService implements INgJwtAuthService {
 
         //list injected dependencies
+        private config: INgJwtAuthServiceConfig;
         private $http: ng.IHttpService;
         private $q: ng.IQService;
-        private config: INgJwtAuthServiceConfig;
+        private $window: ng.IWindowService;
 
         public loggedIn:boolean = false;
         private user:IUser;
@@ -19,12 +20,14 @@ module NgJwtAuth {
          * @param _config
          * @param _$http
          * @param _$q
+         * @param _$window
          */
-        constructor(_config, _$http: ng.IHttpService, _$q: ng.IQService) {
+        constructor(_config, _$http: ng.IHttpService, _$q: ng.IQService, _$window: ng.IWindowService) {
 
             this.config = _config;
             this.$http = _$http;
             this.$q = _$q;
+            this.$window = _$window;
 
         }
 
@@ -132,9 +135,9 @@ module NgJwtAuth {
 
             var expiryInSeconds = expiryDate.diff(moment(), 'seconds');
 
-            //this.saveTokenToStorage(rawToken, expiryInSeconds);
+            this.saveTokenToStorage(rawToken);
 
-            //this.setJWTHeader(rawToken);
+            this.setJWTHeader(rawToken);
 
             return this.getUserFromTokenData(tokenData);
 
@@ -226,6 +229,24 @@ module NgJwtAuth {
         private getUserFromTokenData(tokenData:IJwtToken):IUser {
 
             return _.get(tokenData.data, this.config.tokenUser);
+        }
+
+        /**
+         * Save the token
+         * @param rawToken
+         */
+        private saveTokenToStorage(rawToken:string):void {
+
+            this.$window.localStorage.setItem(this.config.storageKeyName, rawToken);
+        }
+
+        /**
+         * Set the authentication token for all new requests
+         * @param rawToken
+         */
+        private setJWTHeader(rawToken:String):void {
+
+            this.$http.defaults.headers.common.Authorization = 'Bearer '+rawToken;
         }
     }
 

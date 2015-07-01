@@ -203,6 +203,23 @@ describe('Service tests', () => {
 
     });
 
+    it('should have saved the jwt to localstorage', () => {
+
+        let storageKey = (<any>ngJwtAuthService).config.storageKeyName;
+        expect(window.localStorage.getItem(storageKey)).to.equal(fixtures.token);
+    });
+
+    it('should set a default authorisation header for subsequent requests', () => {
+        $httpBackend.expectGET('/any', (headers) => {
+            return headers['Authorization'] == 'Bearer '+fixtures.token;
+        }).respond('foobar');
+
+        (<any>ngJwtAuthService).$http.get('/any');
+
+        $httpBackend.flush();
+
+    });
+
     it('should fail promise when server response with an error code', () => {
 
         $httpBackend.expectGET('/api/auth/login').respond(404);

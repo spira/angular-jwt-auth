@@ -40,8 +40,9 @@ module NgJwtAuth {
                     base: '/api/auth',
                     login: '/login',
                     tokenExchange: '/token',
-                    refresh: '/refresh'
-                }
+                    refresh: '/refresh',
+                },
+                storageKeyName: 'NgJwtAuthToken',
             };
 
         }
@@ -56,14 +57,8 @@ module NgJwtAuth {
             return this;
         }
 
-
-        //public $get(): INgJwtAuthService {
-        //
-        //    return new NgJwtAuthService();
-        //}
-
-        public $get = ['$http', '$q', function NgJwtAuthServiceFactory($http, $q) {
-            return new NgJwtAuthService(this.config, $http, $q);
+        public $get = ['$http', '$q', '$window', function NgJwtAuthServiceFactory($http, $q, $window) {
+            return new NgJwtAuthService(this.config, $http, $q, $window);
         }];
 
     }

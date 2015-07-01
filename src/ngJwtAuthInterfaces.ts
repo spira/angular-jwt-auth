@@ -28,6 +28,7 @@ module NgJwtAuth {
         tokenUser: string;
         loginController: string;
         apiEndpoints: IEndpointDefinition;
+        storageKeyName: string;
     }
 
     export interface IJwtToken {
