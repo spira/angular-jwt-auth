@@ -24,10 +24,8 @@ let fixtures = {
         return 'Basic '+btoa(fixtures.user.email+':'+fixtures.user.password)
     },
 
-    get token(){
-
-        let token:NgJwtAuth.IJwtToken;
-        token = {
+    buildToken: (overrides = {}) => {
+        let defaultConfig = {
             header: {
                 alg: 'RS256',
                 typ: 'JWT'
@@ -44,10 +42,40 @@ let fixtures = {
             signature: 'this-is-the-signed-hash'
         };
 
+        let token:NgJwtAuth.IJwtToken = <any>_.defaults(defaultConfig, overrides);
+
         return btoa(JSON.stringify(token.data))
             + '.' + btoa(JSON.stringify(token.data))
             + '.' + token.signature
         ;
+    },
+
+    get token(){
+
+        return fixtures.buildToken();
+
+        //let token:NgJwtAuth.IJwtToken;
+        //token = {
+        //    header: {
+        //        alg: 'RS256',
+        //        typ: 'JWT'
+        //    },
+        //    data: {
+        //        iss: 'api.spira.io',
+        //        aud: 'spira.io',
+        //        sub: fixtures.user.userId,
+        //        iat: Number(moment().format('X')),
+        //        exp: Number(moment().add(1, 'hours').format('X')),
+        //        jti: 'random-hash',
+        //        '#user': fixtures.userResponse,
+        //    },
+        //    signature: 'this-is-the-signed-hash'
+        //};
+        //
+        //return btoa(JSON.stringify(token.data))
+        //    + '.' + btoa(JSON.stringify(token.data))
+        //    + '.' + token.signature
+        //;
 
     }
 };
@@ -407,7 +435,7 @@ describe('Service tests', () => {
             ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
             $httpBackend.flush();
 
-            let updatedToken = fixtures.token.replace('this-is-the-signed-hash', 'update-hash');
+            let updatedToken = fixtures.buildToken({signature:'update-hash'});
 
             $httpBackend.expectGET('/api/auth/refresh', (headers) => {
                 return headers['Authorization'] == 'Bearer '+fixtures.token;
@@ -436,8 +464,6 @@ describe('Service Reloading', () => {
 
     beforeEach(()=>{
 
-        window.localStorage.setItem((<any>defaultAuthServiceProvider).config.storageKeyName, fixtures.token);
-
         module('ngJwtAuth');
 
         inject((_$httpBackend_, _ngJwtAuthService_) => {
@@ -465,12 +491,50 @@ describe('Service Reloading', () => {
         $httpBackend.verifyNoOutstandingRequest();
     });
 
-    it('should use the token from storage on load', () => {
+    describe('User reloaded before expiry', () => {
 
-        let userPromise = ngJwtAuthService.getPromisedUser();
+        before(()=>{
+            window.localStorage.setItem((<any>defaultAuthServiceProvider).config.storageKeyName, fixtures.token);
+        });
 
-        expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
+        it('should use the token from storage on load', () => {
+
+            let userPromise = ngJwtAuthService.getPromisedUser();
+
+            expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
+            return expect(ngJwtAuthService.loggedIn).to.be.true;
+
+        });
 
     });
+
+    describe('User reloaded after expiry', () => {
+
+        let expiredToken = fixtures.buildToken({
+            nbf: moment().subtract(1, 'hour').format('X')
+        });
+
+        before(()=>{
+            window.localStorage.setItem((<any>defaultAuthServiceProvider).config.storageKeyName, expiredToken);
+        });
+
+        it('should prompt the user to log in when the loaded token has expired', () => {
+
+            //after prompt the creditials are immediately supplied, triggering a new auth request
+            $httpBackend.expectGET('/api/auth/login', (headers) => {
+                return headers['Authorization'] == fixtures.authBasic;
+            }).respond({token: fixtures.token});
+
+            $httpBackend.flush();
+
+            let user = ngJwtAuthService.getUser();
+
+            expect(user).to.deep.equal(fixtures.userResponse);
+            expect(ngJwtAuthService.rawToken).to.not.equal(expiredToken);
+        });
+
+    });
+
+
 
 });
