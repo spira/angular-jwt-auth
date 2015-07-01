@@ -174,25 +174,11 @@ describe('Service tests', () => {
 
     describe('Authentication', () => {
 
-        it('should retrieve a json web token', () => {
-
-            $httpBackend.expectGET('/api/auth/login', (headers) => {
-                return headers['Authorization'] == fixtures.authBasic;
-            }).respond({token: fixtures.token});
-
-            let tokenPromise = (<any>ngJwtAuthService).getToken(fixtures.user.email, fixtures.user.password);
-
-            expect(tokenPromise).to.eventually.equal(fixtures.token);
-
-            $httpBackend.flush();
-
-        });
-
         it('should process a token and return a user', () => {
 
             $httpBackend.expectGET('/api/auth/login').respond({token: fixtures.token});
 
-            let authPromise = ngJwtAuthService.authenticate(fixtures.user.email, fixtures.user.password);
+            let authPromise = ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
 
             expect(authPromise).to.eventually.deep.equal(fixtures.userResponse);
 
@@ -251,7 +237,7 @@ describe('Service tests', () => {
 
             $httpBackend.expectGET('/api/auth/login').respond(404);
 
-            let authPromise = ngJwtAuthService.authenticate(fixtures.user.email, fixtures.user.password);
+            let authPromise = ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
 
             expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
 
@@ -263,7 +249,7 @@ describe('Service tests', () => {
 
             $httpBackend.expectGET('/api/auth/login').respond(401);
 
-            let authPromise = ngJwtAuthService.authenticate(fixtures.user.email, fixtures.user.password);
+            let authPromise = ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
 
             expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
 
@@ -275,7 +261,7 @@ describe('Service tests', () => {
 
             $httpBackend.expectGET('/api/auth/login').respond({token: 'invalid_token'});
 
-            let authPromise = ngJwtAuthService.authenticate(fixtures.user.email, fixtures.user.password);
+            let authPromise = ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
 
             expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
 

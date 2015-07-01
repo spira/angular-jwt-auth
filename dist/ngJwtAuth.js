@@ -88,13 +88,11 @@ var NgJwtAuth;
         };
         /**
          * Retrieve the token from the remote API
-         * @param username
-         * @param password
+         * @param authHeader
          * @returns {IPromise<TResult>}
          */
-        NgJwtAuthService.prototype.getToken = function (username, password) {
+        NgJwtAuthService.prototype.retrieveAndProcessToken = function (authHeader) {
             var _this = this;
-            var authHeader = NgJwtAuthService.getAuthHeader(username, password);
             var requestConfig = {
                 method: 'GET',
                 url: this.getLoginEndpoint(),
@@ -105,6 +103,16 @@ var NgJwtAuth;
             };
             return this.$http(requestConfig).then(function (result) {
                 return _.get(result.data, _this.config.tokenLocation);
+            })
+                .then(function (token) {
+                try {
+                    _this.user = _this.processNewToken(token);
+                    _this.loggedIn = true;
+                    return _this.user;
+                }
+                catch (error) {
+                    return _this.$q.reject(error);
+                }
             })
                 .catch(function (result) {
                 if (result.status === 401) {
@@ -175,8 +183,12 @@ var NgJwtAuth;
                 });
             }
         };
-        NgJwtAuthService.prototype.clearToken = function () {
-            return true;
+        /**
+         * Clear the token
+         */
+        NgJwtAuthService.prototype.clearJWTToken = function () {
+            this.$window.localStorage.removeItem(this.config.storageKeyName);
+            this.unsetJWTHeader();
         };
         /**
          * Attempt to log in with username and password
@@ -184,19 +196,9 @@ var NgJwtAuth;
          * @param password
          * @returns {IPromise<boolean>}
          */
-        NgJwtAuthService.prototype.authenticate = function (username, password) {
-            var _this = this;
-            return this.getToken(username, password)
-                .then(function (token) {
-                try {
-                    _this.user = _this.processNewToken(token);
-                    _this.loggedIn = true;
-                    return _this.user;
-                }
-                catch (error) {
-                    return _this.$q.reject(error);
-                }
-            });
+        NgJwtAuthService.prototype.authenticateCredentials = function (username, password) {
+            var authHeader = NgJwtAuthService.getAuthHeader(username, password);
+            return this.retrieveAndProcessToken(authHeader);
         };
         NgJwtAuthService.prototype.exchangeToken = function (token) {
             return this.$http.get('/');
@@ -206,7 +208,7 @@ var NgJwtAuth;
          * 1. Check if there is already credentials promised
          * 2. If not, execute the credential promise factory
          * 3. Wait until the credentials are resolved
-         * 4. Then try to authenticate
+         * 4. Then try to authenticateCredentials
          * @returns {IPromise<TResult>}
          */
         NgJwtAuthService.prototype.requireCredentialsAndAuthenticate = function () {
@@ -218,7 +220,7 @@ var NgJwtAuth;
                 if (_this.currentCredentialPromise) {
                     _this.currentCredentialPromise = null;
                 }
-                return _this.authenticate(credentials.username, credentials.password);
+                return _this.authenticateCredentials(credentials.username, credentials.password);
             });
         };
         /**
@@ -281,13 +283,6 @@ var NgJwtAuth;
             this.clearJWTToken();
             this.loggedIn = false;
             this.user = null;
-        };
-        /**
-         * Clear the token
-         */
-        NgJwtAuthService.prototype.clearJWTToken = function () {
-            this.$window.localStorage.removeItem(this.config.storageKeyName);
-            this.unsetJWTHeader();
         };
         return NgJwtAuthService;
     })();

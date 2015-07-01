@@ -7,8 +7,7 @@ declare module NgJwtAuth {
         getUser(): Object;
         getPromisedUser(): ng.IPromise<Object>;
         processNewToken(rawToken: string): IUser;
-        clearToken(): boolean;
-        authenticate(username: string, password: string): ng.IPromise<Object>;
+        authenticateCredentials(username: string, password: string): ng.IPromise<Object>;
         exchangeToken(token: string): ng.IPromise<Object>;
         requireCredentialsAndAuthenticate(): ng.IPromise<Object>;
         registerCredentialPromiseFactory(currentUser: IUser): void;
@@ -119,11 +118,10 @@ declare module NgJwtAuth {
         private static getAuthHeader(username, password);
         /**
          * Retrieve the token from the remote API
-         * @param username
-         * @param password
+         * @param authHeader
          * @returns {IPromise<TResult>}
          */
-        private getToken(username, password);
+        private retrieveAndProcessToken(authHeader);
         /**
          * Parse the raw token
          * @param rawToken
@@ -148,21 +146,24 @@ declare module NgJwtAuth {
          * @returns {IHttpPromise<T>}
          */
         getPromisedUser(): ng.IPromise<IUser>;
-        clearToken(): boolean;
+        /**
+         * Clear the token
+         */
+        private clearJWTToken();
         /**
          * Attempt to log in with username and password
          * @param username
          * @param password
          * @returns {IPromise<boolean>}
          */
-        authenticate(username: string, password: string): ng.IPromise<any>;
+        authenticateCredentials(username: string, password: string): ng.IPromise<any>;
         exchangeToken(token: string): ng.IPromise<Object>;
         /**
          * Require that the user logs in again for a request
          * 1. Check if there is already credentials promised
          * 2. If not, execute the credential promise factory
          * 3. Wait until the credentials are resolved
-         * 4. Then try to authenticate
+         * 4. Then try to authenticateCredentials
          * @returns {IPromise<TResult>}
          */
         requireCredentialsAndAuthenticate(): ng.IPromise<IUser>;
@@ -204,10 +205,6 @@ declare module NgJwtAuth {
          * Clear the token and service properties
          */
         logout(): void;
-        /**
-         * Clear the token
-         */
-        private clearJWTToken();
     }
 }
 declare module NgJwtAuth {

@@ -6,7 +6,7 @@ module NgJwtAuth {
         getUser():Object;
         getPromisedUser():ng.IPromise<Object>;
         processNewToken(rawToken:string): IUser;
-        authenticate(username:string, password:string):ng.IPromise<Object>;
+        authenticateCredentials(username:string, password:string):ng.IPromise<Object>;
         exchangeToken(token:string):ng.IPromise<Object>;
         requireCredentialsAndAuthenticate():ng.IPromise<Object>;
         registerCredentialPromiseFactory(currentUser:IUser):void;

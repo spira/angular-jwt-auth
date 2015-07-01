@@ -69,13 +69,10 @@ module NgJwtAuth {
 
         /**
          * Retrieve the token from the remote API
-         * @param username
-         * @param password
+         * @param authHeader
          * @returns {IPromise<TResult>}
          */
-        private getToken(username:string, password:string): ng.IPromise<any>{
-
-            var authHeader = NgJwtAuthService.getAuthHeader(username, password);
+        private retrieveAndProcessToken(authHeader:string): ng.IPromise<any>{
 
             var requestConfig:ng.IRequestConfig = {
                 method: 'GET',
@@ -89,6 +86,20 @@ module NgJwtAuth {
             return this.$http(requestConfig).then((result) => {
                 return _.get(result.data, this.config.tokenLocation);
             })
+            .then((token:string) => {
+
+                try {
+
+                    this.user = this.processNewToken(token);
+
+                    this.loggedIn = true;
+
+                    return this.user;
+                }catch(error){
+                    return this.$q.reject(error);
+                }
+
+            })
             .catch((result) => {
 
                 if (result.status === 401){
@@ -98,7 +109,8 @@ module NgJwtAuth {
 
                 //throw new NgJwtAuthException("The API reported an error");
                 return this.$q.reject(new NgJwtAuthException("The API reported an error"));
-            });
+            })
+
         }
 
         /**
@@ -197,25 +209,12 @@ module NgJwtAuth {
          * @param password
          * @returns {IPromise<boolean>}
          */
-        public authenticate(username:string, password:string):ng.IPromise<any> {
+        public authenticateCredentials(username:string, password:string):ng.IPromise<any> {
 
-            return this.getToken(username, password)
-                .then((token) => {
+            let authHeader = NgJwtAuthService.getAuthHeader(username, password);
 
-                    try {
+            return this.retrieveAndProcessToken(authHeader)
 
-
-
-                        this.user = this.processNewToken(token);
-
-                        this.loggedIn = true;
-
-                        return this.user;
-                    }catch(error){
-                        return this.$q.reject(error);
-                    }
-
-                })
             ;
 
         }
@@ -229,7 +228,7 @@ module NgJwtAuth {
          * 1. Check if there is already credentials promised
          * 2. If not, execute the credential promise factory
          * 3. Wait until the credentials are resolved
-         * 4. Then try to authenticate
+         * 4. Then try to authenticateCredentials
          * @returns {IPromise<TResult>}
          */
         public requireCredentialsAndAuthenticate():ng.IPromise<IUser>{
@@ -244,7 +243,7 @@ module NgJwtAuth {
                     this.currentCredentialPromise = null;
                 }
 
-                return this.authenticate(credentials.username, credentials.password);
+                return this.authenticateCredentials(credentials.username, credentials.password);
             });
 
         }
