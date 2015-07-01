@@ -2,7 +2,8 @@
 /// <reference path="../typings/angularjs/angular.d.ts" />
 declare module NgJwtAuth {
     interface INgJwtAuthService {
-        isLoginMethod(url: string, subString: string): boolean;
+        loggedIn: boolean;
+        isLoginMethod(url: string): boolean;
         getUser(): Object;
         getPromisedUser(): ng.IPromise<Object>;
         processNewToken(rawToken: string): IUser;
@@ -54,11 +55,43 @@ declare module NgJwtAuth {
         private $http;
         private $q;
         private config;
+        loggedIn: boolean;
+        private user;
+        /**
+         * Construct the service with dependencies injected
+         * @param _config
+         * @param _$http
+         * @param _$q
+         */
         constructor(_config: any, _$http: ng.IHttpService, _$q: ng.IQService);
+        /**
+         * Get the endpoint for login
+         * @returns {string}
+         */
         private getLoginEndpoint();
+        /**
+         * Get the endpoint for exchanging a token
+         * @returns {string}
+         */
         private getTokenExchangeEndpoint();
+        /**
+         * Get the endpoint for refreshing a token
+         * @returns {string}
+         */
         private getRefreshEndpoint();
+        /**
+         * Build a authentication basic header string
+         * @param username
+         * @param password
+         * @returns {string}
+         */
         private static getAuthHeader(username, password);
+        /**
+         * Retrieve the token from the remote API
+         * @param username
+         * @param password
+         * @returns {IPromise<TResult>}
+         */
         private getToken(username, password);
         /**
          * Parse the raw token
@@ -66,10 +99,24 @@ declare module NgJwtAuth {
          * @returns {IJwtToken}
          */
         private static readToken(rawToken);
+        /**
+         * Read and save the raw token to storage, kick off timer to attempt refresh
+         * @param rawToken
+         * @returns {IUser}
+         */
         processNewToken(rawToken: string): IUser;
-        isLoginMethod(url: string, subString: string): boolean;
-        getUser(): Object;
-        getPromisedUser(): ng.IPromise<Object>;
+        /**
+         * Check if the endpoint is a login method (used for skipping the authentication error interceptor)
+         * @param url
+         * @returns {boolean}
+         */
+        isLoginMethod(url: string): boolean;
+        getUser(): IUser;
+        /**
+         *
+         * @returns {IHttpPromise<T>}
+         */
+        getPromisedUser(): ng.IPromise<IUser>;
         clearToken(): boolean;
         /**
          * Attempt to log in with username and password
@@ -80,7 +127,6 @@ declare module NgJwtAuth {
         authenticate(username: string, password: string): ng.IPromise<any>;
         exchangeToken(token: string): ng.IPromise<Object>;
         requireLogin(): ng.IPromise<Object>;
-        private getRemoteData(url);
         /**
          * Find the user object within the path
          * @todo resolve the return type assignment with _.get

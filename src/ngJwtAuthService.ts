@@ -11,7 +11,7 @@ module NgJwtAuth {
         private $q: ng.IQService;
         private config: INgJwtAuthServiceConfig;
 
-        private loggedIn:boolean = false;
+        public loggedIn:boolean = false;
         private user:IUser;
 
         /**
@@ -166,8 +166,7 @@ module NgJwtAuth {
         public getPromisedUser(): ng.IPromise<IUser>{
 
             if (this.loggedIn){ //if we are already logged in, resolve the user immediately
-
-                return this.$q.when(this.getUser());
+                return this.$q.when(this.user);
             }else{ //otherwise require login then return the user
                 return this.requireLogin()
                     .then(function(){
@@ -196,7 +195,11 @@ module NgJwtAuth {
                 .then((token) => {
 
                     try {
-                        return this.processNewToken(token);
+                        this.user = this.processNewToken(token);
+
+                        this.loggedIn = true;
+
+                        return this.user;
                     }catch(error){
                         return this.$q.reject(error);
                     }

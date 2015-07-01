@@ -126,7 +126,7 @@ var NgJwtAuth;
          */
         NgJwtAuthService.prototype.getPromisedUser = function () {
             if (this.loggedIn) {
-                return this.$q.when(this.getUser());
+                return this.$q.when(this.user);
             }
             else {
                 return this.requireLogin()
@@ -149,7 +149,9 @@ var NgJwtAuth;
             return this.getToken(username, password)
                 .then(function (token) {
                 try {
-                    return _this.processNewToken(token);
+                    _this.user = _this.processNewToken(token);
+                    _this.loggedIn = true;
+                    return _this.user;
                 }
                 catch (error) {
                     return _this.$q.reject(error);

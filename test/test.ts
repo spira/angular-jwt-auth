@@ -16,6 +16,10 @@ var fixtures = {
         phone: seededChance.phone()
     },
 
+    get userResponse(){
+        return _.omit(fixtures.user, 'password');
+    },
+
     get authBasic(){
         return 'Basic '+btoa(fixtures.user.email+':'+fixtures.user.password)
     },
@@ -35,7 +39,7 @@ var fixtures = {
                 iat: Number(moment().format('X')),
                 exp: Number(moment().add(1, 'hours').format('X')),
                 jti: 'random-hash',
-                '#user': _.omit(fixtures.user, 'password')
+                '#user': fixtures.userResponse,
             },
             signature: 'this-is-the-signed-hash'
         };
@@ -154,6 +158,16 @@ describe('Service tests', () => {
         return expect(ngJwtAuthService).to.be.an('object');
     });
 
+    it('should not be logged in initially', () => {
+
+        return expect(ngJwtAuthService.loggedIn).to.be.false;
+    });
+
+    it('should not be able to retrieve a user on init', () => {
+
+        return expect(ngJwtAuthService.getUser()).to.be.undefined;
+    });
+
     it('should retrieve a json web token', () => {
 
         $httpBackend.expectGET('/api/auth/login', (headers) => {
@@ -174,9 +188,19 @@ describe('Service tests', () => {
 
         let authPromise = ngJwtAuthService.authenticate(fixtures.user.email, fixtures.user.password);
 
-        expect(authPromise).to.eventually.deep.equal(_.omit(fixtures.user, 'password'));
+        expect(authPromise).to.eventually.deep.equal(fixtures.userResponse);
 
         $httpBackend.flush();
+    });
+
+    it('should be able to get user info once authenticated', () => {
+
+        let user = ngJwtAuthService.getUser();
+        let userPromise = ngJwtAuthService.getPromisedUser();
+
+        expect(user).to.deep.equal(fixtures.userResponse);
+        expect(userPromise).eventually.to.deep.equal(fixtures.userResponse);
+
     });
 
     it('should fail promise when authentication fails', () => {
