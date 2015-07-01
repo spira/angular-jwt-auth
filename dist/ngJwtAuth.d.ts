@@ -3,6 +3,7 @@
 declare module NgJwtAuth {
     interface INgJwtAuthService {
         loggedIn: boolean;
+        rawToken: string;
         isLoginMethod(url: string): boolean;
         getUser(): Object;
         getPromisedUser(): ng.IPromise<Object>;
@@ -86,6 +87,7 @@ declare module NgJwtAuth {
         private user;
         private credentialPromiseFactory;
         private currentCredentialPromise;
+        rawToken: string;
         /**
          * Construct the service with dependencies injected
          * @param _config
@@ -117,11 +119,22 @@ declare module NgJwtAuth {
          */
         private static getAuthHeader(username, password);
         /**
+         * Build a token header string
+         * @returns {string}
+         */
+        private static getTokenHeader(token);
+        /**
+         * Build a refresh header string
+         * @returns {string}
+         */
+        private getRefreshHeader();
+        /**
          * Retrieve the token from the remote API
+         * @param endpoint
          * @param authHeader
          * @returns {IPromise<TResult>}
          */
-        private retrieveAndProcessToken(authHeader);
+        private retrieveAndProcessToken(endpoint, authHeader);
         /**
          * Parse the raw token
          * @param rawToken
@@ -157,7 +170,17 @@ declare module NgJwtAuth {
          * @returns {IPromise<boolean>}
          */
         authenticateCredentials(username: string, password: string): ng.IPromise<any>;
+        /**
+         * Exchange an arbitrary token with a jwt token
+         * @param token
+         * @returns {ng.IPromise<any>}
+         */
         exchangeToken(token: string): ng.IPromise<Object>;
+        /**
+         * Refresh an existing token
+         * @returns {ng.IPromise<any>}
+         */
+        refreshToken(): ng.IPromise<Object>;
         /**
          * Require that the user logs in again for a request
          * 1. Check if there is already credentials promised

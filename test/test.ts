@@ -361,4 +361,60 @@ describe('Service tests', () => {
     });
 
 
+    describe('Authenticate with token', () => {
+
+        beforeEach(() => {
+            ngJwtAuthService.logout(); //make sure that the service is not logged in.
+        });
+
+        it ('should be able to authenticate with an arbitrary token', () => {
+
+            let token = 'abc123';
+
+            $httpBackend.expectGET('/api/auth/token', (headers) => {
+                return headers['Authorization'] == 'Token '+token;
+            }).respond({token: fixtures.token});
+
+
+            let authPromise = ngJwtAuthService.exchangeToken(token);
+
+            expect(authPromise).to.eventually.deep.equal(fixtures.userResponse);
+
+            $httpBackend.flush();
+
+        });
+
+        it ('should be able to re-authenticate with an existing token', () => {
+
+            let refreshFn = () => {
+                ngJwtAuthService.refreshToken();
+            };
+
+            expect(refreshFn).to.throw(NgJwtAuth.NgJwtAuthException); //if not logged it, exception should be thrown on attempt to refresh
+
+            $httpBackend.expectGET('/api/auth/login').respond({token: fixtures.token});
+            ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
+            $httpBackend.flush();
+
+            let updatedToken = fixtures.token.replace('this-is-the-signed-hash', 'update-hash');
+
+            $httpBackend.expectGET('/api/auth/refresh', (headers) => {
+                return headers['Authorization'] == 'Bearer '+fixtures.token;
+            }).respond({token: updatedToken});
+
+            let refreshPromise = ngJwtAuthService.refreshToken();
+
+            expect(refreshPromise).to.eventually.be.fulfilled;
+
+            refreshPromise.then(()=>{
+                expect(ngJwtAuthService.rawToken).to.equal(updatedToken);
+            });
+
+            $httpBackend.flush();
+
+        });
+
+    });
+
+
 });

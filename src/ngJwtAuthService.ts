@@ -16,6 +16,7 @@ module NgJwtAuth {
         private user:IUser;
         private credentialPromiseFactory:ICredentialPromiseFactory;
         private currentCredentialPromise:ng.IPromise<ICredentials>;
+        public rawToken:string;
 
         /**
          * Construct the service with dependencies injected
@@ -68,15 +69,36 @@ module NgJwtAuth {
         }
 
         /**
+         * Build a token header string
+         * @returns {string}
+         */
+        private static getTokenHeader(token:string):string{
+            return 'Token ' + token;
+        }
+
+        /**
+         * Build a refresh header string
+         * @returns {string}
+         */
+        private getRefreshHeader():string{
+            if (!this.rawToken){
+                throw new NgJwtAuthException("Token is not set, it cannot be refreshed");
+            }
+
+            return 'Bearer ' + this.rawToken;
+        }
+
+        /**
          * Retrieve the token from the remote API
+         * @param endpoint
          * @param authHeader
          * @returns {IPromise<TResult>}
          */
-        private retrieveAndProcessToken(authHeader:string): ng.IPromise<any>{
+        private retrieveAndProcessToken(endpoint:string, authHeader:string): ng.IPromise<any>{
 
             var requestConfig:ng.IRequestConfig = {
                 method: 'GET',
-                url:  this.getLoginEndpoint(),
+                url:  endpoint,
                 headers: {
                     Authorization : authHeader
                 },
@@ -142,6 +164,7 @@ module NgJwtAuth {
          */
         public processNewToken(rawToken:string) : IUser{
 
+            this.rawToken = rawToken;
 
             var tokenData = NgJwtAuthService.readToken(rawToken);
 
@@ -199,6 +222,7 @@ module NgJwtAuth {
          * Clear the token
          */
         private clearJWTToken():void {
+            this.rawToken = null;
             this.$window.localStorage.removeItem(this.config.storageKeyName);
             this.unsetJWTHeader();
         }
@@ -212,15 +236,36 @@ module NgJwtAuth {
         public authenticateCredentials(username:string, password:string):ng.IPromise<any> {
 
             let authHeader = NgJwtAuthService.getAuthHeader(username, password);
+            let endpoint = this.getLoginEndpoint();
 
-            return this.retrieveAndProcessToken(authHeader)
-
-            ;
+            return this.retrieveAndProcessToken(endpoint, authHeader);
 
         }
 
+        /**
+         * Exchange an arbitrary token with a jwt token
+         * @param token
+         * @returns {ng.IPromise<any>}
+         */
         public exchangeToken(token:string):ng.IPromise<Object> {
-            return this.$http.get('/');
+
+            let authHeader = NgJwtAuthService.getTokenHeader(token);
+            let endpoint = this.getTokenExchangeEndpoint();
+
+            return this.retrieveAndProcessToken(endpoint, authHeader);
+        }
+
+        /**
+         * Refresh an existing token
+         * @returns {ng.IPromise<any>}
+         */
+        public refreshToken():ng.IPromise<Object> {
+
+            let authHeader = this.getRefreshHeader();
+            let endpoint = this.getRefreshEndpoint();
+
+            return this.retrieveAndProcessToken(endpoint, authHeader);
+
         }
 
         /**

@@ -87,15 +87,33 @@ var NgJwtAuth;
             return 'Basic ' + btoa(username + ':' + password); //note btoa is NOT supported <= IE9
         };
         /**
+         * Build a token header string
+         * @returns {string}
+         */
+        NgJwtAuthService.getTokenHeader = function (token) {
+            return 'Token ' + token;
+        };
+        /**
+         * Build a refresh header string
+         * @returns {string}
+         */
+        NgJwtAuthService.prototype.getRefreshHeader = function () {
+            if (!this.rawToken) {
+                throw new NgJwtAuth.NgJwtAuthException("Token is not set, it cannot be refreshed");
+            }
+            return 'Bearer ' + this.rawToken;
+        };
+        /**
          * Retrieve the token from the remote API
+         * @param endpoint
          * @param authHeader
          * @returns {IPromise<TResult>}
          */
-        NgJwtAuthService.prototype.retrieveAndProcessToken = function (authHeader) {
+        NgJwtAuthService.prototype.retrieveAndProcessToken = function (endpoint, authHeader) {
             var _this = this;
             var requestConfig = {
                 method: 'GET',
-                url: this.getLoginEndpoint(),
+                url: endpoint,
                 headers: {
                     Authorization: authHeader
                 },
@@ -146,6 +164,7 @@ var NgJwtAuth;
          * @returns {IUser}
          */
         NgJwtAuthService.prototype.processNewToken = function (rawToken) {
+            this.rawToken = rawToken;
             var tokenData = NgJwtAuthService.readToken(rawToken);
             var expiryDate = moment(tokenData.data.exp * 1000);
             var expiryInSeconds = expiryDate.diff(moment(), 'seconds');
@@ -187,6 +206,7 @@ var NgJwtAuth;
          * Clear the token
          */
         NgJwtAuthService.prototype.clearJWTToken = function () {
+            this.rawToken = null;
             this.$window.localStorage.removeItem(this.config.storageKeyName);
             this.unsetJWTHeader();
         };
@@ -198,10 +218,27 @@ var NgJwtAuth;
          */
         NgJwtAuthService.prototype.authenticateCredentials = function (username, password) {
             var authHeader = NgJwtAuthService.getAuthHeader(username, password);
-            return this.retrieveAndProcessToken(authHeader);
+            var endpoint = this.getLoginEndpoint();
+            return this.retrieveAndProcessToken(endpoint, authHeader);
         };
+        /**
+         * Exchange an arbitrary token with a jwt token
+         * @param token
+         * @returns {ng.IPromise<any>}
+         */
         NgJwtAuthService.prototype.exchangeToken = function (token) {
-            return this.$http.get('/');
+            var authHeader = NgJwtAuthService.getTokenHeader(token);
+            var endpoint = this.getTokenExchangeEndpoint();
+            return this.retrieveAndProcessToken(endpoint, authHeader);
+        };
+        /**
+         * Refresh an existing token
+         * @returns {ng.IPromise<any>}
+         */
+        NgJwtAuthService.prototype.refreshToken = function () {
+            var authHeader = this.getRefreshHeader();
+            var endpoint = this.getRefreshEndpoint();
+            return this.retrieveAndProcessToken(endpoint, authHeader);
         };
         /**
          * Require that the user logs in again for a request
