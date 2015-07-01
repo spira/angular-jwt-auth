@@ -32,9 +32,18 @@ module NgJwtAuth {
             this.$q = _$q;
             this.$window = _$window;
 
+        }
+
+        /**
+         * Service needs an init function so runtime configuration can occur before
+         * bootstrapping the service. This allows the user supplied CredentialPromiseFactory
+         * to be registered
+         */
+        public init():void {
+
             //attempt to load the token from storage
             this.loadTokenFromStorage();
-
+            
         }
 
         /**
@@ -170,7 +179,11 @@ module NgJwtAuth {
 
             var expiryDate = moment(tokenData.data.exp * 1000);
 
-            var expiryInSeconds = expiryDate.diff(moment(), 'seconds');
+            //console.log('checked expiry date', expiryDate);
+
+            if (expiryDate < moment()){
+                throw new NgJwtAuthTokenExpiredException("Token has expired");
+            }
 
             this.saveTokenToStorage(rawToken);
 
@@ -192,10 +205,17 @@ module NgJwtAuth {
                 return false;
             }
 
-            this.processNewToken(rawToken);
+            try {
+                this.processNewToken(rawToken);
+                return true;
+            }catch(e){
+                if (e instanceof NgJwtAuthTokenExpiredException){
+                    this.requireCredentialsAndAuthenticate();
 
-            return true;
+                }
+            }
 
+            return false;
         }
 
         /**

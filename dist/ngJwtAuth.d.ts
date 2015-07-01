@@ -4,6 +4,7 @@ declare module NgJwtAuth {
     interface INgJwtAuthService {
         loggedIn: boolean;
         rawToken: string;
+        init(): void;
         isLoginMethod(url: string): boolean;
         getUser(): Object;
         getPromisedUser(): ng.IPromise<Object>;
@@ -96,6 +97,12 @@ declare module NgJwtAuth {
          * @param _$window
          */
         constructor(_config: any, _$http: ng.IHttpService, _$q: ng.IQService, _$window: ng.IWindowService);
+        /**
+         * Service needs an init function so runtime configuration can occur before
+         * bootstrapping the service. This allows the user supplied CredentialPromiseFactory
+         * to be registered
+         */
+        init(): void;
         /**
          * Get the endpoint for login
          * @returns {string}
@@ -242,6 +249,8 @@ declare module NgJwtAuth {
         message: string;
         constructor(message: string);
         toString(): string;
+    }
+    class NgJwtAuthTokenExpiredException extends NgJwtAuthException {
     }
     class NgJwtAuthServiceProvider implements ng.IServiceProvider, INgJwtAuthServiceProvider {
         private config;

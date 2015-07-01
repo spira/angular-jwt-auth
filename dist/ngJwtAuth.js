@@ -55,9 +55,16 @@ var NgJwtAuth;
             this.$http = _$http;
             this.$q = _$q;
             this.$window = _$window;
+        }
+        /**
+         * Service needs an init function so runtime configuration can occur before
+         * bootstrapping the service. This allows the user supplied CredentialPromiseFactory
+         * to be registered
+         */
+        NgJwtAuthService.prototype.init = function () {
             //attempt to load the token from storage
             this.loadTokenFromStorage();
-        }
+        };
         /**
          * Get the endpoint for login
          * @returns {string}
@@ -167,7 +174,10 @@ var NgJwtAuth;
             this.rawToken = rawToken;
             var tokenData = NgJwtAuthService.readToken(rawToken);
             var expiryDate = moment(tokenData.data.exp * 1000);
-            var expiryInSeconds = expiryDate.diff(moment(), 'seconds');
+            //console.log('checked expiry date', expiryDate);
+            if (expiryDate < moment()) {
+                throw new NgJwtAuth.NgJwtAuthTokenExpiredException("Token has expired");
+            }
             this.saveTokenToStorage(rawToken);
             this.setJWTHeader(rawToken);
             this.loggedIn = true;
@@ -179,8 +189,16 @@ var NgJwtAuth;
             if (!rawToken) {
                 return false;
             }
-            this.processNewToken(rawToken);
-            return true;
+            try {
+                this.processNewToken(rawToken);
+                return true;
+            }
+            catch (e) {
+                if (e instanceof NgJwtAuth.NgJwtAuthTokenExpiredException) {
+                    this.requireCredentialsAndAuthenticate();
+                }
+            }
+            return false;
         };
         /**
          * Check if the endpoint is a login method (used for skipping the authentication error interceptor)
@@ -366,6 +384,14 @@ var NgJwtAuth;
         return NgJwtAuthException;
     })(Error);
     NgJwtAuth.NgJwtAuthException = NgJwtAuthException;
+    var NgJwtAuthTokenExpiredException = (function (_super) {
+        __extends(NgJwtAuthTokenExpiredException, _super);
+        function NgJwtAuthTokenExpiredException() {
+            _super.apply(this, arguments);
+        }
+        return NgJwtAuthTokenExpiredException;
+    })(NgJwtAuthException);
+    NgJwtAuth.NgJwtAuthTokenExpiredException = NgJwtAuthTokenExpiredException;
     var NgJwtAuthServiceProvider = (function () {
         function NgJwtAuthServiceProvider() {
             this.$get = ['$http', '$q', '$window', function NgJwtAuthServiceFactory($http, $q, $window) {
