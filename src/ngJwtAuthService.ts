@@ -173,9 +173,9 @@ module NgJwtAuth {
             if (this.loggedIn){ //if we are already logged in, resolve the user immediately
                 return this.$q.when(this.user);
             }else{ //otherwise require login then return the user
-                return this.requireLogin()
-                    .then(function(){
-                        return this.getUser();
+                return this.requireCredentialsAndAuthenticate()
+                    .then(function(authenticatedUser:IUser){
+                        return authenticatedUser;
                     })
                 ;
             }
@@ -183,9 +183,12 @@ module NgJwtAuth {
         }
 
 
-
-        public clearToken():boolean {
-            return true;
+        /**
+         * Clear the token
+         */
+        private clearJWTToken():void {
+            this.$window.localStorage.removeItem(this.config.storageKeyName);
+            this.unsetJWTHeader();
         }
 
         /**
@@ -221,8 +224,29 @@ module NgJwtAuth {
             return this.$http.get('/');
         }
 
-        public requireLogin():ng.IPromise<Object>{
-            return this.$http.get('/');
+        /**
+         * Require that the user logs in again for a request
+         * 1. Check if there is already credentials promised
+         * 2. If not, execute the credential promise factory
+         * 3. Wait until the credentials are resolved
+         * 4. Then try to authenticate
+         * @returns {IPromise<TResult>}
+         */
+        public requireCredentialsAndAuthenticate():ng.IPromise<IUser>{
+
+            if (!this.currentCredentialPromise){
+                this.currentCredentialPromise = this.credentialPromiseFactory(this.user);
+            }
+
+            return this.currentCredentialPromise.then((credentials:ICredentials) => {
+
+                if (this.currentCredentialPromise){ //if there are any credential promises outstanding, delete them
+                    this.currentCredentialPromise = null;
+                }
+
+                return this.authenticate(credentials.username, credentials.password);
+            });
+
         }
 
         /**
@@ -255,30 +279,26 @@ module NgJwtAuth {
         }
 
         /**
+         * Remove the default http authorization header
+         */
+        private unsetJWTHeader():void {
+            delete this.$http.defaults.headers.common.Authorization;
+        }
+
+        /**
          * Handle a request that was rejected due to unauthorised response
-         * 1. Check if there is already credentials promised
-         * 2. If not, excecute the credential promise factory
-         * 3. Wait until the credentials are resolved
-         * 4. Then try to authenticate
-         * 5. Then retry the $http request
+         * 1. Require authentication
+         * 2. Retry the rejected $http request
+         *
          * @param rejection
          */
         public handleInterceptedUnauthorisedResponse(rejection:any):void {
-            if (!this.currentCredentialPromise){
-                this.currentCredentialPromise = this.credentialPromiseFactory(this.user);
-            }
 
-            this.currentCredentialPromise.then((credentials:ICredentials) => {
-
-                if (this.currentCredentialPromise){ //if there are any credential promises outstanding, delete them
-                    this.currentCredentialPromise = null;
-                }
-
-                return this.authenticate(credentials.username, credentials.password);
-            }).then((user:IUser) => {
-                return this.$http(rejection.config);
-            });
-
+            this.requireCredentialsAndAuthenticate()
+                .then((user:IUser) => {
+                    return this.$http(rejection.config);
+                })
+            ;
         }
 
         /**
@@ -290,6 +310,15 @@ module NgJwtAuth {
                 throw new NgJwtAuthException("You cannot redeclare the credential promise factory");
             }
             this.credentialPromiseFactory = promiseFactory;
+        }
+
+        /**
+         * Clear the token and service properties
+         */
+        public logout():void {
+            this.clearJWTToken();
+            this.loggedIn = false;
+            this.user = null;
         }
     }
 

@@ -10,8 +10,9 @@ declare module NgJwtAuth {
         clearToken(): boolean;
         authenticate(username: string, password: string): ng.IPromise<Object>;
         exchangeToken(token: string): ng.IPromise<Object>;
-        requireLogin(): ng.IPromise<Object>;
+        requireCredentialsAndAuthenticate(): ng.IPromise<Object>;
         registerCredentialPromiseFactory(currentUser: IUser): void;
+        logout(): void;
     }
     interface INgJwtAuthServiceProvider {
         setApiEndpoints(config: IEndpointDefinition): NgJwtAuthServiceProvider;
@@ -156,7 +157,15 @@ declare module NgJwtAuth {
          */
         authenticate(username: string, password: string): ng.IPromise<any>;
         exchangeToken(token: string): ng.IPromise<Object>;
-        requireLogin(): ng.IPromise<Object>;
+        /**
+         * Require that the user logs in again for a request
+         * 1. Check if there is already credentials promised
+         * 2. If not, execute the credential promise factory
+         * 3. Wait until the credentials are resolved
+         * 4. Then try to authenticate
+         * @returns {IPromise<TResult>}
+         */
+        requireCredentialsAndAuthenticate(): ng.IPromise<IUser>;
         /**
          * Find the user object within the path
          * @todo resolve the return type assignment with _.get
@@ -175,12 +184,14 @@ declare module NgJwtAuth {
          */
         private setJWTHeader(rawToken);
         /**
+         * Remove the default http authorization header
+         */
+        private unsetJWTHeader();
+        /**
          * Handle a request that was rejected due to unauthorised response
-         * 1. Check if there is already credentials promised
-         * 2. If not, excecute the credential promise factory
-         * 3. Wait until the credentials are resolved
-         * 4. Then try to authenticate
-         * 5. Then retry the $http request
+         * 1. Require authentication
+         * 2. Retry the rejected $http request
+         *
          * @param rejection
          */
         handleInterceptedUnauthorisedResponse(rejection: any): void;
@@ -189,6 +200,14 @@ declare module NgJwtAuth {
          * @param promiseFactory
          */
         registerCredentialPromiseFactory(promiseFactory: ICredentialPromiseFactory): void;
+        /**
+         * Clear the token and service properties
+         */
+        logout(): void;
+        /**
+         * Clear the token
+         */
+        private clearJWTToken();
     }
 }
 declare module NgJwtAuth {

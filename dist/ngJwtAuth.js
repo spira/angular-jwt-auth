@@ -169,9 +169,9 @@ var NgJwtAuth;
                 return this.$q.when(this.user);
             }
             else {
-                return this.requireLogin()
-                    .then(function () {
-                    return this.getUser();
+                return this.requireCredentialsAndAuthenticate()
+                    .then(function (authenticatedUser) {
+                    return authenticatedUser;
                 });
             }
         };
@@ -201,8 +201,25 @@ var NgJwtAuth;
         NgJwtAuthService.prototype.exchangeToken = function (token) {
             return this.$http.get('/');
         };
-        NgJwtAuthService.prototype.requireLogin = function () {
-            return this.$http.get('/');
+        /**
+         * Require that the user logs in again for a request
+         * 1. Check if there is already credentials promised
+         * 2. If not, execute the credential promise factory
+         * 3. Wait until the credentials are resolved
+         * 4. Then try to authenticate
+         * @returns {IPromise<TResult>}
+         */
+        NgJwtAuthService.prototype.requireCredentialsAndAuthenticate = function () {
+            var _this = this;
+            if (!this.currentCredentialPromise) {
+                this.currentCredentialPromise = this.credentialPromiseFactory(this.user);
+            }
+            return this.currentCredentialPromise.then(function (credentials) {
+                if (_this.currentCredentialPromise) {
+                    _this.currentCredentialPromise = null;
+                }
+                return _this.authenticate(credentials.username, credentials.password);
+            });
         };
         /**
          * Find the user object within the path
@@ -228,25 +245,22 @@ var NgJwtAuth;
             this.$http.defaults.headers.common.Authorization = 'Bearer ' + rawToken;
         };
         /**
+         * Remove the default http authorization header
+         */
+        NgJwtAuthService.prototype.unsetJWTHeader = function () {
+            delete this.$http.defaults.headers.common.Authorization;
+        };
+        /**
          * Handle a request that was rejected due to unauthorised response
-         * 1. Check if there is already credentials promised
-         * 2. If not, excecute the credential promise factory
-         * 3. Wait until the credentials are resolved
-         * 4. Then try to authenticate
-         * 5. Then retry the $http request
+         * 1. Require authentication
+         * 2. Retry the rejected $http request
+         *
          * @param rejection
          */
         NgJwtAuthService.prototype.handleInterceptedUnauthorisedResponse = function (rejection) {
             var _this = this;
-            if (!this.currentCredentialPromise) {
-                this.currentCredentialPromise = this.credentialPromiseFactory(this.user);
-            }
-            this.currentCredentialPromise.then(function (credentials) {
-                if (_this.currentCredentialPromise) {
-                    _this.currentCredentialPromise = null;
-                }
-                return _this.authenticate(credentials.username, credentials.password);
-            }).then(function (user) {
+            this.requireCredentialsAndAuthenticate()
+                .then(function (user) {
                 return _this.$http(rejection.config);
             });
         };
@@ -259,6 +273,21 @@ var NgJwtAuth;
                 throw new NgJwtAuth.NgJwtAuthException("You cannot redeclare the credential promise factory");
             }
             this.credentialPromiseFactory = promiseFactory;
+        };
+        /**
+         * Clear the token and service properties
+         */
+        NgJwtAuthService.prototype.logout = function () {
+            this.clearJWTToken();
+            this.loggedIn = false;
+            this.user = null;
+        };
+        /**
+         * Clear the token
+         */
+        NgJwtAuthService.prototype.clearJWTToken = function () {
+            this.$window.localStorage.removeItem(this.config.storageKeyName);
+            this.unsetJWTHeader();
         };
         return NgJwtAuthService;
     })();

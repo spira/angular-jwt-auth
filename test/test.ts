@@ -226,6 +226,22 @@ describe('Service tests', () => {
 
         });
 
+        it('should be able to log out and clear token data', () => {
+            ngJwtAuthService.logout();
+
+            expect(ngJwtAuthService.getUser()).to.be.null;
+
+            $httpBackend.expectGET('/any', (headers) => {
+                return !_.contains(headers, 'Authorization'); //Authorization header has been unset
+            }).respond('foobar');
+
+            (<any>ngJwtAuthService).$http.get('/any');
+
+            $httpBackend.flush();
+
+            return expect(ngJwtAuthService.loggedIn).to.be.false;
+        })
+
     });
 
     describe('Failed authentication', () => {
@@ -262,6 +278,20 @@ describe('Service tests', () => {
             let authPromise = ngJwtAuthService.authenticate(fixtures.user.email, fixtures.user.password);
 
             expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+
+            $httpBackend.flush();
+
+        });
+
+        it('should pass through any http errors that are not unauthorised', () => {
+
+            $httpBackend.expectGET('/any').respond(403);
+
+            let $http = (<any>ngJwtAuthService).$http; //get the injected http method
+
+            let httpResponse = $http.get('/any'); //try to get a resource
+
+            expect(httpResponse).to.eventually.be.rejected;
 
             $httpBackend.flush();
 
@@ -322,6 +352,24 @@ describe('Service tests', () => {
             $httpBackend.expectGET('/any').respond('ok');
 
             $httpBackend.flush();
+        });
+
+
+        it('should be able to wait for a user to authenticate to get a user object', () => {
+
+            ngJwtAuthService.logout(); //make sure that the service is not logged in.
+
+            $httpBackend.expectGET('/api/auth/login', (headers) => {
+                return headers['Authorization'] == fixtures.authBasic;
+            }).respond({token: fixtures.token});
+
+
+            let userPromise = ngJwtAuthService.getPromisedUser();
+
+            expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
+
+            $httpBackend.flush();
+
         });
 
     });
