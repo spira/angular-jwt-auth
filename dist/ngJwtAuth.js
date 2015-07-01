@@ -343,6 +343,7 @@ var NgJwtAuth;
                 throw new NgJwtAuth.NgJwtAuthException("You cannot redeclare the credential promise factory");
             }
             this.credentialPromiseFactory = promiseFactory;
+            return this;
         };
         /**
          * Clear the token and service properties

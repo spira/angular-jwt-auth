@@ -12,7 +12,7 @@ declare module NgJwtAuth {
         authenticateCredentials(username: string, password: string): ng.IPromise<Object>;
         exchangeToken(token: string): ng.IPromise<Object>;
         requireCredentialsAndAuthenticate(): ng.IPromise<Object>;
-        registerCredentialPromiseFactory(currentUser: IUser): void;
+        registerCredentialPromiseFactory(currentUser: IUser): NgJwtAuthService;
         logout(): void;
     }
     interface INgJwtAuthServiceProvider {
@@ -231,7 +231,7 @@ declare module NgJwtAuth {
          * Register the user provided credential promise factory
          * @param promiseFactory
          */
-        registerCredentialPromiseFactory(promiseFactory: ICredentialPromiseFactory): void;
+        registerCredentialPromiseFactory(promiseFactory: ICredentialPromiseFactory): NgJwtAuthService;
         /**
          * Clear the token and service properties
          */

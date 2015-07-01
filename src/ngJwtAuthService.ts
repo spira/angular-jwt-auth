@@ -43,7 +43,6 @@ module NgJwtAuth {
 
             //attempt to load the token from storage
             this.loadTokenFromStorage();
-            
         }
 
         /**
@@ -391,11 +390,13 @@ module NgJwtAuth {
          * Register the user provided credential promise factory
          * @param promiseFactory
          */
-        public registerCredentialPromiseFactory(promiseFactory:ICredentialPromiseFactory):void {
+        public registerCredentialPromiseFactory(promiseFactory:ICredentialPromiseFactory):NgJwtAuthService {
             if (_.isFunction(this.credentialPromiseFactory)){
                 throw new NgJwtAuthException("You cannot redeclare the credential promise factory");
             }
             this.credentialPromiseFactory = promiseFactory;
+
+            return this;
         }
 
         /**
