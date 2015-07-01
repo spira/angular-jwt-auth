@@ -203,6 +203,18 @@ describe('Service tests', () => {
 
     });
 
+    it('should fail promise when server response with an error code', () => {
+
+        $httpBackend.expectGET('/api/auth/login').respond(404);
+
+        let authPromise = ngJwtAuthService.authenticate(fixtures.user.email, fixtures.user.password);
+
+        expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+
+        $httpBackend.flush();
+
+    });
+
     it('should fail promise when authentication fails', () => {
 
         $httpBackend.expectGET('/api/auth/login').respond(401);
