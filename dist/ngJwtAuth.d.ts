@@ -3,14 +3,16 @@
 declare module NgJwtAuth {
     interface INgJwtAuthService {
         loggedIn: boolean;
+        rawToken: string;
         isLoginMethod(url: string): boolean;
         getUser(): Object;
         getPromisedUser(): ng.IPromise<Object>;
         processNewToken(rawToken: string): IUser;
-        clearToken(): boolean;
-        authenticate(username: string, password: string): ng.IPromise<Object>;
+        authenticateCredentials(username: string, password: string): ng.IPromise<Object>;
         exchangeToken(token: string): ng.IPromise<Object>;
-        requireLogin(): ng.IPromise<Object>;
+        requireCredentialsAndAuthenticate(): ng.IPromise<Object>;
+        registerCredentialPromiseFactory(currentUser: IUser): void;
+        logout(): void;
     }
     interface INgJwtAuthServiceProvider {
         setApiEndpoints(config: IEndpointDefinition): NgJwtAuthServiceProvider;
@@ -50,6 +52,30 @@ declare module NgJwtAuth {
         firstName?: string;
         lastName?: string;
     }
+    interface ICredentials {
+        username: string;
+        password: string;
+    }
+    interface ICredentialPromiseFactory {
+        (currentUser: IUser): ng.IPromise<ICredentials>;
+    }
+}
+declare module NgJwtAuth {
+    class NgJwtAuthInterceptor {
+        private $http;
+        private $q;
+        private $injector;
+        private ngJwtAuthService;
+        /**
+         * Construct the service with dependencies injected
+         * @param _$q
+         * @param _$injector
+         */
+        static $inject: string[];
+        constructor(_$q: ng.IQService, _$injector: ng.auto.IInjectorService);
+        private getNgJwtAuthService;
+        responseError: (rejection: any) => any;
+    }
 }
 declare module NgJwtAuth {
     class NgJwtAuthService implements INgJwtAuthService {
@@ -59,6 +85,9 @@ declare module NgJwtAuth {
         private $window;
         loggedIn: boolean;
         private user;
+        private credentialPromiseFactory;
+        private currentCredentialPromise;
+        rawToken: string;
         /**
          * Construct the service with dependencies injected
          * @param _config
@@ -90,12 +119,22 @@ declare module NgJwtAuth {
          */
         private static getAuthHeader(username, password);
         /**
+         * Build a token header string
+         * @returns {string}
+         */
+        private static getTokenHeader(token);
+        /**
+         * Build a refresh header string
+         * @returns {string}
+         */
+        private getRefreshHeader();
+        /**
          * Retrieve the token from the remote API
-         * @param username
-         * @param password
+         * @param endpoint
+         * @param authHeader
          * @returns {IPromise<TResult>}
          */
-        private getToken(username, password);
+        private retrieveAndProcessToken(endpoint, authHeader);
         /**
          * Parse the raw token
          * @param rawToken
@@ -120,16 +159,37 @@ declare module NgJwtAuth {
          * @returns {IHttpPromise<T>}
          */
         getPromisedUser(): ng.IPromise<IUser>;
-        clearToken(): boolean;
+        /**
+         * Clear the token
+         */
+        private clearJWTToken();
         /**
          * Attempt to log in with username and password
          * @param username
          * @param password
          * @returns {IPromise<boolean>}
          */
-        authenticate(username: string, password: string): ng.IPromise<any>;
+        authenticateCredentials(username: string, password: string): ng.IPromise<any>;
+        /**
+         * Exchange an arbitrary token with a jwt token
+         * @param token
+         * @returns {ng.IPromise<any>}
+         */
         exchangeToken(token: string): ng.IPromise<Object>;
-        requireLogin(): ng.IPromise<Object>;
+        /**
+         * Refresh an existing token
+         * @returns {ng.IPromise<any>}
+         */
+        refreshToken(): ng.IPromise<Object>;
+        /**
+         * Require that the user logs in again for a request
+         * 1. Check if there is already credentials promised
+         * 2. If not, execute the credential promise factory
+         * 3. Wait until the credentials are resolved
+         * 4. Then try to authenticateCredentials
+         * @returns {IPromise<TResult>}
+         */
+        requireCredentialsAndAuthenticate(): ng.IPromise<IUser>;
         /**
          * Find the user object within the path
          * @todo resolve the return type assignment with _.get
@@ -147,6 +207,27 @@ declare module NgJwtAuth {
          * @param rawToken
          */
         private setJWTHeader(rawToken);
+        /**
+         * Remove the default http authorization header
+         */
+        private unsetJWTHeader();
+        /**
+         * Handle a request that was rejected due to unauthorised response
+         * 1. Require authentication
+         * 2. Retry the rejected $http request
+         *
+         * @param rejection
+         */
+        handleInterceptedUnauthorisedResponse(rejection: any): void;
+        /**
+         * Register the user provided credential promise factory
+         * @param promiseFactory
+         */
+        registerCredentialPromiseFactory(promiseFactory: ICredentialPromiseFactory): void;
+        /**
+         * Clear the token and service properties
+         */
+        logout(): void;
     }
 }
 declare module NgJwtAuth {

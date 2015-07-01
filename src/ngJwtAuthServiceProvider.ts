@@ -2,6 +2,7 @@
 /// <reference path="../typings/angularjs/angular.d.ts" />
 /// <reference path="./ngJwtAuthInterfaces.ts" />
 /// <reference path="./ngJwtAuthService.ts" />
+/// <reference path="./ngJwtAuthInterceptor.ts" />
 
 module NgJwtAuth {
 
@@ -63,8 +64,24 @@ module NgJwtAuth {
 
     }
 
+
+
     angular.module('ngJwtAuth', [])
         .provider('ngJwtAuthService', NgJwtAuthServiceProvider)
+        .service('ngJwtAuthInterceptor', NgJwtAuthInterceptor)
+        .config(['$httpProvider', '$injector', ($httpProvider:ng.IHttpProvider) => {
+
+            $httpProvider.interceptors.push('ngJwtAuthInterceptor');
+        }])
     ;
+
+    //angular.module('ngJwtAuth.interceptor', [])
+    //    .service('ngJwtAuthInterceptor', NgJwtAuthInterceptor)
+    //    .config(['$httpProvider', '$injector', ($httpProvider:ng.IHttpProvider) => {
+    //
+    //        $httpProvider.interceptors.push('ngJwtAuthInterceptor');
+    //    }])
+    //;
+
 
 }

@@ -14,6 +14,9 @@ module NgJwtAuth {
 
         public loggedIn:boolean = false;
         private user:IUser;
+        private credentialPromiseFactory:ICredentialPromiseFactory;
+        private currentCredentialPromise:ng.IPromise<ICredentials>;
+        public rawToken:string;
 
         /**
          * Construct the service with dependencies injected
@@ -66,18 +69,36 @@ module NgJwtAuth {
         }
 
         /**
+         * Build a token header string
+         * @returns {string}
+         */
+        private static getTokenHeader(token:string):string{
+            return 'Token ' + token;
+        }
+
+        /**
+         * Build a refresh header string
+         * @returns {string}
+         */
+        private getRefreshHeader():string{
+            if (!this.rawToken){
+                throw new NgJwtAuthException("Token is not set, it cannot be refreshed");
+            }
+
+            return 'Bearer ' + this.rawToken;
+        }
+
+        /**
          * Retrieve the token from the remote API
-         * @param username
-         * @param password
+         * @param endpoint
+         * @param authHeader
          * @returns {IPromise<TResult>}
          */
-        private getToken(username:string, password:string): ng.IPromise<any>{
-
-            var authHeader = NgJwtAuthService.getAuthHeader(username, password);
+        private retrieveAndProcessToken(endpoint:string, authHeader:string): ng.IPromise<any>{
 
             var requestConfig:ng.IRequestConfig = {
                 method: 'GET',
-                url:  this.getLoginEndpoint(),
+                url:  endpoint,
                 headers: {
                     Authorization : authHeader
                 },
@@ -86,6 +107,20 @@ module NgJwtAuth {
 
             return this.$http(requestConfig).then((result) => {
                 return _.get(result.data, this.config.tokenLocation);
+            })
+            .then((token:string) => {
+
+                try {
+
+                    this.user = this.processNewToken(token);
+
+                    this.loggedIn = true;
+
+                    return this.user;
+                }catch(error){
+                    return this.$q.reject(error);
+                }
+
             })
             .catch((result) => {
 
@@ -96,7 +131,8 @@ module NgJwtAuth {
 
                 //throw new NgJwtAuthException("The API reported an error");
                 return this.$q.reject(new NgJwtAuthException("The API reported an error"));
-            });
+            })
+
         }
 
         /**
@@ -128,6 +164,7 @@ module NgJwtAuth {
          */
         public processNewToken(rawToken:string) : IUser{
 
+            this.rawToken = rawToken;
 
             var tokenData = NgJwtAuthService.readToken(rawToken);
 
@@ -171,9 +208,9 @@ module NgJwtAuth {
             if (this.loggedIn){ //if we are already logged in, resolve the user immediately
                 return this.$q.when(this.user);
             }else{ //otherwise require login then return the user
-                return this.requireLogin()
-                    .then(function(){
-                        return this.getUser();
+                return this.requireCredentialsAndAuthenticate()
+                    .then(function(authenticatedUser:IUser){
+                        return authenticatedUser;
                     })
                 ;
             }
@@ -181,9 +218,13 @@ module NgJwtAuth {
         }
 
 
-
-        public clearToken():boolean {
-            return true;
+        /**
+         * Clear the token
+         */
+        private clearJWTToken():void {
+            this.rawToken = null;
+            this.$window.localStorage.removeItem(this.config.storageKeyName);
+            this.unsetJWTHeader();
         }
 
         /**
@@ -192,32 +233,64 @@ module NgJwtAuth {
          * @param password
          * @returns {IPromise<boolean>}
          */
-        public authenticate(username:string, password:string):ng.IPromise<any> {
+        public authenticateCredentials(username:string, password:string):ng.IPromise<any> {
 
-            return this.getToken(username, password)
-                .then((token) => {
+            let authHeader = NgJwtAuthService.getAuthHeader(username, password);
+            let endpoint = this.getLoginEndpoint();
 
-                    try {
-                        this.user = this.processNewToken(token);
-
-                        this.loggedIn = true;
-
-                        return this.user;
-                    }catch(error){
-                        return this.$q.reject(error);
-                    }
-
-                })
-            ;
+            return this.retrieveAndProcessToken(endpoint, authHeader);
 
         }
 
+        /**
+         * Exchange an arbitrary token with a jwt token
+         * @param token
+         * @returns {ng.IPromise<any>}
+         */
         public exchangeToken(token:string):ng.IPromise<Object> {
-            return this.$http.get('/');
+
+            let authHeader = NgJwtAuthService.getTokenHeader(token);
+            let endpoint = this.getTokenExchangeEndpoint();
+
+            return this.retrieveAndProcessToken(endpoint, authHeader);
         }
 
-        public requireLogin():ng.IPromise<Object>{
-            return this.$http.get('/');
+        /**
+         * Refresh an existing token
+         * @returns {ng.IPromise<any>}
+         */
+        public refreshToken():ng.IPromise<Object> {
+
+            let authHeader = this.getRefreshHeader();
+            let endpoint = this.getRefreshEndpoint();
+
+            return this.retrieveAndProcessToken(endpoint, authHeader);
+
+        }
+
+        /**
+         * Require that the user logs in again for a request
+         * 1. Check if there is already credentials promised
+         * 2. If not, execute the credential promise factory
+         * 3. Wait until the credentials are resolved
+         * 4. Then try to authenticateCredentials
+         * @returns {IPromise<TResult>}
+         */
+        public requireCredentialsAndAuthenticate():ng.IPromise<IUser>{
+
+            if (!this.currentCredentialPromise){
+                this.currentCredentialPromise = this.credentialPromiseFactory(this.user);
+            }
+
+            return this.currentCredentialPromise.then((credentials:ICredentials) => {
+
+                if (this.currentCredentialPromise){ //if there are any credential promises outstanding, delete them
+                    this.currentCredentialPromise = null;
+                }
+
+                return this.authenticateCredentials(credentials.username, credentials.password);
+            });
+
         }
 
         /**
@@ -247,6 +320,49 @@ module NgJwtAuth {
         private setJWTHeader(rawToken:String):void {
 
             this.$http.defaults.headers.common.Authorization = 'Bearer '+rawToken;
+        }
+
+        /**
+         * Remove the default http authorization header
+         */
+        private unsetJWTHeader():void {
+            delete this.$http.defaults.headers.common.Authorization;
+        }
+
+        /**
+         * Handle a request that was rejected due to unauthorised response
+         * 1. Require authentication
+         * 2. Retry the rejected $http request
+         *
+         * @param rejection
+         */
+        public handleInterceptedUnauthorisedResponse(rejection:any):void {
+
+            this.requireCredentialsAndAuthenticate()
+                .then((user:IUser) => {
+                    return this.$http(rejection.config);
+                })
+            ;
+        }
+
+        /**
+         * Register the user provided credential promise factory
+         * @param promiseFactory
+         */
+        public registerCredentialPromiseFactory(promiseFactory:ICredentialPromiseFactory):void {
+            if (_.isFunction(this.credentialPromiseFactory)){
+                throw new NgJwtAuthException("You cannot redeclare the credential promise factory");
+            }
+            this.credentialPromiseFactory = promiseFactory;
+        }
+
+        /**
+         * Clear the token and service properties
+         */
+        public logout():void {
+            this.clearJWTToken();
+            this.loggedIn = false;
+            this.user = null;
         }
     }
 

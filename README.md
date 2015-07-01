@@ -66,3 +66,40 @@ angular.module('app', ['ngJwtAuth'])
     
 }])
 ```
+
+## Credential Promise Factory
+To handle prompting the user for authentication, angular-jwt-auth provides a registration method to allow the application
+ to provide a function that returns a promise containing the credentials to attempt to login, then to retry the intercepted
+ request with.
+ 
+Example using a modal from [angular-bootstrap's `$modal`](https://angular-ui.github.io/bootstrap/#/modal) :
+
+```js
+angular.module('app', ['ngJwtAuth'])
+.run(['ngJwtAuthService', '$modal', function(ngJwtAuthService, $modal){
+    ngJwtAuthServiceProvider
+        .registerCredentialPromiseFactory(function(existingUser){
+            
+            var credentialsPromise = $modal.open({
+                    templateUrl : '/path/to/template.tpl.html',
+                    controller: 'LoginModalCtrl',
+                    size : 'md'
+                }).result;
+            };
+            
+            return credentialsPromise;
+            
+        })
+    ;
+}])
+.controller('LoginModalCtrl', ['$scope', '$modal', function($scope, $modalInstance){
+    $scope.login = function (username, password) {
+        //the promise must resolve with the form {username: string, password: string}
+        $modalInstance.close({
+            username: username,
+            password: password
+        });
+    };
+}])
+
+```
