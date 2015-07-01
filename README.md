@@ -92,7 +92,7 @@ angular.module('app', ['ngJwtAuth'])
         })
     ;
 }])
-.controller('LoginModalCtrl', ['$modal', function($modalInstance){
+.controller('LoginModalCtrl', ['$scope', '$modal', function($scope, $modalInstance){
     $scope.login = function (username, password) {
         //the promise must resolve with the form {username: string, password: string}
         $modalInstance.close({
