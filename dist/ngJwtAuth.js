@@ -9,12 +9,14 @@ var NgJwtAuth;
          * @param _config
          * @param _$http
          * @param _$q
+         * @param _$window
          */
-        function NgJwtAuthService(_config, _$http, _$q) {
+        function NgJwtAuthService(_config, _$http, _$q, _$window) {
             this.loggedIn = false;
             this.config = _config;
             this.$http = _$http;
             this.$q = _$q;
+            this.$window = _$window;
         }
         /**
          * Get the endpoint for login
@@ -101,8 +103,8 @@ var NgJwtAuth;
             var tokenData = NgJwtAuthService.readToken(rawToken);
             var expiryDate = moment(tokenData.data.exp * 1000);
             var expiryInSeconds = expiryDate.diff(moment(), 'seconds');
-            //this.saveTokenToStorage(rawToken, expiryInSeconds);
-            //this.setJWTHeader(rawToken);
+            this.saveTokenToStorage(rawToken);
+            this.setJWTHeader(rawToken);
             return this.getUserFromTokenData(tokenData);
         };
         /**
@@ -173,6 +175,20 @@ var NgJwtAuth;
         NgJwtAuthService.prototype.getUserFromTokenData = function (tokenData) {
             return _.get(tokenData.data, this.config.tokenUser);
         };
+        /**
+         * Save the token
+         * @param rawToken
+         */
+        NgJwtAuthService.prototype.saveTokenToStorage = function (rawToken) {
+            this.$window.localStorage.setItem(this.config.storageKeyName, rawToken);
+        };
+        /**
+         * Set the authentication token for all new requests
+         * @param rawToken
+         */
+        NgJwtAuthService.prototype.setJWTHeader = function (rawToken) {
+            this.$http.defaults.headers.common.Authorization = 'Bearer ' + rawToken;
+        };
         return NgJwtAuthService;
     })();
     NgJwtAuth.NgJwtAuthService = NgJwtAuthService;
@@ -206,12 +222,8 @@ var NgJwtAuth;
     NgJwtAuth.NgJwtAuthException = NgJwtAuthException;
     var NgJwtAuthServiceProvider = (function () {
         function NgJwtAuthServiceProvider() {
-            //public $get(): INgJwtAuthService {
-            //
-            //    return new NgJwtAuthService();
-            //}
-            this.$get = ['$http', '$q', function NgJwtAuthServiceFactory($http, $q) {
-                    return new NgJwtAuth.NgJwtAuthService(this.config, $http, $q);
+            this.$get = ['$http', '$q', '$window', function NgJwtAuthServiceFactory($http, $q, $window) {
+                    return new NgJwtAuth.NgJwtAuthService(this.config, $http, $q, $window);
                 }];
             //initialise service config
             this.config = {
@@ -222,8 +234,9 @@ var NgJwtAuth;
                     base: '/api/auth',
                     login: '/login',
                     tokenExchange: '/token',
-                    refresh: '/refresh'
-                }
+                    refresh: '/refresh',
+                },
+                storageKeyName: 'NgJwtAuthToken',
             };
         }
         /**

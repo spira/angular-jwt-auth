@@ -26,6 +26,7 @@ declare module NgJwtAuth {
         tokenUser: string;
         loginController: string;
         apiEndpoints: IEndpointDefinition;
+        storageKeyName: string;
     }
     interface IJwtToken {
         header: {
@@ -52,9 +53,10 @@ declare module NgJwtAuth {
 }
 declare module NgJwtAuth {
     class NgJwtAuthService implements INgJwtAuthService {
+        private config;
         private $http;
         private $q;
-        private config;
+        private $window;
         loggedIn: boolean;
         private user;
         /**
@@ -62,8 +64,9 @@ declare module NgJwtAuth {
          * @param _config
          * @param _$http
          * @param _$q
+         * @param _$window
          */
-        constructor(_config: any, _$http: ng.IHttpService, _$q: ng.IQService);
+        constructor(_config: any, _$http: ng.IHttpService, _$q: ng.IQService, _$window: ng.IWindowService);
         /**
          * Get the endpoint for login
          * @returns {string}
@@ -134,6 +137,16 @@ declare module NgJwtAuth {
          * @returns {T}
          */
         private getUserFromTokenData(tokenData);
+        /**
+         * Save the token
+         * @param rawToken
+         */
+        private saveTokenToStorage(rawToken);
+        /**
+         * Set the authentication token for all new requests
+         * @param rawToken
+         */
+        private setJWTHeader(rawToken);
     }
 }
 declare module NgJwtAuth {
@@ -157,6 +170,6 @@ declare module NgJwtAuth {
          * @returns {NgJwtAuth.NgJwtAuthServiceProvider}
          */
         setApiEndpoints(config: IEndpointDefinition): NgJwtAuthServiceProvider;
-        $get: (string | (($http: any, $q: any) => NgJwtAuthService))[];
+        $get: (string | (($http: any, $q: any, $window: any) => NgJwtAuthService))[];
     }
 }

@@ -153,106 +153,119 @@ describe('Service tests', () => {
         $httpBackend.verifyNoOutstandingRequest();
     });
 
-    it('should be an injectable service', () => {
+    describe('Initialisation', () => {
 
-        return expect(ngJwtAuthService).to.be.an('object');
-    });
+        it('should be an injectable service', () => {
 
-    it('should not be logged in initially', () => {
+            return expect(ngJwtAuthService).to.be.an('object');
+        });
 
-        return expect(ngJwtAuthService.loggedIn).to.be.false;
-    });
+        it('should not be logged in initially', () => {
 
-    it('should not be able to retrieve a user on init', () => {
+            return expect(ngJwtAuthService.loggedIn).to.be.false;
+        });
 
-        return expect(ngJwtAuthService.getUser()).to.be.undefined;
-    });
+        it('should not be able to retrieve a user on init', () => {
 
-    it('should retrieve a json web token', () => {
-
-        $httpBackend.expectGET('/api/auth/login', (headers) => {
-            return headers['Authorization'] == fixtures.authBasic;
-        }).respond({token: fixtures.token});
-
-        let tokenPromise = (<any>ngJwtAuthService).getToken(fixtures.user.email, fixtures.user.password);
-
-        expect(tokenPromise).to.eventually.equal(fixtures.token);
-
-        $httpBackend.flush();
+            return expect(ngJwtAuthService.getUser()).to.be.undefined;
+        });
 
     });
 
-    it('should process a token and return a user', () => {
+    describe('Authentication', () => {
 
-        $httpBackend.expectGET('/api/auth/login').respond({token: fixtures.token});
+        it('should retrieve a json web token', () => {
 
-        let authPromise = ngJwtAuthService.authenticate(fixtures.user.email, fixtures.user.password);
+            $httpBackend.expectGET('/api/auth/login', (headers) => {
+                return headers['Authorization'] == fixtures.authBasic;
+            }).respond({token: fixtures.token});
 
-        expect(authPromise).to.eventually.deep.equal(fixtures.userResponse);
+            let tokenPromise = (<any>ngJwtAuthService).getToken(fixtures.user.email, fixtures.user.password);
 
-        $httpBackend.flush();
-    });
+            expect(tokenPromise).to.eventually.equal(fixtures.token);
 
-    it('should be able to get user info once authenticated', () => {
+            $httpBackend.flush();
 
-        let user = ngJwtAuthService.getUser();
-        let userPromise = ngJwtAuthService.getPromisedUser();
+        });
 
-        expect(user).to.deep.equal(fixtures.userResponse);
-        expect(userPromise).eventually.to.deep.equal(fixtures.userResponse);
+        it('should process a token and return a user', () => {
 
-    });
+            $httpBackend.expectGET('/api/auth/login').respond({token: fixtures.token});
 
-    it('should have saved the jwt to localstorage', () => {
+            let authPromise = ngJwtAuthService.authenticate(fixtures.user.email, fixtures.user.password);
 
-        let storageKey = (<any>ngJwtAuthService).config.storageKeyName;
-        expect(window.localStorage.getItem(storageKey)).to.equal(fixtures.token);
-    });
+            expect(authPromise).to.eventually.deep.equal(fixtures.userResponse);
 
-    it('should set a default authorisation header for subsequent requests', () => {
-        $httpBackend.expectGET('/any', (headers) => {
-            return headers['Authorization'] == 'Bearer '+fixtures.token;
-        }).respond('foobar');
+            $httpBackend.flush();
+        });
 
-        (<any>ngJwtAuthService).$http.get('/any');
+        it('should be able to get user info once authenticated', () => {
 
-        $httpBackend.flush();
+            let user = ngJwtAuthService.getUser();
+            let userPromise = ngJwtAuthService.getPromisedUser();
 
-    });
+            expect(user).to.deep.equal(fixtures.userResponse);
+            expect(userPromise).eventually.to.deep.equal(fixtures.userResponse);
 
-    it('should fail promise when server response with an error code', () => {
+        });
 
-        $httpBackend.expectGET('/api/auth/login').respond(404);
+        it('should have saved the jwt to localstorage', () => {
 
-        let authPromise = ngJwtAuthService.authenticate(fixtures.user.email, fixtures.user.password);
+            let storageKey = (<any>ngJwtAuthService).config.storageKeyName;
+            expect(window.localStorage.getItem(storageKey)).to.equal(fixtures.token);
+        });
 
-        expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+        it('should set a default authorisation header for subsequent requests', () => {
+            $httpBackend.expectGET('/any', (headers) => {
+                return headers['Authorization'] == 'Bearer '+fixtures.token;
+            }).respond('foobar');
 
-        $httpBackend.flush();
+            (<any>ngJwtAuthService).$http.get('/any');
 
-    });
+            $httpBackend.flush();
 
-    it('should fail promise when authentication fails', () => {
-
-        $httpBackend.expectGET('/api/auth/login').respond(401);
-
-        let authPromise = ngJwtAuthService.authenticate(fixtures.user.email, fixtures.user.password);
-
-        expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
-
-        $httpBackend.flush();
+        });
 
     });
 
-    it('should fail promise when returned token is invalid', () => {
+    describe('Failed authentication', () => {
 
-        $httpBackend.expectGET('/api/auth/login').respond({token: 'invalid_token'});
 
-        let authPromise = ngJwtAuthService.authenticate(fixtures.user.email, fixtures.user.password);
+        it('should fail promise when server response with an error code', () => {
 
-        expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+            $httpBackend.expectGET('/api/auth/login').respond(404);
 
-        $httpBackend.flush();
+            let authPromise = ngJwtAuthService.authenticate(fixtures.user.email, fixtures.user.password);
+
+            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+
+            $httpBackend.flush();
+
+        });
+
+        it('should fail promise when authentication fails', () => {
+
+            $httpBackend.expectGET('/api/auth/login').respond(401);
+
+            let authPromise = ngJwtAuthService.authenticate(fixtures.user.email, fixtures.user.password);
+
+            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+
+            $httpBackend.flush();
+
+        });
+
+        it('should fail promise when returned token is invalid', () => {
+
+            $httpBackend.expectGET('/api/auth/login').respond({token: 'invalid_token'});
+
+            let authPromise = ngJwtAuthService.authenticate(fixtures.user.email, fixtures.user.password);
+
+            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+
+            $httpBackend.flush();
+
+        });
 
     });
 
