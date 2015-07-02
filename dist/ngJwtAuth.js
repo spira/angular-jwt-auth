@@ -202,7 +202,6 @@ var NgJwtAuth;
             if (expiryDate < moment()) {
                 throw new NgJwtAuth.NgJwtAuthTokenExpiredException("Token has expired");
             }
-            console.log('Processed new token');
             this.saveTokenToStorage(rawToken);
             this.setJWTHeader(rawToken);
             this.loggedIn = true;
