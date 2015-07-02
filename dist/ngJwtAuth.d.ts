@@ -16,7 +16,7 @@ declare module NgJwtAuth {
         logout(): void;
     }
     interface INgJwtAuthServiceProvider {
-        setApiEndpoints(config: IEndpointDefinition): NgJwtAuthServiceProvider;
+        configure(config: INgJwtAuthServiceConfig): NgJwtAuthServiceProvider;
     }
     interface IEndpointDefinition {
         base?: string;
@@ -25,13 +25,12 @@ declare module NgJwtAuth {
         refresh?: string;
     }
     interface INgJwtAuthServiceConfig {
-        tokenLocation: string;
-        tokenUser: string;
-        loginController: string;
-        apiEndpoints: IEndpointDefinition;
-        storageKeyName: string;
-        refreshBeforeSeconds: number;
-        checkExpiryEverySeconds: number;
+        tokenLocation?: string;
+        tokenUser?: string;
+        apiEndpoints?: IEndpointDefinition;
+        storageKeyName?: string;
+        refreshBeforeSeconds?: number;
+        checkExpiryEverySeconds?: number;
     }
     interface IJwtToken {
         header: {
@@ -269,13 +268,16 @@ declare module NgJwtAuth {
     }
     class NgJwtAuthServiceProvider implements ng.IServiceProvider, INgJwtAuthServiceProvider {
         private config;
+        /**
+         * Initialise the service provider
+         */
         constructor();
         /**
-         * Set the API endpoints for the auth service to call
+         * Set the configuration
          * @param config
          * @returns {NgJwtAuth.NgJwtAuthServiceProvider}
          */
-        setApiEndpoints(config: IEndpointDefinition): NgJwtAuthServiceProvider;
+        configure(config: IEndpointDefinition): NgJwtAuthServiceProvider;
         $get: (string | (($http: any, $q: any, $window: any, $interval: any) => NgJwtAuthService))[];
     }
 }

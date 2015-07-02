@@ -32,13 +32,15 @@ module NgJwtAuth {
 
         private config: INgJwtAuthServiceConfig;
 
+        /**
+         * Initialise the service provider
+         */
         constructor() {
 
             //initialise service config
             this.config = {
                 tokenLocation: 'token',
                 tokenUser: '#user',
-                loginController: 'app.public.login',
                 apiEndpoints: {
                     base: '/api/auth',
                     login: '/login',
@@ -53,12 +55,12 @@ module NgJwtAuth {
         }
 
         /**
-         * Set the API endpoints for the auth service to call
+         * Set the configuration
          * @param config
          * @returns {NgJwtAuth.NgJwtAuthServiceProvider}
          */
-        public setApiEndpoints(config:IEndpointDefinition) : NgJwtAuthServiceProvider {
-            this.config.apiEndpoints = _.defaults(config, this.config.apiEndpoints);
+        public configure(config:IEndpointDefinition) : NgJwtAuthServiceProvider {
+            this.config = _.defaults(config, this.config.apiEndpoints);
             return this;
         }
 
