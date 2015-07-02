@@ -561,6 +561,29 @@ describe('Service Reloading', () => {
 
         });
 
+        it('should not attempt to refresh the token over time when the user has never logged in', () => {
+
+            ngJwtAuthService.logout(); //make sure user is logged out
+
+            let tickIntervalSeconds = (<any>ngJwtAuthService).config.checkExpiryEverySeconds,
+                hoursToRun = 4,
+                intervalsToRun = (hoursToRun*60*60) / tickIntervalSeconds
+            ;
+
+            ngJwtAuthService.init(); //initialise without a token
+
+            //as angular's $interval does not seem to be overidden by sinon's clock they both have to be ticked independently
+            for (let i=0; i <= intervalsToRun;i++){ //add
+
+                clock.tick(1000 * tickIntervalSeconds); //fast forward clock by the configured seconds
+                (<any>ngJwtAuthService).$interval.flush(1000 * tickIntervalSeconds); //fast forward intervals by the configured seconds
+
+            }
+
+            return expect(ngJwtAuthService.loggedIn).to.be.false;
+
+        });
+
     });
 
     describe('User reloaded after expiry', () => {
