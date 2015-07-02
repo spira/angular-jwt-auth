@@ -139,7 +139,7 @@ gulp.task('bump', function (cb) {
                 },
                 {
                     name: 'Major (Breaking Changes)',
-                    value: 'patch'
+                    value: 'major'
                 }
             ]
         },
@@ -154,7 +154,7 @@ gulp.task('bump', function (cb) {
     ];
 
     plugins.inquirer.prompt(questions, function (answers) {
-        console.log('anseers', answers);
+
         if (answers.confirm === true) {
 
             return gulp.src(['./package.json', './bower.json'])
@@ -162,7 +162,7 @@ gulp.task('bump', function (cb) {
                 .pipe(gulp.dest('./'))
                 .pipe(plugins.git.commit('chore(semver): bump '+answers.bumpType+' version'))
                 .pipe(plugins.filter('package.json'))  // read package.json for the new version
-                .pipe(plugins.tagVersion());           // create tag
+                .pipe(plugins.tagVersion())           // create tag
             ;
         }
     });
