@@ -268,6 +268,9 @@ declare module NgJwtAuth {
     }
     class NgJwtAuthServiceProvider implements ng.IServiceProvider, INgJwtAuthServiceProvider {
         private config;
+        /**
+         * Initialise the service provider
+         */
         constructor();
         /**
          * Set the configuration

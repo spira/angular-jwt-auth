@@ -418,6 +418,9 @@ var NgJwtAuth;
     })(NgJwtAuthException);
     NgJwtAuth.NgJwtAuthTokenExpiredException = NgJwtAuthTokenExpiredException;
     var NgJwtAuthServiceProvider = (function () {
+        /**
+         * Initialise the service provider
+         */
         function NgJwtAuthServiceProvider() {
             this.$get = ['$http', '$q', '$window', '$interval', function NgJwtAuthServiceFactory($http, $q, $window, $interval) {
                     return new NgJwtAuth.NgJwtAuthService(this.config, $http, $q, $window, $interval);
