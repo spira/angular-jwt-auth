@@ -52,31 +52,7 @@ let fixtures = {
 
     get token(){
 
-        return fixtures.buildToken();
-
-        //let token:NgJwtAuth.IJwtToken;
-        //token = {
-        //    header: {
-        //        alg: 'RS256',
-        //        typ: 'JWT'
-        //    },
-        //    data: {
-        //        iss: 'api.spira.io',
-        //        aud: 'spira.io',
-        //        sub: fixtures.user.userId,
-        //        iat: Number(moment().format('X')),
-        //        exp: Number(moment().add(1, 'hours').format('X')),
-        //        jti: 'random-hash',
-        //        '#user': fixtures.userResponse,
-        //    },
-        //    signature: 'this-is-the-signed-hash'
-        //};
-        //
-        //return btoa(JSON.stringify(token.data))
-        //    + '.' + btoa(JSON.stringify(token.data))
-        //    + '.' + token.signature
-        //;
-
+        return fixtures.buildToken(); //no customisations
     }
 };
 
@@ -124,26 +100,34 @@ describe('Custom configuration', function () {
 
     let authServiceProvider:NgJwtAuth.NgJwtAuthServiceProvider;
     let customAuthService:NgJwtAuth.NgJwtAuthService;
+    let partialCustomConfig:NgJwtAuth.INgJwtAuthServiceConfig = {
+        tokenLocation: 'token-custom',
+        tokenUser: '#user-custom',
+        apiEndpoints: {
+            base: '/api/auth-custom',
+            login: '/login-custom',
+            tokenExchange: '/token-custom',
+            refresh: '/refresh-custom',
+        },
+        //storageKeyName: 'NgJwtAuthToken-custom', //intentionally commented out as this will be tested to be the default
+    };
 
     beforeEach(() => {
 
         module('ngJwtAuth', (_ngJwtAuthServiceProvider_) => {
             authServiceProvider = _ngJwtAuthServiceProvider_; //register injection of service provider
 
-            authServiceProvider.setApiEndpoints({
-                base: 'mock/base/path/',
-                login: 'to/login',
-                refresh: 'to/refresh'
-            });
-
+            authServiceProvider.configure(partialCustomConfig);
         });
 
     });
 
-    it('should have the custom endpoints', () => {
-        expect((<any>authServiceProvider).config.apiEndpoints.base).to.equal('mock/base/path/');
-        expect((<any>authServiceProvider).config.apiEndpoints.login).to.equal('to/login');
-        expect((<any>authServiceProvider).config.apiEndpoints.refresh).to.equal('to/refresh');
+    it('should be able to partially configure the service provider', () => {
+
+        expect((<any>authServiceProvider).config.apiEndpoints).to.deep.equal(partialCustomConfig.apiEndpoints); //assert that the custom value has come across
+
+        expect((<any>authServiceProvider).config.storageKeyName).to.deep.equal((<any>authServiceProvider).config.storageKeyName); //assert that the default was not overridden
+
     });
 
     beforeEach(()=>{
@@ -153,7 +137,7 @@ describe('Custom configuration', function () {
     });
 
     it('should have the configured login endpoint', function() {
-        expect((<any>customAuthService).getLoginEndpoint()).to.equal('mock/base/path/to/login');
+        expect((<any>customAuthService).getLoginEndpoint()).to.equal('/api/auth-custom/login-custom');
     });
 
 });
@@ -551,7 +535,6 @@ describe('Service Reloading', () => {
                 ;
 
                 if (latestRefresh <= nextRefreshOpportunity){ //after the interval that the token should have refreshed, flush the http request
-                    console.log('flushing');
                     $httpBackend.flush();
                 }
 

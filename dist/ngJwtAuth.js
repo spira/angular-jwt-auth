@@ -426,7 +426,6 @@ var NgJwtAuth;
             this.config = {
                 tokenLocation: 'token',
                 tokenUser: '#user',
-                loginController: 'app.public.login',
                 apiEndpoints: {
                     base: '/api/auth',
                     login: '/login',
@@ -439,12 +438,12 @@ var NgJwtAuth;
             };
         }
         /**
-         * Set the API endpoints for the auth service to call
+         * Set the configuration
          * @param config
          * @returns {NgJwtAuth.NgJwtAuthServiceProvider}
          */
-        NgJwtAuthServiceProvider.prototype.setApiEndpoints = function (config) {
-            this.config.apiEndpoints = _.defaults(config, this.config.apiEndpoints);
+        NgJwtAuthServiceProvider.prototype.configure = function (config) {
+            this.config = _.defaults(config, this.config.apiEndpoints);
             return this;
         };
         return NgJwtAuthServiceProvider;

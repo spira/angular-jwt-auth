@@ -37,10 +37,14 @@ angular.module('app', ['ngJwtAuth'])
 angular.module('app', ['ngJwtAuth'])
 .config(['ngJwtAuthServiceProvider', function(ngJwtAuthServiceProvider){
     ngJwtAuthServiceProvider
-        .setApiEndpoints({
-            base: '/api/auth/jwt',
-            login: '/login',
-            refresh: '/refresh'
+        .configure({
+            tokenLocation: 'token-custom',
+            apiEndpoints: {
+                base: '/api',
+                login: '/login-custom',
+                tokenExchange: '/token-custom',
+                refresh: '/refresh-custom',
+            }
         })
     ;
 }])

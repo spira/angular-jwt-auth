@@ -16,7 +16,7 @@ module NgJwtAuth {
     }
 
     export interface INgJwtAuthServiceProvider {
-        setApiEndpoints(config:IEndpointDefinition): NgJwtAuthServiceProvider;
+        configure(config:INgJwtAuthServiceConfig): NgJwtAuthServiceProvider;
     }
 
     export interface IEndpointDefinition {
@@ -27,13 +27,12 @@ module NgJwtAuth {
     }
 
     export interface INgJwtAuthServiceConfig {
-        tokenLocation: string;
-        tokenUser: string;
-        loginController: string;
-        apiEndpoints: IEndpointDefinition;
-        storageKeyName: string;
-        refreshBeforeSeconds: number;
-        checkExpiryEverySeconds: number;
+        tokenLocation?: string;
+        tokenUser?: string;
+        apiEndpoints?: IEndpointDefinition;
+        storageKeyName?: string;
+        refreshBeforeSeconds?: number;
+        checkExpiryEverySeconds?: number;
     }
 
     export interface IJwtToken {
