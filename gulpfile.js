@@ -121,26 +121,49 @@ gulp.task('build', [
     'js:app'
 ]);
 
-gulp.task('bump', function () {
+gulp.task('bump', function (cb) {
 
     var questions = [
         {
-            type: 'input',
-            name: 'bump',
-            message: 'Are you sure you want to bump the patch version? [Y/N]'
+            type: 'list',
+            message: 'What type of release is this?',
+            name: 'bumpType',
+            choices: [
+                {
+                    name: 'Patch (minor fix, no breaking changes)',
+                    value: 'patch'
+                },
+                {
+                    name: 'Minor (minor improvement, extended functionality, no breaking changes)',
+                    value: 'minor'
+                },
+                {
+                    name: 'Major (Breaking Changes)',
+                    value: 'patch'
+                }
+            ]
+        },
+        {
+            type: 'confirm',
+            name: 'confirm',
+            message: function(answers){
+                return 'Are you sure you want to bump the '+answers.bumpType+' version?'
+            }
         }
+
     ];
 
     plugins.inquirer.prompt(questions, function (answers) {
-        if (answers.bump === 'Y') {
+        console.log('anseers', answers);
+        if (answers.confirm === true) {
 
             return gulp.src(['./package.json', './bower.json'])
-                .pipe(plugins.bump({type: 'patch'}))
+                .pipe(plugins.bump({type: answers.bumpType}))
                 .pipe(gulp.dest('./'))
-                .pipe(plugins.git.commit('bump patch version'))
+                .pipe(plugins.git.commit('chore(semver): bump '+answers.bumpType+' version'))
                 .pipe(plugins.filter('package.json'))  // read package.json for the new version
-                .pipe(tagVersion());           // create tag
-
+                .pipe(plugins.tagVersion());           // create tag
+            ;
         }
     });
 });
