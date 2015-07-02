@@ -373,13 +373,12 @@ module NgJwtAuth {
 
         /**
          * Find the user object within the path
-         * @todo resolve the return type assignment with _.get
          * @param tokenData
          * @returns {T}
          */
         private getUserFromTokenData(tokenData:IJwtToken):IUser {
 
-            return _.get(tokenData.data, this.config.tokenUser);
+            return <IUser>_.get(tokenData.data, this.config.tokenUser);
         }
 
         /**

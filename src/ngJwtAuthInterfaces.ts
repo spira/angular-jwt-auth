@@ -11,7 +11,7 @@ module NgJwtAuth {
         authenticateCredentials(username:string, password:string):ng.IPromise<Object>;
         exchangeToken(token:string):ng.IPromise<Object>;
         requireCredentialsAndAuthenticate():ng.IPromise<Object>;
-        registerCredentialPromiseFactory(currentUser:IUser):NgJwtAuthService;
+        registerCredentialPromiseFactory(promiseFactory:ICredentialPromiseFactory):NgJwtAuthService;
         logout():void;
     }
 
@@ -54,8 +54,8 @@ module NgJwtAuth {
     }
 
     export interface IUser {
-        userId?: any;
-        email?: string,
+        userId: any;
+        email: string,
         firstName?: string,
         lastName?: string,
     }
