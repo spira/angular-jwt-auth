@@ -1,7 +1,7 @@
 module.exports = function(config) {
     config.set({
 
-        frameworks: ['chai-as-promised', 'mocha', 'sinon-chai'],
+        frameworks: ['chai-as-promised', 'mocha', 'sinon', 'sinon-chai'],
         //plugins: ['karma-mocha', 'karma-phantomjs-launcher', 'karma-coverage', 'karma-sinon-chai'],
 
         preprocessors: {

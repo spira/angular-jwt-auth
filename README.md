@@ -85,31 +85,32 @@ Example using a modal from [angular-bootstrap's `$modal`](https://angular-ui.git
 
 ```js
 angular.module('app', ['ngJwtAuth'])
-.run(['ngJwtAuthService', '$modal', function(ngJwtAuthService, $modal){
-    ngJwtAuthService
-        .registerCredentialPromiseFactory(function(existingUser){
-            
-            var credentialsPromise = $modal.open({
+    .run(['ngJwtAuthService', '$modal', function(ngJwtAuthService, $modal){
+        ngJwtAuthService
+            .registerCredentialPromiseFactory(function(existingUser){
+
+                var credentialsPromise = $modal.open({
                     templateUrl : '/path/to/template.tpl.html',
                     controller: 'LoginModalCtrl',
                     size : 'md'
                 }).result;
-            };
-            
-            return credentialsPromise;
-            
-        })
-        .init(); //note that init must be called after the credential promise is registered
-    ;
-}])
-.controller('LoginModalCtrl', ['$scope', '$modal', function($scope, $modalInstance){
-    $scope.login = function (username, password) {
-        //the promise must resolve with the form {username: string, password: string}
-        $modalInstance.close({
-            username: username,
-            password: password
-        });
-    };
-}])
+
+
+                return credentialsPromise;
+
+            })
+            .init(); //note that init must be called after the credential promise is registered
+
+    }])
+    .controller('LoginModalCtrl', ['$scope', '$modal', function($scope, $modalInstance){
+        $scope.login = function (username, password) {
+            //the promise must resolve with the form {username: string, password: string}
+            $modalInstance.close({
+                username: username,
+                password: password
+            });
+        };
+    }])
+;
 
 ```

@@ -30,6 +30,8 @@ declare module NgJwtAuth {
         loginController: string;
         apiEndpoints: IEndpointDefinition;
         storageKeyName: string;
+        refreshBeforeSeconds: number;
+        checkExpiryEverySeconds: number;
     }
     interface IJwtToken {
         header: {
@@ -84,10 +86,13 @@ declare module NgJwtAuth {
         private $http;
         private $q;
         private $window;
-        loggedIn: boolean;
+        private $interval;
         private user;
         private credentialPromiseFactory;
         private currentCredentialPromise;
+        private refreshTimerPromise;
+        private tokenData;
+        loggedIn: boolean;
         rawToken: string;
         /**
          * Construct the service with dependencies injected
@@ -95,14 +100,24 @@ declare module NgJwtAuth {
          * @param _$http
          * @param _$q
          * @param _$window
+         * @param _$interval
          */
-        constructor(_config: any, _$http: ng.IHttpService, _$q: ng.IQService, _$window: ng.IWindowService);
+        constructor(_config: INgJwtAuthServiceConfig, _$http: ng.IHttpService, _$q: ng.IQService, _$window: ng.IWindowService, _$interval: ng.IIntervalService);
         /**
          * Service needs an init function so runtime configuration can occur before
          * bootstrapping the service. This allows the user supplied CredentialPromiseFactory
          * to be registered
          */
         init(): void;
+        /**
+         * Handle token refresh timer
+         */
+        private tickRefreshTime;
+        /**
+         * Check if the token needs to refresh now
+         * @returns {boolean}
+         */
+        private tokenNeedsToRefreshNow();
         /**
          * Get the endpoint for login
          * @returns {string}
@@ -261,6 +276,6 @@ declare module NgJwtAuth {
          * @returns {NgJwtAuth.NgJwtAuthServiceProvider}
          */
         setApiEndpoints(config: IEndpointDefinition): NgJwtAuthServiceProvider;
-        $get: (string | (($http: any, $q: any, $window: any) => NgJwtAuthService))[];
+        $get: (string | (($http: any, $q: any, $window: any, $interval: any) => NgJwtAuthService))[];
     }
 }

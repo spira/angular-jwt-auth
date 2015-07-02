@@ -32,6 +32,8 @@ module NgJwtAuth {
         loginController: string;
         apiEndpoints: IEndpointDefinition;
         storageKeyName: string;
+        refreshBeforeSeconds: number;
+        checkExpiryEverySeconds: number;
     }
 
     export interface IJwtToken {

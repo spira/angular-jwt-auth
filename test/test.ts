@@ -496,18 +496,67 @@ describe('Service Reloading', () => {
 
     describe('User reloaded before expiry', () => {
 
-        before(()=>{
-            window.localStorage.setItem((<any>defaultAuthServiceProvider).config.storageKeyName, fixtures.token);
 
+        let clock:Sinon.SinonFakeTimers = sinon.useFakeTimers();
+
+        after(() => {
+            clock.restore();
         });
 
         it('should use the token from storage on init', () => {
+
+            window.localStorage.setItem((<any>defaultAuthServiceProvider).config.storageKeyName, fixtures.token);
 
             ngJwtAuthService.init();
 
             let userPromise = ngJwtAuthService.getPromisedUser();
 
             expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
+            return expect(ngJwtAuthService.loggedIn).to.be.true;
+
+        });
+
+        it('should refresh the token when it is about to expire', () => {
+
+            let tokenExpirySeconds = 60 * 20; //20 mins
+
+            let expiringToken = fixtures.buildToken({
+                data: {
+                    exp: moment().add(tokenExpirySeconds, 'seconds').format('X')
+                },
+                signature: 'nearly-expired-token'
+            });
+
+            window.localStorage.setItem((<any>ngJwtAuthService).config.storageKeyName, expiringToken);
+
+            let tickIntervalSeconds = (<any>ngJwtAuthService).config.checkExpiryEverySeconds,
+                refreshBeforeSeconds = (<any>ngJwtAuthService).config.refreshBeforeSeconds,
+                intervalsToRun = (tokenExpirySeconds / tickIntervalSeconds) + 10 //make sure at least the expiry period is ticked over
+            ;
+
+            ngJwtAuthService.init(); //initialise with the default token
+
+            $httpBackend.expectGET('/api/auth/refresh', (headers) => {
+                return headers['Authorization'] == 'Bearer '+expiringToken;
+            }).respond({token: fixtures.token});
+
+            //as angular's $interval does not seem to be overidden by sinon's clock they both have to be ticked independently
+            for (let i=0; i<=intervalsToRun;i++){ //add
+                clock.tick(1000 * tickIntervalSeconds); //fast forward clock by the configured seconds
+                (<any>ngJwtAuthService).$interval.flush(1000 * tickIntervalSeconds); //fast forward intervals by the configured seconds
+
+
+                let latestRefresh = moment((<any>ngJwtAuthService).tokenData.data.exp * 1000).subtract(refreshBeforeSeconds, 'seconds'),
+                    nextRefreshOpportunity = moment().add(tickIntervalSeconds)
+                ;
+
+                if (latestRefresh <= nextRefreshOpportunity){ //after the interval that the token should have refreshed, flush the http request
+                    console.log('flushing');
+                    $httpBackend.flush();
+                }
+
+            }
+
             return expect(ngJwtAuthService.loggedIn).to.be.true;
 
         });
