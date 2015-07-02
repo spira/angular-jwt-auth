@@ -3,6 +3,7 @@ module NgJwtAuth {
     export interface INgJwtAuthService {
         loggedIn: boolean;
         rawToken:string;
+        init():void;
         isLoginMethod(url:string): boolean;
         getUser():Object;
         getPromisedUser():ng.IPromise<Object>;
@@ -10,7 +11,7 @@ module NgJwtAuth {
         authenticateCredentials(username:string, password:string):ng.IPromise<Object>;
         exchangeToken(token:string):ng.IPromise<Object>;
         requireCredentialsAndAuthenticate():ng.IPromise<Object>;
-        registerCredentialPromiseFactory(currentUser:IUser):void;
+        registerCredentialPromiseFactory(currentUser:IUser):NgJwtAuthService;
         logout():void;
     }
 
@@ -31,6 +32,8 @@ module NgJwtAuth {
         loginController: string;
         apiEndpoints: IEndpointDefinition;
         storageKeyName: string;
+        refreshBeforeSeconds: number;
+        checkExpiryEverySeconds: number;
     }
 
     export interface IJwtToken {

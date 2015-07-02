@@ -11,11 +11,17 @@ module NgJwtAuth {
         private $http: ng.IHttpService;
         private $q: ng.IQService;
         private $window: ng.IWindowService;
+        private $interval:ng.IIntervalService;
 
-        public loggedIn:boolean = false;
+        //private properties
         private user:IUser;
         private credentialPromiseFactory:ICredentialPromiseFactory;
         private currentCredentialPromise:ng.IPromise<ICredentials>;
+        private refreshTimerPromise:ng.IPromise<any>;
+        private tokenData:IJwtToken;
+
+        //public properties
+        public loggedIn:boolean = false;
         public rawToken:string;
 
         /**
@@ -24,14 +30,58 @@ module NgJwtAuth {
          * @param _$http
          * @param _$q
          * @param _$window
+         * @param _$interval
          */
-        constructor(_config, _$http: ng.IHttpService, _$q: ng.IQService, _$window: ng.IWindowService) {
+        constructor(_config:INgJwtAuthServiceConfig, _$http: ng.IHttpService, _$q: ng.IQService, _$window: ng.IWindowService, _$interval: ng.IIntervalService) {
 
             this.config = _config;
             this.$http = _$http;
             this.$q = _$q;
             this.$window = _$window;
+            this.$interval = _$interval;
 
+        }
+
+        /**
+         * Service needs an init function so runtime configuration can occur before
+         * bootstrapping the service. This allows the user supplied CredentialPromiseFactory
+         * to be registered
+         */
+        public init():void {
+
+            //attempt to load the token from storage
+            this.loadTokenFromStorage();
+
+            this.refreshTimerPromise = this.$interval(this.tickRefreshTime, this.config.checkExpiryEverySeconds * 1000, null, false);
+        }
+
+        /**
+         * Handle token refresh timer
+         */
+        private tickRefreshTime = ():void => {
+
+            if (this.tokenNeedsToRefreshNow()){
+                this.refreshToken();
+            }
+
+        };
+
+        /**
+         * Check if the token needs to refresh now
+         * @returns {boolean}
+         */
+        private tokenNeedsToRefreshNow():boolean {
+
+            if (!this.rawToken){
+                return false; //cant refresh if there isn't a token
+            }
+
+            let latestRefresh = moment(this.tokenData.data.exp * 1000).subtract(this.config.refreshBeforeSeconds, 'seconds'),
+                nextRefreshOpportunity = moment().add(this.config.checkExpiryEverySeconds)
+            ;
+
+            //needs to refresh if the the next time we could refresh is after the configured refresh before date
+            return (latestRefresh <= nextRefreshOpportunity);
         }
 
         /**
@@ -112,11 +162,8 @@ module NgJwtAuth {
 
                 try {
 
-                    this.user = this.processNewToken(token);
+                    return this.processNewToken(token);
 
-                    this.loggedIn = true;
-
-                    return this.user;
                 }catch(error){
                     return this.$q.reject(error);
                 }
@@ -166,18 +213,45 @@ module NgJwtAuth {
 
             this.rawToken = rawToken;
 
-            var tokenData = NgJwtAuthService.readToken(rawToken);
+            this.tokenData = NgJwtAuthService.readToken(rawToken);
 
-            var expiryDate = moment(tokenData.data.exp * 1000);
+            var expiryDate = moment(this.tokenData.data.exp * 1000);
 
-            var expiryInSeconds = expiryDate.diff(moment(), 'seconds');
+            if (expiryDate < moment()){
+                throw new NgJwtAuthTokenExpiredException("Token has expired");
+            }
 
             this.saveTokenToStorage(rawToken);
 
             this.setJWTHeader(rawToken);
 
-            return this.getUserFromTokenData(tokenData);
+            this.loggedIn = true;
 
+            this.user = this.getUserFromTokenData(this.tokenData);
+
+            return this.user;
+
+        }
+
+        private loadTokenFromStorage():boolean {
+
+            let rawToken = this.$window.localStorage.getItem(this.config.storageKeyName);
+
+            if (!rawToken){
+                return false;
+            }
+
+            try {
+                this.processNewToken(rawToken);
+                return true;
+            }catch(e){
+                if (e instanceof NgJwtAuthTokenExpiredException){
+                    this.requireCredentialsAndAuthenticate();
+
+                }
+            }
+
+            return false;
         }
 
         /**
@@ -278,6 +352,10 @@ module NgJwtAuth {
          */
         public requireCredentialsAndAuthenticate():ng.IPromise<IUser>{
 
+            if (!_.isFunction(this.credentialPromiseFactory)){
+                throw new NgJwtAuthException("You must set a credentialPromiseFactory with `ngJwtAuthService.registerCredentialPromiseFactory()` so the user can be prompted for their credentials");
+            }
+
             if (!this.currentCredentialPromise){
                 this.currentCredentialPromise = this.credentialPromiseFactory(this.user);
             }
@@ -349,11 +427,13 @@ module NgJwtAuth {
          * Register the user provided credential promise factory
          * @param promiseFactory
          */
-        public registerCredentialPromiseFactory(promiseFactory:ICredentialPromiseFactory):void {
+        public registerCredentialPromiseFactory(promiseFactory:ICredentialPromiseFactory):NgJwtAuthService {
             if (_.isFunction(this.credentialPromiseFactory)){
                 throw new NgJwtAuthException("You cannot redeclare the credential promise factory");
             }
             this.credentialPromiseFactory = promiseFactory;
+
+            return this;
         }
 
         /**

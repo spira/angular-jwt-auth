@@ -26,6 +26,8 @@ module NgJwtAuth {
         }
     }
 
+    export class NgJwtAuthTokenExpiredException extends NgJwtAuthException{}
+
     export class NgJwtAuthServiceProvider implements ng.IServiceProvider, INgJwtAuthServiceProvider {
 
         private config: INgJwtAuthServiceConfig;
@@ -44,6 +46,8 @@ module NgJwtAuth {
                     refresh: '/refresh',
                 },
                 storageKeyName: 'NgJwtAuthToken',
+                refreshBeforeSeconds: 60 * 2, //2 mins
+                checkExpiryEverySeconds: 60, //2 mins
             };
 
         }
@@ -58,8 +62,8 @@ module NgJwtAuth {
             return this;
         }
 
-        public $get = ['$http', '$q', '$window', function NgJwtAuthServiceFactory($http, $q, $window) {
-            return new NgJwtAuthService(this.config, $http, $q, $window);
+        public $get = ['$http', '$q', '$window', '$interval', function NgJwtAuthServiceFactory($http, $q, $window, $interval) {
+            return new NgJwtAuthService(this.config, $http, $q, $window, $interval);
         }];
 
     }

@@ -4,6 +4,7 @@ declare module NgJwtAuth {
     interface INgJwtAuthService {
         loggedIn: boolean;
         rawToken: string;
+        init(): void;
         isLoginMethod(url: string): boolean;
         getUser(): Object;
         getPromisedUser(): ng.IPromise<Object>;
@@ -11,7 +12,7 @@ declare module NgJwtAuth {
         authenticateCredentials(username: string, password: string): ng.IPromise<Object>;
         exchangeToken(token: string): ng.IPromise<Object>;
         requireCredentialsAndAuthenticate(): ng.IPromise<Object>;
-        registerCredentialPromiseFactory(currentUser: IUser): void;
+        registerCredentialPromiseFactory(currentUser: IUser): NgJwtAuthService;
         logout(): void;
     }
     interface INgJwtAuthServiceProvider {
@@ -29,6 +30,8 @@ declare module NgJwtAuth {
         loginController: string;
         apiEndpoints: IEndpointDefinition;
         storageKeyName: string;
+        refreshBeforeSeconds: number;
+        checkExpiryEverySeconds: number;
     }
     interface IJwtToken {
         header: {
@@ -83,10 +86,13 @@ declare module NgJwtAuth {
         private $http;
         private $q;
         private $window;
-        loggedIn: boolean;
+        private $interval;
         private user;
         private credentialPromiseFactory;
         private currentCredentialPromise;
+        private refreshTimerPromise;
+        private tokenData;
+        loggedIn: boolean;
         rawToken: string;
         /**
          * Construct the service with dependencies injected
@@ -94,8 +100,24 @@ declare module NgJwtAuth {
          * @param _$http
          * @param _$q
          * @param _$window
+         * @param _$interval
          */
-        constructor(_config: any, _$http: ng.IHttpService, _$q: ng.IQService, _$window: ng.IWindowService);
+        constructor(_config: INgJwtAuthServiceConfig, _$http: ng.IHttpService, _$q: ng.IQService, _$window: ng.IWindowService, _$interval: ng.IIntervalService);
+        /**
+         * Service needs an init function so runtime configuration can occur before
+         * bootstrapping the service. This allows the user supplied CredentialPromiseFactory
+         * to be registered
+         */
+        init(): void;
+        /**
+         * Handle token refresh timer
+         */
+        private tickRefreshTime;
+        /**
+         * Check if the token needs to refresh now
+         * @returns {boolean}
+         */
+        private tokenNeedsToRefreshNow();
         /**
          * Get the endpoint for login
          * @returns {string}
@@ -147,6 +169,7 @@ declare module NgJwtAuth {
          * @returns {IUser}
          */
         processNewToken(rawToken: string): IUser;
+        private loadTokenFromStorage();
         /**
          * Check if the endpoint is a login method (used for skipping the authentication error interceptor)
          * @param url
@@ -223,7 +246,7 @@ declare module NgJwtAuth {
          * Register the user provided credential promise factory
          * @param promiseFactory
          */
-        registerCredentialPromiseFactory(promiseFactory: ICredentialPromiseFactory): void;
+        registerCredentialPromiseFactory(promiseFactory: ICredentialPromiseFactory): NgJwtAuthService;
         /**
          * Clear the token and service properties
          */
@@ -242,6 +265,8 @@ declare module NgJwtAuth {
         constructor(message: string);
         toString(): string;
     }
+    class NgJwtAuthTokenExpiredException extends NgJwtAuthException {
+    }
     class NgJwtAuthServiceProvider implements ng.IServiceProvider, INgJwtAuthServiceProvider {
         private config;
         constructor();
@@ -251,6 +276,6 @@ declare module NgJwtAuth {
          * @returns {NgJwtAuth.NgJwtAuthServiceProvider}
          */
         setApiEndpoints(config: IEndpointDefinition): NgJwtAuthServiceProvider;
-        $get: (string | (($http: any, $q: any, $window: any) => NgJwtAuthService))[];
+        $get: (string | (($http: any, $q: any, $window: any, $interval: any) => NgJwtAuthService))[];
     }
 }

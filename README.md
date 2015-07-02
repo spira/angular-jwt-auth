@@ -46,10 +46,19 @@ angular.module('app', ['ngJwtAuth'])
 }])
 ```
 
-* Inject the `ngJwtAuthService` and use it!
+* Inject the `ngJwtAuthService`, initialise it then use it!
+The init function loads any existing token from storage and kicks off the $interval that
+monitors the expiry status of the token.
+
+It is _highly_ recommended that you register a credential promise factory (See below), as 
+this will allow the interceptor to prompt your users for their login details when an api
+request that returns status code 401.
 
 ```js
 angular.module('app', ['ngJwtAuth'])
+.run(['ngJwtAuthService', function(ngJwtAuthService){
+    ngJwtAuthService.init();
+}])
 .controller('AppCtrl', ['ngJwtAuthService', function(ngJwtAuthService){
     
     $scope.login = function(username, password){
@@ -76,30 +85,32 @@ Example using a modal from [angular-bootstrap's `$modal`](https://angular-ui.git
 
 ```js
 angular.module('app', ['ngJwtAuth'])
-.run(['ngJwtAuthService', '$modal', function(ngJwtAuthService, $modal){
-    ngJwtAuthServiceProvider
-        .registerCredentialPromiseFactory(function(existingUser){
-            
-            var credentialsPromise = $modal.open({
+    .run(['ngJwtAuthService', '$modal', function(ngJwtAuthService, $modal){
+        ngJwtAuthService
+            .registerCredentialPromiseFactory(function(existingUser){
+
+                var credentialsPromise = $modal.open({
                     templateUrl : '/path/to/template.tpl.html',
                     controller: 'LoginModalCtrl',
                     size : 'md'
                 }).result;
-            };
-            
-            return credentialsPromise;
-            
-        })
-    ;
-}])
-.controller('LoginModalCtrl', ['$scope', '$modal', function($scope, $modalInstance){
-    $scope.login = function (username, password) {
-        //the promise must resolve with the form {username: string, password: string}
-        $modalInstance.close({
-            username: username,
-            password: password
-        });
-    };
-}])
+
+
+                return credentialsPromise;
+
+            })
+            .init(); //note that init must be called after the credential promise is registered
+
+    }])
+    .controller('LoginModalCtrl', ['$scope', '$modal', function($scope, $modalInstance){
+        $scope.login = function (username, password) {
+            //the promise must resolve with the form {username: string, password: string}
+            $modalInstance.close({
+                username: username,
+                password: password
+            });
+        };
+    }])
+;
 
 ```
