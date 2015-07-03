@@ -1,5 +1,5 @@
 {
-  "name": "ng-jwt-auth",
+  "name": "angular-jwt-auth",
   "version": "1.0.2",
   "description": "Angular JSON Web Token Authentication Module",
   "main": "dist/ngJwtAuth.js",
