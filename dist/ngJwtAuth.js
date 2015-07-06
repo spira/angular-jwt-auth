@@ -317,7 +317,6 @@ var NgJwtAuth;
         };
         /**
          * Find the user object within the path
-         * @todo resolve the return type assignment with _.get
          * @param tokenData
          * @returns {T}
          */

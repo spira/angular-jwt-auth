@@ -81,13 +81,4 @@ module NgJwtAuth {
         }])
     ;
 
-    //angular.module('ngJwtAuth.interceptor', [])
-    //    .service('ngJwtAuthInterceptor', NgJwtAuthInterceptor)
-    //    .config(['$httpProvider', '$injector', ($httpProvider:ng.IHttpProvider) => {
-    //
-    //        $httpProvider.interceptors.push('ngJwtAuthInterceptor');
-    //    }])
-    //;
-
-
 }
