@@ -3,6 +3,10 @@
   "version": "1.0.3",
   "description": "Angular JSON Web Token Authentication Module",
   "main": "dist/ngJwtAuth.js",
+  "scripts": {
+    "test": "gulp test",
+    "postinstall": "./node_modules/.bin/tsd reinstall --config tsd.json"
+  },
   "dependencies": {},
   "devDependencies": {
     "bower": "^1.4.1",
