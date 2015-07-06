@@ -51,6 +51,7 @@
     "requirejs": "^2.1.18",
     "run-sequence": "^1.1.1",
     "sinon": "^1.15.4",
+    "tsd": "^0.6.3",
     "typescript": "^1.5.0-beta"
   }
 }
