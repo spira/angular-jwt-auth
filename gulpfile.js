@@ -96,6 +96,7 @@ gulp.task('js:app', function () {
     return gulp.src(sources.app.ts)
         .pipe(plugins.tsc({
             sourceMap: true,
+            sourceRoot: __dirname+'/src/',
             declaration: true,
             keepTree: false,
             out: path.basename(bowerJson.main),
