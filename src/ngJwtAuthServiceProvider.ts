@@ -1,9 +1,3 @@
-/// <reference path="../typings/lodash/lodash.d.ts" />
-/// <reference path="../typings/angularjs/angular.d.ts" />
-/// <reference path="./ngJwtAuthInterfaces.ts" />
-/// <reference path="./ngJwtAuthService.ts" />
-/// <reference path="./ngJwtAuthInterceptor.ts" />
-
 module NgJwtAuth {
 
     export declare class Error {

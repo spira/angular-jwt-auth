@@ -1,5 +1,21 @@
-/// <reference path="../typings/lodash/lodash.d.ts" />
-/// <reference path="../typings/angularjs/angular.d.ts" />
+/// <reference path="../typings/tsd.d.ts" />
+declare module NgJwtAuth {
+    class NgJwtAuthInterceptor {
+        private $http;
+        private $q;
+        private $injector;
+        private ngJwtAuthService;
+        /**
+         * Construct the service with dependencies injected
+         * @param _$q
+         * @param _$injector
+         */
+        static $inject: string[];
+        constructor(_$q: ng.IQService, _$injector: ng.auto.IInjectorService);
+        private getNgJwtAuthService;
+        responseError: (rejection: any) => any;
+    }
+}
 declare module NgJwtAuth {
     interface INgJwtAuthService {
         loggedIn: boolean;
@@ -60,23 +76,6 @@ declare module NgJwtAuth {
     }
     interface ICredentialPromiseFactory {
         (currentUser: IUser): ng.IPromise<ICredentials>;
-    }
-}
-declare module NgJwtAuth {
-    class NgJwtAuthInterceptor {
-        private $http;
-        private $q;
-        private $injector;
-        private ngJwtAuthService;
-        /**
-         * Construct the service with dependencies injected
-         * @param _$q
-         * @param _$injector
-         */
-        static $inject: string[];
-        constructor(_$q: ng.IQService, _$injector: ng.auto.IInjectorService);
-        private getNgJwtAuthService;
-        responseError: (rejection: any) => any;
     }
 }
 declare module NgJwtAuth {
