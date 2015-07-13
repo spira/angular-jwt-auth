@@ -1,15 +1,16 @@
+sudo: false #use container based infrastructure
 language: node_js
 node_js:
   - "0.12"
 
-before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -y libnotify-bin
+addons:
+  apt:
+    sources:
+      - libnotify-bin
 
 install:
-  - travis_retry npm install -g gulp bower
+  - travis_retry npm install -g gulp
   - travis_retry npm install
-  - travis_retry bower install
 
 script:
   - gulp test
