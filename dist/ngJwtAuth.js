@@ -1,6 +1,3 @@
-/// <reference path="../typings/lodash/lodash.d.ts" />
-/// <reference path="../typings/angularjs/angular.d.ts" />
-/// <reference path="./ngJwtAuthInterfaces.ts" />
 var NgJwtAuth;
 (function (NgJwtAuth) {
     var NgJwtAuthInterceptor = (function () {
@@ -36,9 +33,7 @@ var NgJwtAuth;
     })();
     NgJwtAuth.NgJwtAuthInterceptor = NgJwtAuthInterceptor;
 })(NgJwtAuth || (NgJwtAuth = {}));
-/// <reference path="../typings/lodash/lodash.d.ts" />
-/// <reference path="../typings/angularjs/angular.d.ts" />
-/// <reference path="./ngJwtAuthInterfaces.ts" />
+/// <reference path="../typings/tsd.d.ts" />
 var NgJwtAuth;
 (function (NgJwtAuth) {
     var NgJwtAuthService = (function () {
@@ -380,11 +375,6 @@ var NgJwtAuth;
     })();
     NgJwtAuth.NgJwtAuthService = NgJwtAuthService;
 })(NgJwtAuth || (NgJwtAuth = {}));
-/// <reference path="../typings/lodash/lodash.d.ts" />
-/// <reference path="../typings/angularjs/angular.d.ts" />
-/// <reference path="./ngJwtAuthInterfaces.ts" />
-/// <reference path="./ngJwtAuthService.ts" />
-/// <reference path="./ngJwtAuthInterceptor.ts" />
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -458,4 +448,5 @@ var NgJwtAuth;
             $httpProvider.interceptors.push('ngJwtAuthInterceptor');
         }]);
 })(NgJwtAuth || (NgJwtAuth = {}));
+
 //# sourceMappingURL=ngJwtAuth.js.map
