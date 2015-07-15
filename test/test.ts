@@ -114,11 +114,23 @@ describe('Custom configuration', function () {
 
     beforeEach(() => {
 
+        console.log('partialCustomConfig', partialCustomConfig);
+
         module('ngJwtAuth', (_ngJwtAuthServiceProvider_) => {
             authServiceProvider = _ngJwtAuthServiceProvider_; //register injection of service provider
 
             authServiceProvider.configure(partialCustomConfig);
         });
+
+    });
+
+    it('should throw an exception when invalid configuration is passed', () => {
+
+        let testInvalidConfigurationFn = () => {
+            authServiceProvider.configure(<any>{invalid:'config'});
+        };
+
+        expect(testInvalidConfigurationFn).to.throw(NgJwtAuth.NgJwtAuthException);
 
     });
 
