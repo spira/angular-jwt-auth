@@ -186,6 +186,13 @@ var NgJwtAuth;
             return jwt;
         };
         /**
+         * Prompt user for their login credentials, and attempt to login
+         * @returns {ng.IPromise<IUser>}
+         */
+        NgJwtAuthService.prototype.promptLogin = function () {
+            return this.requireCredentialsAndAuthenticate();
+        };
+        /**
          * Read and save the raw token to storage, kick off timer to attempt refresh
          * @param rawToken
          * @returns {IUser}

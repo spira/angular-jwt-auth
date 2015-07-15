@@ -22,6 +22,7 @@ declare module NgJwtAuth {
         rawToken: string;
         init(): void;
         isLoginMethod(url: string): boolean;
+        promptLogin(): ng.IPromise<Object>;
         getUser(): Object;
         getPromisedUser(): ng.IPromise<Object>;
         processNewToken(rawToken: string): IUser;
@@ -161,6 +162,11 @@ declare module NgJwtAuth {
          * @returns {IJwtToken}
          */
         private static readToken(rawToken);
+        /**
+         * Prompt user for their login credentials, and attempt to login
+         * @returns {ng.IPromise<IUser>}
+         */
+        promptLogin(): angular.IPromise<Object>;
         /**
          * Read and save the raw token to storage, kick off timer to attempt refresh
          * @param rawToken

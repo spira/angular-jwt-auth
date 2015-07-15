@@ -7,6 +7,7 @@ module NgJwtAuth {
         rawToken:string;
         init():void;
         isLoginMethod(url:string): boolean;
+        promptLogin():ng.IPromise<Object>;
         getUser():Object;
         getPromisedUser():ng.IPromise<Object>;
         processNewToken(rawToken:string): IUser;
