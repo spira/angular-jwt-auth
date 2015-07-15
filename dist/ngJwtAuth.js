@@ -435,7 +435,11 @@ var NgJwtAuth;
          * @returns {NgJwtAuth.NgJwtAuthServiceProvider}
          */
         NgJwtAuthServiceProvider.prototype.configure = function (config) {
-            this.config = _.defaults(config, this.config.apiEndpoints);
+            var mismatchedConfig = _.difference(_.keys(config), _.keys(this.config));
+            if (mismatchedConfig.length > 0) {
+                throw new NgJwtAuthException("Invalid properties [" + mismatchedConfig.join(',') + "] passed to config)");
+            }
+            this.config = _.defaults(config, this.config);
             return this;
         };
         return NgJwtAuthServiceProvider;

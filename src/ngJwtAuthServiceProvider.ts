@@ -54,7 +54,13 @@ module NgJwtAuth {
          * @returns {NgJwtAuth.NgJwtAuthServiceProvider}
          */
         public configure(config:IEndpointDefinition) : NgJwtAuthServiceProvider {
-            this.config = _.defaults(config, this.config.apiEndpoints);
+
+            let mismatchedConfig = _.difference(_.keys(config), _.keys(this.config));
+            if (mismatchedConfig.length > 0){
+                throw new NgJwtAuthException("Invalid properties ["+mismatchedConfig.join(',')+"] passed to config)");
+            }
+
+            this.config = _.defaults(config, this.config);
             return this;
         }
 
