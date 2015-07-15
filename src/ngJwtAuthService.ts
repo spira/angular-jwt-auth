@@ -201,6 +201,15 @@ module NgJwtAuth {
         }
 
         /**
+         * Prompt user for their login credentials, and attempt to login
+         * @returns {ng.IPromise<IUser>}
+         */
+        public promptLogin():angular.IPromise<Object> {
+
+            return this.requireCredentialsAndAuthenticate();
+        }
+
+        /**
          * Read and save the raw token to storage, kick off timer to attempt refresh
          * @param rawToken
          * @returns {IUser}
