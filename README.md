@@ -139,7 +139,9 @@ module app.guest.login {
                         clickOutsideToClose: true,
                         locals : {
                             deferredCredentials: deferredCredentials,
-                            loginSuccessPromise: loginSuccessPromise,
+                            loginSuccess: {
+                                promise: loginSuccessPromise //nest the promise in a function as otherwise material will try to wait for it to resolve
+                            },
                         }
                     };
 
@@ -157,16 +159,17 @@ module app.guest.login {
     {
         login(username:string, password:string):void;
         cancelLoginDialog():void;
+        loginError:string;
     }
 
     class LoginController {
 
-        static $inject = ['$scope', '$mdDialog', 'deferredCredentials'];
+        static $inject = ['$scope', '$mdDialog', 'deferredCredentials', 'loginSuccess'];
         constructor(
             private $scope : IScope,
             private $mdDialog:ng.material.IDialogService,
             private deferredCredentials:ng.IDeferred<NgJwtAuth.ICredentials>,
-            private loginSuccessPromise:ng.IPromise<NgJwtAuth.IUser>
+            private loginSuccess:{promise:ng.IPromise<NgJwtAuth.IUser>}
         ) {
 
             $scope.login = (username, password) => {
@@ -176,20 +179,22 @@ module app.guest.login {
                     password: password,
                 };
 
-                deferredCredentials.resolve(credentials);
+                deferredCredentials.resolve(credentials); //resolve the deferred credentials with the passed creds
 
-                loginSuccessPromise
+                loginSuccess.promise
                     .then(
                         (user) => $mdDialog.hide(user), //on success hide the dialog, pass through the returned user object
-                        (err) => {
-                            console.error(err); //@todo display the error to the user. This will be something like password incorrect
+                        (err:Error) => {
+                            if (err instanceof NgJwtAuth.NgJwtAuthException){
+                                $scope.loginError = err.message; //if the is an auth exception, show the value to the user
+                            }
                         }
                     )
                 ;
 
             };
 
-            $scope.cancelLoginDialog = () => $mdDialog.cancel();
+            $scope.cancelLoginDialog = () => $mdDialog.cancel(); //allow the user to manually close the dialog
 
         }
 
