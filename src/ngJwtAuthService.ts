@@ -12,7 +12,10 @@ module NgJwtAuth {
         //private properties
         private user:IUser;
         private credentialPromiseFactory:ICredentialPromiseFactory;
-        private currentCredentialPromise:ng.IPromise<ICredentials>;
+
+        private loginPromptFactory:ILoginPromptFactory;
+        private userLoggedInPromise:ng.IPromise<any>;
+
         private refreshTimerPromise:ng.IPromise<any>;
         private tokenData:IJwtToken;
 
@@ -287,11 +290,7 @@ module NgJwtAuth {
             if (this.loggedIn){ //if we are already logged in, resolve the user immediately
                 return this.$q.when(this.user);
             }else{ //otherwise require login then return the user
-                return this.requireCredentialsAndAuthenticate()
-                    .then(function(authenticatedUser:IUser){
-                        return authenticatedUser;
-                    })
-                ;
+                return this.requireCredentialsAndAuthenticate();
             }
 
         }
@@ -357,24 +356,38 @@ module NgJwtAuth {
          */
         public requireCredentialsAndAuthenticate():ng.IPromise<IUser>{
 
-            if (!_.isFunction(this.credentialPromiseFactory)){
-                throw new NgJwtAuthException("You must set a credentialPromiseFactory with `ngJwtAuthService.registerCredentialPromiseFactory()` so the user can be prompted for their credentials");
+            if (!_.isFunction(this.loginPromptFactory)){
+                throw new NgJwtAuthException("You must set a loginPromptFactory with `ngJwtAuthService.registerLoginPromptFactory()` so the user can be prompted for their credentials");
             }
 
-            if (!this.currentCredentialPromise){
-                this.currentCredentialPromise = this.credentialPromiseFactory(this.user);
+            if (!this.userLoggedInPromise){
+                let deferredCredentials = this.$q.defer();
+
+                let loginSuccessPromise = deferredCredentials.promise
+                    .then((credentials:ICredentials) => {
+
+                        return this.authenticateCredentials(credentials.username, credentials.password);
+                    })
+                ;
+
+                this.userLoggedInPromise = this.loginPromptFactory(deferredCredentials, loginSuccessPromise, this.user)
+                    .then(() => {
+                        return loginSuccessPromise;
+                    })
+                ;
+
             }
 
-            return this.currentCredentialPromise
-                .then((credentials:ICredentials) => {
-
-                    return this.authenticateCredentials(credentials.username, credentials.password);
+            return this.userLoggedInPromise
+                .then(() => {
+                    return this.getUser();
                 })
                 .finally(() => {
 
-                    if (this.currentCredentialPromise){ //if there are any credential promises outstanding, delete them
-                        this.currentCredentialPromise = null;
+                    if (!!this.userLoggedInPromise){ //deregister the userLoggedInPromise
+                        this.userLoggedInPromise = null;
                     }
+
                 })
             ;
 
@@ -440,6 +453,22 @@ module NgJwtAuth {
                 throw new NgJwtAuthException("You cannot redeclare the credential promise factory");
             }
             this.credentialPromiseFactory = promiseFactory;
+
+            return this;
+        }
+
+        /**
+         * Register the login prompt factory
+         * @param loginPromptFactory
+         * @returns {NgJwtAuth.NgJwtAuthService}
+         */
+        public registerLoginPromptFactory(loginPromptFactory:ILoginPromptFactory):NgJwtAuthService {
+
+            if (_.isFunction(this.loginPromptFactory)){
+                throw new NgJwtAuthException("You cannot redeclare the login prompt factory");
+            }
+
+            this.loginPromptFactory = loginPromptFactory;
 
             return this;
         }

@@ -311,7 +311,7 @@ describe('Service tests', () => {
 
     });
 
-    describe('Require login', () => {
+    describe.skip('Require login', () => {
 
         let $q;
         let rejectPromise = false;
@@ -461,6 +461,148 @@ describe('Service tests', () => {
 
     });
 
+    describe('Login prompt', () => {
+
+        let $q;
+        let rejectPromise = false;
+        let spy = {
+            loginPromptFactory: (deferredCredentials:ng.IDeferred<NgJwtAuth.ICredentials>, loginSuccessPromise:ng.IPromise<NgJwtAuth.IUser>, currentUser:NgJwtAuth.IUser): ng.IPromise<any> => {
+
+                let credentials:NgJwtAuth.ICredentials = {
+                    username: fixtures.user.email,
+                    password: fixtures.user.password,
+                };
+
+                if (rejectPromise){
+                    return $q.reject('rejected');
+                }
+
+                deferredCredentials.resolve(credentials);
+
+                return $q.when(true); //immediately resolve
+            }
+        };
+
+        sinon.spy(spy, 'loginPromptFactory');
+
+        beforeEach(() => {
+            $q = (<any>ngJwtAuthService).$q;
+        });
+
+        it('should throw an exception when a login prompt factory is not set', () => {
+
+            let testLoginPromptFactoryFn = () => {
+                ngJwtAuthService.promptLogin();
+            };
+
+            expect(testLoginPromptFactoryFn).to.throw(NgJwtAuth.NgJwtAuthException);
+
+        });
+
+        it('should be able to set a login prompt factory', () => {
+
+            //set credential promise factory
+            ngJwtAuthService.registerLoginPromptFactory(spy.loginPromptFactory);
+
+            expect(spy.loginPromptFactory).not.to.have.been.called;
+
+        });
+
+        it('should not be able to re-set a login prompt factory', () => {
+
+            //set credential promise factory
+            let setFactoryFn = () => {
+                ngJwtAuthService.registerLoginPromptFactory(() => $q.when(true));
+            };
+
+
+            expect(setFactoryFn).to.throw(NgJwtAuth.NgJwtAuthException);
+
+        });
+
+        it('should prompt a login promise to be resolved when a 401 occurs, then retry the method', () => {
+            $httpBackend.expectGET('/any').respond(401);
+
+            let $http = (<any>ngJwtAuthService).$http; //get the injected http method
+
+            $http.get('/any'); //try to get a resource
+
+            $httpBackend.expectGET('/api/auth/login', (headers) => {
+                return headers['Authorization'] == fixtures.authBasic;
+            }).respond({token: fixtures.token});
+
+            $httpBackend.expectGET('/any').respond('ok');
+
+            $httpBackend.flush();
+
+            expect(spy.loginPromptFactory).to.have.been.calledOnce;
+
+        });
+
+
+        it('should be able to wait for a user to authenticate to get a user object', () => {
+
+            ngJwtAuthService.logout(); //make sure that the service is not logged in.
+
+            $httpBackend.expectGET('/api/auth/login', (headers) => {
+                return headers['Authorization'] == fixtures.authBasic;
+            }).respond({token: fixtures.token});
+
+
+            let userPromise = ngJwtAuthService.getPromisedUser();
+
+            let loginStatusPromise = userPromise.then(() => {
+                return ngJwtAuthService.loggedIn;
+            });
+
+            expect(loginStatusPromise).eventually.to.be.true;
+
+            expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
+
+            $httpBackend.flush();
+
+            expect(spy.loginPromptFactory).to.have.been.calledTwice;
+
+        });
+
+        it('should prompt the login prompt factory for credentials when requested and log out when request rejected', () => {
+
+            rejectPromise = true;
+
+            let userPromise = ngJwtAuthService.promptLogin();
+
+            let loginStatusPromise = userPromise.then(() => {
+                return ngJwtAuthService.loggedIn;
+            });
+
+            expect(userPromise).to.eventually.be.rejectedWith('rejected');
+
+            expect(spy.loginPromptFactory).to.have.been.calledThrice;
+
+            expect(loginStatusPromise).eventually.to.be.false;
+
+        });
+
+        it('should prompt the login prompt factory for credentials when requested', () => {
+
+            rejectPromise = false;
+
+            $httpBackend.expectGET('/api/auth/login', (headers) => {
+                return headers['Authorization'] == fixtures.authBasic;
+            }).respond({token: fixtures.token});
+
+            let userPromise = ngJwtAuthService.promptLogin();
+
+            expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
+
+            $httpBackend.flush();
+
+            expect(spy.loginPromptFactory).to.have.callCount(4);
+
+        });
+
+    });
+
 
     describe('Authenticate with token', () => {
 
@@ -537,13 +679,17 @@ describe('Service Reloading', () => {
 
         let $q = (<any>ngJwtAuthService).$q;
 
-        ngJwtAuthService.registerCredentialPromiseFactory((currentUser:NgJwtAuth.IUser):ng.IPromise<NgJwtAuth.ICredentials> => {
+
+        ngJwtAuthService.registerLoginPromptFactory((deferredCredentials:ng.IDeferred<NgJwtAuth.ICredentials>, loginSuccessPromise:ng.IPromise<NgJwtAuth.IUser>, currentUser:NgJwtAuth.IUser): ng.IPromise<any> => {
+
             let credentials:NgJwtAuth.ICredentials = {
                 username: fixtures.user.email,
                 password: fixtures.user.password,
             };
 
-            return $q.when(credentials); //immediately resolve
+            deferredCredentials.resolve(credentials);
+
+            return $q.when(true); //immediately resolve
         });
 
     });

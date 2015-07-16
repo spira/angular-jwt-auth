@@ -30,6 +30,7 @@ declare module NgJwtAuth {
         exchangeToken(token: string): ng.IPromise<Object>;
         requireCredentialsAndAuthenticate(): ng.IPromise<Object>;
         registerCredentialPromiseFactory(promiseFactory: ICredentialPromiseFactory): NgJwtAuthService;
+        registerLoginPromptFactory(promiseFactory: ILoginPromptFactory): NgJwtAuthService;
         logout(): void;
     }
     interface INgJwtAuthServiceProvider {
@@ -78,6 +79,9 @@ declare module NgJwtAuth {
     interface ICredentialPromiseFactory {
         (currentUser: IUser): ng.IPromise<ICredentials>;
     }
+    interface ILoginPromptFactory {
+        (deferredCredentials: ng.IDeferred<ICredentials>, loginSuccessPromise: ng.IPromise<IUser>, currentUser: IUser): ng.IPromise<any>;
+    }
 }
 declare module NgJwtAuth {
     class NgJwtAuthService implements INgJwtAuthService {
@@ -88,7 +92,8 @@ declare module NgJwtAuth {
         private $interval;
         private user;
         private credentialPromiseFactory;
-        private currentCredentialPromise;
+        private loginPromptFactory;
+        private userLoggedInPromise;
         private refreshTimerPromise;
         private tokenData;
         loggedIn: boolean;
@@ -250,6 +255,12 @@ declare module NgJwtAuth {
          * @param promiseFactory
          */
         registerCredentialPromiseFactory(promiseFactory: ICredentialPromiseFactory): NgJwtAuthService;
+        /**
+         * Register the login prompt factory
+         * @param loginPromptFactory
+         * @returns {NgJwtAuth.NgJwtAuthService}
+         */
+        registerLoginPromptFactory(loginPromptFactory: ILoginPromptFactory): NgJwtAuthService;
         /**
          * Clear the token and service properties
          */
