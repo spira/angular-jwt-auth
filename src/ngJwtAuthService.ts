@@ -11,7 +11,6 @@ module NgJwtAuth {
 
         //private properties
         private user:IUser;
-        private credentialPromiseFactory:ICredentialPromiseFactory;
 
         private loginPromptFactory:ILoginPromptFactory;
         private userLoggedInPromise:ng.IPromise<any>;
@@ -43,7 +42,7 @@ module NgJwtAuth {
 
         /**
          * Service needs an init function so runtime configuration can occur before
-         * bootstrapping the service. This allows the user supplied CredentialPromiseFactory
+         * bootstrapping the service. This allows the user supplied LoginPromptFactory
          * to be registered
          */
         public init():void {
@@ -442,19 +441,6 @@ module NgJwtAuth {
                     return this.$http(rejection.config);
                 })
             ;
-        }
-
-        /**
-         * Register the user provided credential promise factory
-         * @param promiseFactory
-         */
-        public registerCredentialPromiseFactory(promiseFactory:ICredentialPromiseFactory):NgJwtAuthService {
-            if (_.isFunction(this.credentialPromiseFactory)){
-                throw new NgJwtAuthException("You cannot redeclare the credential promise factory");
-            }
-            this.credentialPromiseFactory = promiseFactory;
-
-            return this;
         }
 
         /**
