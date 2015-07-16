@@ -310,11 +310,14 @@ var NgJwtAuth;
             if (!this.currentCredentialPromise) {
                 this.currentCredentialPromise = this.credentialPromiseFactory(this.user);
             }
-            return this.currentCredentialPromise.then(function (credentials) {
+            return this.currentCredentialPromise
+                .then(function (credentials) {
+                return _this.authenticateCredentials(credentials.username, credentials.password);
+            })
+                .finally(function () {
                 if (_this.currentCredentialPromise) {
                     _this.currentCredentialPromise = null;
                 }
-                return _this.authenticateCredentials(credentials.username, credentials.password);
             });
         };
         /**

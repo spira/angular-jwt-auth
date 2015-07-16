@@ -314,12 +314,17 @@ describe('Service tests', () => {
     describe('Require login', () => {
 
         let $q;
+        let rejectPromise = false;
         let spy = {
             credentialPromiseFactory: (currentUser:NgJwtAuth.IUser) : ng.IPromise<NgJwtAuth.ICredentials> => {
                 let credentials:NgJwtAuth.ICredentials = {
                     username: fixtures.user.email,
                     password: fixtures.user.password,
                 };
+
+                if (rejectPromise){
+                    return $q.reject('rejected');
+                }
 
                 return $q.when(credentials); //immediately resolve
             }
@@ -400,6 +405,12 @@ describe('Service tests', () => {
 
             let userPromise = ngJwtAuthService.getPromisedUser();
 
+            let loginStatusPromise = userPromise.then(() => {
+                return ngJwtAuthService.loggedIn;
+            });
+
+            expect(loginStatusPromise).eventually.to.be.true;
+
             expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
 
             $httpBackend.flush();
@@ -408,7 +419,27 @@ describe('Service tests', () => {
 
         });
 
+        it('should prompt the credential promise factory for credentials when requested and log out when request rejected', () => {
+
+            rejectPromise = true;
+
+            let userPromise = ngJwtAuthService.promptLogin();
+
+            let loginStatusPromise = userPromise.then(() => {
+                return ngJwtAuthService.loggedIn;
+            });
+
+            expect(userPromise).to.eventually.be.rejectedWith('rejected');
+
+            expect(spy.credentialPromiseFactory).to.have.been.calledThrice;
+
+            expect(loginStatusPromise).eventually.to.be.false;
+
+        });
+
         it('should prompt the credential promise factory for credentials when requested', () => {
+
+            rejectPromise = false;
 
             $httpBackend.expectGET('/api/auth/login', (headers) => {
                 return headers['Authorization'] == fixtures.authBasic;
@@ -420,9 +451,13 @@ describe('Service tests', () => {
 
             $httpBackend.flush();
 
-            expect(spy.credentialPromiseFactory).to.have.been.calledThrice;
+            expect(spy.credentialPromiseFactory).to.have.callCount(4);
 
         });
+
+
+
+
 
     });
 
