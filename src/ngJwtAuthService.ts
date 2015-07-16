@@ -365,14 +365,18 @@ module NgJwtAuth {
                 this.currentCredentialPromise = this.credentialPromiseFactory(this.user);
             }
 
-            return this.currentCredentialPromise.then((credentials:ICredentials) => {
+            return this.currentCredentialPromise
+                .then((credentials:ICredentials) => {
 
-                if (this.currentCredentialPromise){ //if there are any credential promises outstanding, delete them
-                    this.currentCredentialPromise = null;
-                }
+                    return this.authenticateCredentials(credentials.username, credentials.password);
+                })
+                .finally(() => {
 
-                return this.authenticateCredentials(credentials.username, credentials.password);
-            });
+                    if (this.currentCredentialPromise){ //if there are any credential promises outstanding, delete them
+                        this.currentCredentialPromise = null;
+                    }
+                })
+            ;
 
         }
 
