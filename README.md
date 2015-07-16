@@ -172,6 +172,8 @@ module app.guest.login {
             private loginSuccess:{promise:ng.IPromise<NgJwtAuth.IUser>}
         ) {
 
+            $scope.loginError = '';
+
             $scope.login = (username, password) => {
 
                 let credentials:NgJwtAuth.ICredentials = {
