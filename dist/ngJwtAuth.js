@@ -250,10 +250,7 @@ var NgJwtAuth;
                 return this.$q.when(this.user);
             }
             else {
-                return this.requireCredentialsAndAuthenticate()
-                    .then(function (authenticatedUser) {
-                    return authenticatedUser;
-                });
+                return this.requireCredentialsAndAuthenticate();
             }
         };
         /**
@@ -304,19 +301,27 @@ var NgJwtAuth;
          */
         NgJwtAuthService.prototype.requireCredentialsAndAuthenticate = function () {
             var _this = this;
-            if (!_.isFunction(this.credentialPromiseFactory)) {
-                throw new NgJwtAuth.NgJwtAuthException("You must set a credentialPromiseFactory with `ngJwtAuthService.registerCredentialPromiseFactory()` so the user can be prompted for their credentials");
+            if (!_.isFunction(this.loginPromptFactory)) {
+                throw new NgJwtAuth.NgJwtAuthException("You must set a loginPromptFactory with `ngJwtAuthService.registerLoginPromptFactory()` so the user can be prompted for their credentials");
             }
-            if (!this.currentCredentialPromise) {
-                this.currentCredentialPromise = this.credentialPromiseFactory(this.user);
+            if (!this.userLoggedInPromise) {
+                var deferredCredentials = this.$q.defer();
+                var loginSuccessPromise = deferredCredentials.promise
+                    .then(function (credentials) {
+                    return _this.authenticateCredentials(credentials.username, credentials.password);
+                });
+                this.userLoggedInPromise = this.loginPromptFactory(deferredCredentials, loginSuccessPromise, this.user)
+                    .then(function () {
+                    return loginSuccessPromise;
+                });
             }
-            return this.currentCredentialPromise
-                .then(function (credentials) {
-                return _this.authenticateCredentials(credentials.username, credentials.password);
+            return this.userLoggedInPromise
+                .then(function () {
+                return _this.getUser();
             })
                 .finally(function () {
-                if (_this.currentCredentialPromise) {
-                    _this.currentCredentialPromise = null;
+                if (!!_this.userLoggedInPromise) {
+                    _this.userLoggedInPromise = null;
                 }
             });
         };
@@ -371,6 +376,18 @@ var NgJwtAuth;
                 throw new NgJwtAuth.NgJwtAuthException("You cannot redeclare the credential promise factory");
             }
             this.credentialPromiseFactory = promiseFactory;
+            return this;
+        };
+        /**
+         * Register the login prompt factory
+         * @param loginPromptFactory
+         * @returns {NgJwtAuth.NgJwtAuthService}
+         */
+        NgJwtAuthService.prototype.registerLoginPromptFactory = function (loginPromptFactory) {
+            if (_.isFunction(this.loginPromptFactory)) {
+                throw new NgJwtAuth.NgJwtAuthException("You cannot redeclare the login prompt factory");
+            }
+            this.loginPromptFactory = loginPromptFactory;
             return this;
         };
         /**

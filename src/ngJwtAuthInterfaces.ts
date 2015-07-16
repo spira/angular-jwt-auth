@@ -14,7 +14,8 @@ module NgJwtAuth {
         authenticateCredentials(username:string, password:string):ng.IPromise<Object>;
         exchangeToken(token:string):ng.IPromise<Object>;
         requireCredentialsAndAuthenticate():ng.IPromise<Object>;
-        registerCredentialPromiseFactory(promiseFactory:ICredentialPromiseFactory):NgJwtAuthService;
+
+        registerLoginPromptFactory(promiseFactory:ILoginPromptFactory):NgJwtAuthService;
         logout():void;
     }
 
@@ -68,8 +69,8 @@ module NgJwtAuth {
         password: string;
     }
 
-    export interface ICredentialPromiseFactory {
-        (currentUser:IUser): ng.IPromise<ICredentials>;
+    export interface ILoginPromptFactory {
+        (deferredCredentials:ng.IDeferred<ICredentials>, loginSuccessPromise:ng.IPromise<IUser>, currentUser:IUser): ng.IPromise<any>;
     }
 
 }
