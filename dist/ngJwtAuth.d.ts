@@ -29,7 +29,6 @@ declare module NgJwtAuth {
         authenticateCredentials(username: string, password: string): ng.IPromise<Object>;
         exchangeToken(token: string): ng.IPromise<Object>;
         requireCredentialsAndAuthenticate(): ng.IPromise<Object>;
-        registerCredentialPromiseFactory(promiseFactory: ICredentialPromiseFactory): NgJwtAuthService;
         registerLoginPromptFactory(promiseFactory: ILoginPromptFactory): NgJwtAuthService;
         logout(): void;
     }
@@ -76,9 +75,6 @@ declare module NgJwtAuth {
         username: string;
         password: string;
     }
-    interface ICredentialPromiseFactory {
-        (currentUser: IUser): ng.IPromise<ICredentials>;
-    }
     interface ILoginPromptFactory {
         (deferredCredentials: ng.IDeferred<ICredentials>, loginSuccessPromise: ng.IPromise<IUser>, currentUser: IUser): ng.IPromise<any>;
     }
@@ -91,7 +87,6 @@ declare module NgJwtAuth {
         private $window;
         private $interval;
         private user;
-        private credentialPromiseFactory;
         private loginPromptFactory;
         private userLoggedInPromise;
         private refreshTimerPromise;
@@ -109,7 +104,7 @@ declare module NgJwtAuth {
         constructor(_config: INgJwtAuthServiceConfig, _$http: ng.IHttpService, _$q: ng.IQService, _$window: ng.IWindowService, _$interval: ng.IIntervalService);
         /**
          * Service needs an init function so runtime configuration can occur before
-         * bootstrapping the service. This allows the user supplied CredentialPromiseFactory
+         * bootstrapping the service. This allows the user supplied LoginPromptFactory
          * to be registered
          */
         init(): void;
@@ -250,11 +245,6 @@ declare module NgJwtAuth {
          * @param rejection
          */
         handleInterceptedUnauthorisedResponse(rejection: any): void;
-        /**
-         * Register the user provided credential promise factory
-         * @param promiseFactory
-         */
-        registerCredentialPromiseFactory(promiseFactory: ICredentialPromiseFactory): NgJwtAuthService;
         /**
          * Register the login prompt factory
          * @param loginPromptFactory

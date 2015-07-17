@@ -370,9 +370,13 @@ module NgJwtAuth {
                 ;
 
                 this.userLoggedInPromise = this.loginPromptFactory(deferredCredentials, loginSuccessPromise, this.user)
-                    .then(() => {
-                        return loginSuccessPromise;
-                    })
+                    .then(
+                        () => loginSuccessPromise, //when the user has completed the login, chain on the login success promise
+                        (err) => {
+                            deferredCredentials.reject(); //if the user aborted login, reject the credentials promise
+                            return this.$q.reject(err); //and reject the login promise
+                        }
+                    )
                 ;
 
             }

@@ -65,7 +65,7 @@ var NgJwtAuth;
         }
         /**
          * Service needs an init function so runtime configuration can occur before
-         * bootstrapping the service. This allows the user supplied CredentialPromiseFactory
+         * bootstrapping the service. This allows the user supplied LoginPromptFactory
          * to be registered
          */
         NgJwtAuthService.prototype.init = function () {
@@ -311,8 +311,9 @@ var NgJwtAuth;
                     return _this.authenticateCredentials(credentials.username, credentials.password);
                 });
                 this.userLoggedInPromise = this.loginPromptFactory(deferredCredentials, loginSuccessPromise, this.user)
-                    .then(function () {
-                    return loginSuccessPromise;
+                    .then(function () { return loginSuccessPromise; }, function (err) {
+                    deferredCredentials.reject(); //if the user aborted login, reject the credentials promise
+                    return _this.$q.reject(err); //and reject the login promise
                 });
             }
             return this.userLoggedInPromise
@@ -366,17 +367,6 @@ var NgJwtAuth;
                 .then(function (user) {
                 return _this.$http(rejection.config);
             });
-        };
-        /**
-         * Register the user provided credential promise factory
-         * @param promiseFactory
-         */
-        NgJwtAuthService.prototype.registerCredentialPromiseFactory = function (promiseFactory) {
-            if (_.isFunction(this.credentialPromiseFactory)) {
-                throw new NgJwtAuth.NgJwtAuthException("You cannot redeclare the credential promise factory");
-            }
-            this.credentialPromiseFactory = promiseFactory;
-            return this;
         };
         /**
          * Register the login prompt factory
