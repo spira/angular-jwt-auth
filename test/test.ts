@@ -158,6 +158,8 @@ describe('Service tests', () => {
     let $httpBackend:ng.IHttpBackendService;
     let ngJwtAuthService:NgJwtAuth.NgJwtAuthService;
 
+    window.localStorage.clear();
+
     beforeEach(()=>{
 
         module('ngJwtAuth');

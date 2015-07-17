@@ -58,7 +58,7 @@ module NgJwtAuth {
          */
         private tickRefreshTime = ():void => {
 
-            if (this.tokenNeedsToRefreshNow()){
+            if (!this.userLoggedInPromise && this.tokenNeedsToRefreshNow()){
                 this.refreshToken();
             }
 

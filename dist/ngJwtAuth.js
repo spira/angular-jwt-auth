@@ -53,7 +53,7 @@ var NgJwtAuth;
              * Handle token refresh timer
              */
             this.tickRefreshTime = function () {
-                if (_this.tokenNeedsToRefreshNow()) {
+                if (!_this.userLoggedInPromise && _this.tokenNeedsToRefreshNow()) {
                     _this.refreshToken();
                 }
             };
