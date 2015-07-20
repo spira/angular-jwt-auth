@@ -42,7 +42,7 @@ let fixtures = {
             signature: 'this-is-the-signed-hash'
         };
 
-        let token:NgJwtAuth.IJwtToken = <any>_.defaults(overrides, defaultConfig);
+        let token:NgJwtAuth.IJwtToken = <any>_.merge(defaultConfig, overrides);
 
         return btoa(JSON.stringify(token.data))
             + '.' + btoa(JSON.stringify(token.data))
@@ -156,6 +156,7 @@ describe('Custom configuration', function () {
 describe('Service tests', () => {
 
     let $httpBackend:ng.IHttpBackendService;
+    let $http:ng.IHttpService;
     let ngJwtAuthService:NgJwtAuth.NgJwtAuthService;
 
     window.localStorage.clear();
@@ -164,11 +165,12 @@ describe('Service tests', () => {
 
         module('ngJwtAuth');
 
-        inject((_$httpBackend_, _ngJwtAuthService_) => {
+        inject((_$httpBackend_, _ngJwtAuthService_, _$http_) => {
 
             if (!ngJwtAuthService){ //dont rebind, so each test gets the singleton
                 $httpBackend = _$httpBackend_;
                 ngJwtAuthService = _ngJwtAuthService_; //register injected of service provider
+                $http = _$http_; //register injected of service provider
             }
         });
 
@@ -504,6 +506,55 @@ describe('Service tests', () => {
             refreshPromise.then(()=>{
                 expect(ngJwtAuthService.rawToken).to.equal(updatedToken);
             });
+
+            $httpBackend.flush();
+
+        });
+
+    });
+
+
+
+
+    describe('API Response Authorization update', () => {
+
+
+        it ('should update the request header when an Authorization-Update header is received', () => {
+
+
+            ngJwtAuthService.logout(); //make sure user is logged out
+            let validToken = fixtures.token;
+
+            //get the user a valid token
+            $httpBackend.expectGET('/api/auth/login', (headers) => {
+                return headers['Authorization'] == fixtures.authBasic;
+            }).respond({token: validToken});
+
+            let user = ngJwtAuthService.getPromisedUser();
+
+            $httpBackend.flush();
+
+            expect(user).eventually.to.deep.equal(fixtures.userResponse);
+
+            let newHeader = fixtures.buildToken({data:{jti:'updated-token'}});
+
+            $httpBackend.expectGET('/any', (headers) => {
+                return headers['Authorization'] == 'Bearer '+validToken;
+            }).respond('foo', {
+                'Authorization-Update': 'Bearer' + newHeader,
+            });
+
+            $http.get('/any');
+
+            $httpBackend.flush();
+
+            expect(ngJwtAuthService.rawToken).to.equal(newHeader);
+
+            $httpBackend.expectGET('/any', (headers) => {
+                return headers['Authorization'] == 'Bearer '+newHeader;
+            }).respond('bar');
+
+            (<any>ngJwtAuthService).$http.get('/any');
 
             $httpBackend.flush();
 
