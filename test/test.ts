@@ -519,7 +519,7 @@ describe('Service tests', () => {
     describe('API Response Authorization update', () => {
 
 
-        it ('should update the request header when an Authorization-Update header is received', () => {
+        it('should update the request header when an Authorization-Update header is received', () => {
 
 
             ngJwtAuthService.logout(); //make sure user is logged out
@@ -541,7 +541,7 @@ describe('Service tests', () => {
             $httpBackend.expectGET('/any', (headers) => {
                 return headers['Authorization'] == 'Bearer '+validToken;
             }).respond('foo', {
-                'Authorization-Update': 'Bearer' + newHeader,
+                'Authorization-Update': 'Bearer ' + newHeader,
             });
 
             $http.get('/any');
@@ -557,6 +557,20 @@ describe('Service tests', () => {
             (<any>ngJwtAuthService).$http.get('/any');
 
             $httpBackend.flush();
+
+        });
+
+        it('should allow another api to define a non-jwt Authorization-Update header without throwing an error', () => {
+
+            $httpBackend.expectGET('/any').respond('foo', {
+                'Authorization-Update': 'Bearer ' + 'some-other-token',
+            });
+
+            let result = $http.get('/any');
+
+            $httpBackend.flush();
+
+            expect(result).eventually.to.have.deep.property('data', 'foo');
 
         });
 
