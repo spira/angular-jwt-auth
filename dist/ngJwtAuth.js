@@ -332,13 +332,21 @@ var NgJwtAuth;
             }
             if (!this.userLoggedInPromise) {
                 var deferredCredentials = this.$q.defer();
-                var loginSuccessPromise = deferredCredentials.promise
-                    .then(function (credentials) {
-                    return _this.authenticateCredentials(credentials.username, credentials.password);
+                var loginSuccess = this.$q.defer();
+                deferredCredentials.promise
+                    .then(null, null, function (credentials) {
+                    return _this.authenticateCredentials(credentials.username, credentials.password).then(function (user) {
+                        //credentials were successful; resolve the promises
+                        deferredCredentials.resolve(user);
+                        loginSuccess.resolve(user);
+                    }, function (err) {
+                        loginSuccess.notify(err);
+                    });
                 });
-                this.userLoggedInPromise = this.loginPromptFactory(deferredCredentials, loginSuccessPromise, this.user)
-                    .then(function () { return loginSuccessPromise; }, function (err) {
+                this.userLoggedInPromise = this.loginPromptFactory(deferredCredentials, loginSuccess.promise, this.user)
+                    .then(function () { return loginSuccess.promise; }, function (err) {
                     deferredCredentials.reject(); //if the user aborted login, reject the credentials promise
+                    loginSuccess.reject();
                     return _this.$q.reject(err); //and reject the login promise
                 });
             }
@@ -418,7 +426,7 @@ var NgJwtAuth;
     })();
     NgJwtAuth.NgJwtAuthService = NgJwtAuthService;
 })(NgJwtAuth || (NgJwtAuth = {}));
-var __extends = this.__extends || function (d, b) {
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;

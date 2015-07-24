@@ -380,18 +380,27 @@ module NgJwtAuth {
             if (!this.userLoggedInPromise){
                 let deferredCredentials = this.$q.defer();
 
-                let loginSuccessPromise = deferredCredentials.promise
-                    .then((credentials:ICredentials) => {
+                let loginSuccess = this.$q.defer();
 
-                        return this.authenticateCredentials(credentials.username, credentials.password);
+                deferredCredentials.promise
+                    .then(null, null, (credentials:ICredentials) => { //check on notify
+
+                        return this.authenticateCredentials(credentials.username, credentials.password).then((user) => {
+                            //credentials were successful; resolve the promises
+                            deferredCredentials.resolve(user);
+                            loginSuccess.resolve(user);
+                        }, (err) => { //pass notification to loginSuccess
+                            loginSuccess.notify(err);
+                        });
                     })
                 ;
 
-                this.userLoggedInPromise = this.loginPromptFactory(deferredCredentials, loginSuccessPromise, this.user)
+                this.userLoggedInPromise = this.loginPromptFactory(deferredCredentials, loginSuccess.promise, this.user)
                     .then(
-                        () => loginSuccessPromise, //when the user has completed the login, chain on the login success promise
+                        () => loginSuccess.promise, //when the user has completed the login, chain on the login success promise
                         (err) => {
                             deferredCredentials.reject(); //if the user aborted login, reject the credentials promise
+                            loginSuccess.reject();
                             return this.$q.reject(err); //and reject the login promise
                         }
                     )
