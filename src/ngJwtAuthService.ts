@@ -367,18 +367,13 @@ module NgJwtAuth {
                 deferredCredentials.promise
                     .then(null, null, (credentials:ICredentials) => { //check on notify
 
-                        console.log('notified with new credentials', credentials);
-
                         return this.authenticateCredentials(credentials.username, credentials.password).then((user) => {
                             //credentials were successful; resolve the promises
-                            console.log('credentials successful, resolved user', user);
                             deferredCredentials.resolve(user);
                             loginSuccess.resolve(user);
                         }, (err) => { //pass notification to loginSuccess
-                            console.log('credentials failed, notifying login success', err);
                             loginSuccess.notify(err);
                         }).catch((err) => {
-                            console.log('credentials failed in catch, notifying login success', err);
                             loginSuccess.notify(err);
                         });
                     })

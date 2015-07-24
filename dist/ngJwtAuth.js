@@ -309,17 +309,13 @@ var NgJwtAuth;
                 var loginSuccess = this.$q.defer();
                 deferredCredentials.promise
                     .then(null, null, function (credentials) {
-                    console.log('notified with new credentials', credentials);
                     return _this.authenticateCredentials(credentials.username, credentials.password).then(function (user) {
                         //credentials were successful; resolve the promises
-                        console.log('credentials successful, resolved user', user);
                         deferredCredentials.resolve(user);
                         loginSuccess.resolve(user);
                     }, function (err) {
-                        console.log('credentials failed, notifying login success', err);
                         loginSuccess.notify(err);
                     }).catch(function (err) {
-                        console.log('credentials failed in catch, notifying login success', err);
                         loginSuccess.notify(err);
                     });
                 });

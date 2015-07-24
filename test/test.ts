@@ -336,9 +336,7 @@ describe('Service tests', () => {
                 deferredCredentials.notify(credentials);
 
                 loginSuccessPromise.then(() => {
-                    console.log('successfully logged in');
                 }, null, (err) => {
-                    console.log('retrying credentials', err);
                     deferredCredentials.notify(credentials); //retry resolving creds
                 });
 
@@ -570,7 +568,7 @@ describe('Service Reloading', () => {
                 password: fixtures.user.password,
             };
 
-            deferredCredentials.resolve(credentials);
+            deferredCredentials.notify(credentials);
 
             return $q.when(true); //immediately resolve
         });
@@ -683,18 +681,18 @@ describe('Service Reloading', () => {
         });
 
         before(()=>{
+            ngJwtAuthService.logout(); //clear the authservice state
             window.localStorage.setItem((<any>defaultAuthServiceProvider).config.storageKeyName, expiredToken);
         });
 
         it('should prompt the user to log in when the loaded token has expired on init', () => {
 
-
-            ngJwtAuthService.init();
-
             //after prompt the credentials are immediately supplied, triggering a new auth request
             $httpBackend.expectGET('/api/auth/login', (headers) => {
                 return headers['Authorization'] == fixtures.authBasic;
             }).respond({token: fixtures.token});
+
+            ngJwtAuthService.init();
 
             $httpBackend.flush();
 
