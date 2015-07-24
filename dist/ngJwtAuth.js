@@ -9,6 +9,18 @@ var NgJwtAuth;
                 }
                 return _this.ngJwtAuthService;
             };
+            this.response = function (response) {
+                var updateHeader = response.headers('Authorization-Update');
+                if (updateHeader) {
+                    var newToken = updateHeader.replace('Bearer ', '');
+                    if (!NgJwtAuth.NgJwtAuthService.validateToken(newToken)) {
+                        return response; //if it is not a valid JWT, just return the response as it might be some other kind of token that is being updated.
+                    }
+                    var ngJwtAuthService = _this.getNgJwtAuthService();
+                    ngJwtAuthService.processNewToken(newToken);
+                }
+                return response;
+            };
             this.responseError = function (rejection) {
                 var ngJwtAuthService = _this.getNgJwtAuthService();
                 //if the response is on a login method, reject immediately
@@ -184,6 +196,20 @@ var NgJwtAuth;
                 signature: pieces[2],
             };
             return jwt;
+        };
+        /**
+         * Validate JWT Token
+         * @param rawToken
+         * @returns {any}
+         */
+        NgJwtAuthService.validateToken = function (rawToken) {
+            try {
+                var tokenData = NgJwtAuthService.readToken(rawToken);
+                return _.isObject(tokenData);
+            }
+            catch (e) {
+                return false;
+            }
         };
         /**
          * Prompt user for their login credentials, and attempt to login
@@ -400,7 +426,7 @@ var NgJwtAuth;
     })();
     NgJwtAuth.NgJwtAuthService = NgJwtAuthService;
 })(NgJwtAuth || (NgJwtAuth = {}));
-var __extends = this.__extends || function (d, b) {
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;

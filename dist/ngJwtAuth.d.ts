@@ -13,6 +13,7 @@ declare module NgJwtAuth {
         static $inject: string[];
         constructor(_$q: ng.IQService, _$injector: ng.auto.IInjectorService);
         private getNgJwtAuthService;
+        response: (response: ng.IHttpPromiseCallbackArg<any>) => ng.IHttpPromiseCallbackArg<any>;
         responseError: (rejection: any) => any;
     }
 }
@@ -162,6 +163,12 @@ declare module NgJwtAuth {
          * @returns {IJwtToken}
          */
         private static readToken(rawToken);
+        /**
+         * Validate JWT Token
+         * @param rawToken
+         * @returns {any}
+         */
+        static validateToken(rawToken: string): boolean;
         /**
          * Prompt user for their login credentials, and attempt to login
          * @returns {ng.IPromise<IUser>}
