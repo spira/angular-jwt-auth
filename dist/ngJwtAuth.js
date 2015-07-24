@@ -315,8 +315,6 @@ var NgJwtAuth;
                         loginSuccess.resolve(user);
                     }, function (err) {
                         loginSuccess.notify(err);
-                    }).catch(function (err) {
-                        loginSuccess.notify(err);
                     });
                 });
                 this.userLoggedInPromise = this.loginPromptFactory(deferredCredentials, loginSuccess.promise, this.user)

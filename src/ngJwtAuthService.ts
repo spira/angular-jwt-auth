@@ -373,8 +373,6 @@ module NgJwtAuth {
                             loginSuccess.resolve(user);
                         }, (err) => { //pass notification to loginSuccess
                             loginSuccess.notify(err);
-                        }).catch((err) => {
-                            loginSuccess.notify(err);
                         });
                     })
                 ;
