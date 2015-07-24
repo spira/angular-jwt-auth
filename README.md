@@ -181,12 +181,13 @@ module app.guest.login {
                     password: password,
                 };
 
-                deferredCredentials.resolve(credentials); //resolve the deferred credentials with the passed creds
+                deferredCredentials.notify(credentials); //resolve the deferred credentials with the passed creds
 
                 loginSuccess.promise
                     .then(
                         (user) => $mdDialog.hide(user), //on success hide the dialog, pass through the returned user object
-                        (err:Error) => {
+                        null,
+                        (err:Error) => { //recoverable errors are notified so the user can retry
                             if (err instanceof NgJwtAuth.NgJwtAuthException){
                                 $scope.loginError = err.message; //if the is an auth exception, show the value to the user
                             }
@@ -196,7 +197,11 @@ module app.guest.login {
 
             };
 
-            $scope.cancelLoginDialog = () => $mdDialog.cancel('closed'); //allow the user to manually close the dialog
+            $scope.cancelLoginDialog = () => {
+                ngJwtAuthService.logout(); //make sure the user is logged out
+                $mdDialog.cancel('closed');
+            }; //allow the user to manually close the dialog
+
 
         }
 
