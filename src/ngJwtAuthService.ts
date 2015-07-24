@@ -203,6 +203,24 @@ module NgJwtAuth {
         }
 
         /**
+         * Validate JWT Token
+         * @param rawToken
+         * @returns {any}
+         */
+        public static validateToken(rawToken:string):boolean {
+
+            try {
+                let tokenData = NgJwtAuthService.readToken(rawToken);
+
+                return _.isObject(tokenData);
+
+            }catch(e){
+                return false;
+            }
+
+        }
+
+        /**
          * Prompt user for their login credentials, and attempt to login
          * @returns {ng.IPromise<IUser>}
          */
