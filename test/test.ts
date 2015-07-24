@@ -156,7 +156,9 @@ describe('Custom configuration', function () {
 describe('Service tests', () => {
 
     let $httpBackend:ng.IHttpBackendService;
+    let $http:ng.IHttpService;
     let ngJwtAuthService:NgJwtAuth.NgJwtAuthService;
+    let $rootScope:ng.IRootScopeService;
 
     window.localStorage.clear();
 
@@ -164,11 +166,13 @@ describe('Service tests', () => {
 
         module('ngJwtAuth');
 
-        inject((_$httpBackend_, _ngJwtAuthService_) => {
+        inject((_$httpBackend_, _ngJwtAuthService_, _$http_, _$rootScope_) => {
 
             if (!ngJwtAuthService){ //dont rebind, so each test gets the singleton
                 $httpBackend = _$httpBackend_;
+                $rootScope = _$rootScope_;
                 ngJwtAuthService = _ngJwtAuthService_; //register injected of service provider
+                $http = _$http_;
             }
         });
 
@@ -329,7 +333,14 @@ describe('Service tests', () => {
                     return $q.reject('rejected');
                 }
 
-                deferredCredentials.resolve(credentials);
+                deferredCredentials.notify(credentials);
+
+                loginSuccessPromise.then(() => {
+                    console.log('successfully logged in');
+                }, null, (err) => {
+                    console.log('retrying credentials', err);
+                    deferredCredentials.notify(credentials); //retry resolving creds
+                });
 
                 return $q.when(true); //immediately resolve
             }
@@ -450,6 +461,26 @@ describe('Service tests', () => {
             $httpBackend.flush();
 
             expect(spy.loginPromptFactory).to.have.callCount(4);
+
+        });
+
+        it('should allow the user to retry their credentials when they get them wrong the first time', () => {
+
+            $httpBackend.expectGET('/api/auth/login', (headers) => {
+                return headers['Authorization'] == fixtures.authBasic;
+            }).respond(401); //fail their login first time
+
+            $httpBackend.expectGET('/api/auth/login', (headers) => {
+                return headers['Authorization'] == fixtures.authBasic;
+            }).respond({token: fixtures.token}); //pass it the second time
+
+            let userPromise = ngJwtAuthService.promptLogin();
+
+            expect(spy.loginPromptFactory).to.have.callCount(5);
+
+            expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
+
+            $httpBackend.flush();
 
         });
 
