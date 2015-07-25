@@ -321,6 +321,7 @@ describe('Service tests', () => {
 
         let $q;
         let rejectPromise = false;
+        let loginSuccess:ng.IPromise<any> = null;
         let spy = {
             loginPromptFactory: (deferredCredentials:ng.IDeferred<NgJwtAuth.ICredentials>, loginSuccessPromise:ng.IPromise<NgJwtAuth.IUser>, currentUser:NgJwtAuth.IUser): ng.IPromise<any> => {
 
@@ -332,6 +333,8 @@ describe('Service tests', () => {
                 if (rejectPromise){
                     return $q.reject('rejected');
                 }
+
+                loginSuccess = loginSuccessPromise; //bind so the tests can attach a spy
 
                 deferredCredentials.notify(credentials);
 
@@ -475,6 +478,39 @@ describe('Service tests', () => {
             let userPromise = ngJwtAuthService.promptLogin();
 
             expect(spy.loginPromptFactory).to.have.callCount(5);
+
+            expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
+
+            $httpBackend.flush();
+
+        });
+
+        it('should have only one error notification emitted for each repeated credential failure', (done) => {
+
+            $httpBackend.expectGET('/api/auth/login', (headers) => {
+                return headers['Authorization'] == fixtures.authBasic;
+            }).respond(401); //fail their login first time
+
+            $httpBackend.expectGET('/api/auth/login', (headers) => {
+                return headers['Authorization'] == fixtures.authBasic;
+            }).respond(401); //fail their login a second time
+
+            $httpBackend.expectGET('/api/auth/login', (headers) => {
+                return headers['Authorization'] == fixtures.authBasic;
+            }).respond({token: fixtures.token}); //pass it on the third go
+
+            let userPromise = ngJwtAuthService.promptLogin();
+
+            expect(spy.loginPromptFactory).to.have.callCount(6);
+
+            var progressSpy = sinon.spy();
+            loginSuccess.then(null, null, progressSpy);
+
+            userPromise.then(() => {
+                progressSpy.should.have.been.calledTwice;
+                progressSpy.should.have.been.calledWith(sinon.match.instanceOf(NgJwtAuth.NgJwtAuthException));
+                done();
+            });
 
             expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
 

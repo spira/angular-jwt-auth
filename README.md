@@ -164,15 +164,16 @@ module app.guest.login {
 
     class LoginController {
 
-        static $inject = ['$scope', '$mdDialog', 'deferredCredentials', 'loginSuccess'];
+        static $inject = ['$scope', '$rootScope', '$mdDialog', '$mdToast', 'ngJwtAuthService', 'deferredCredentials', 'loginSuccess'];
         constructor(
             private $scope : IScope,
+            private $rootScope : global.IRootScope,
             private $mdDialog:ng.material.IDialogService,
+            private $mdToast:ng.material.IToastService,
+            private ngJwtAuthService:NgJwtAuth.NgJwtAuthService,
             private deferredCredentials:ng.IDeferred<NgJwtAuth.ICredentials>,
             private loginSuccess:{promise:ng.IPromise<NgJwtAuth.IUser>}
         ) {
-
-            $scope.loginError = '';
 
             $scope.login = (username, password) => {
 
@@ -183,18 +184,6 @@ module app.guest.login {
 
                 deferredCredentials.notify(credentials); //resolve the deferred credentials with the passed creds
 
-                loginSuccess.promise
-                    .then(
-                        (user) => $mdDialog.hide(user), //on success hide the dialog, pass through the returned user object
-                        null,
-                        (err:Error) => { //recoverable errors are notified so the user can retry
-                            if (err instanceof NgJwtAuth.NgJwtAuthException){
-                                $scope.loginError = err.message; //if the is an auth exception, show the value to the user
-                            }
-                        }
-                    )
-                ;
-
             };
 
             $scope.cancelLoginDialog = () => {
@@ -202,6 +191,25 @@ module app.guest.login {
                 $mdDialog.cancel('closed');
             }; //allow the user to manually close the dialog
 
+
+            //register error handling and close on success
+            loginSuccess.promise
+                .then(
+                (user) => $mdDialog.hide(user), //on success hide the dialog, pass through the returned user object
+                null,
+                (err:Error) => {
+                    console.log('got error', err);
+                    if (err instanceof NgJwtAuth.NgJwtAuthException){
+                        this.$mdToast.show(
+                            (<any>$mdToast).simple() //<any> added so the parent method doesn't throw error, see https://github.com/borisyankov/DefinitelyTyped/issues/4843#issuecomment-124443371
+                                .hideDelay(2000)
+                                .position('top')
+                                .content(err.message)
+                                .parent('#loginDialog')
+                        );
+                    }
+                }
+            );
 
         }
 
