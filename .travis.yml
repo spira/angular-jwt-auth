@@ -8,6 +8,11 @@ addons:
     sources:
       - libnotify-bin
 
+cache:
+  directories:
+    - node_modules
+    - bower_components
+
 install:
   - travis_retry npm install -g gulp
   - travis_retry npm install
