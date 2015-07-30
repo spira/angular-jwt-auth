@@ -26,11 +26,12 @@ declare module NgJwtAuth {
         promptLogin(): ng.IPromise<Object>;
         getUser(): Object;
         getPromisedUser(): ng.IPromise<Object>;
-        processNewToken(rawToken: string): IUser;
+        processNewToken(rawToken: string): ng.IPromise<IUser>;
         authenticateCredentials(username: string, password: string): ng.IPromise<Object>;
         exchangeToken(token: string): ng.IPromise<Object>;
         requireCredentialsAndAuthenticate(): ng.IPromise<Object>;
         registerLoginPromptFactory(promiseFactory: ILoginPromptFactory): NgJwtAuthService;
+        registerUserFactory(userFactory: IUserFactory): NgJwtAuthService;
         logout(): void;
     }
     interface INgJwtAuthServiceProvider {
@@ -50,20 +51,21 @@ declare module NgJwtAuth {
         refreshBeforeSeconds?: number;
         checkExpiryEverySeconds?: number;
     }
+    interface IJwtClaims {
+        iss: string;
+        aud: string;
+        sub: string;
+        nbf?: number;
+        iat: number;
+        exp: number;
+        jti: string;
+    }
     interface IJwtToken {
         header: {
             alg: string;
             typ: string;
         };
-        data: {
-            iss: string;
-            aud: string;
-            sub: string;
-            nbf?: number;
-            iat: number;
-            exp: number;
-            jti: string;
-        };
+        data: IJwtClaims;
         signature: string;
     }
     interface IUser {
@@ -79,6 +81,9 @@ declare module NgJwtAuth {
     interface ILoginPromptFactory {
         (deferredCredentials: ng.IDeferred<ICredentials>, loginSuccessPromise: ng.IPromise<IUser>, currentUser: IUser): ng.IPromise<any>;
     }
+    interface IUserFactory {
+        (subClaim: string, tokenData: IJwtClaims): ng.IPromise<IUser>;
+    }
 }
 declare module NgJwtAuth {
     class NgJwtAuthService implements INgJwtAuthService {
@@ -88,6 +93,7 @@ declare module NgJwtAuth {
         private $window;
         private $interval;
         private user;
+        private userFactory;
         private loginPromptFactory;
         private userLoggedInPromise;
         private refreshTimerPromise;
@@ -104,11 +110,15 @@ declare module NgJwtAuth {
          */
         constructor(_config: INgJwtAuthServiceConfig, _$http: ng.IHttpService, _$q: ng.IQService, _$window: ng.IWindowService, _$interval: ng.IIntervalService);
         /**
+         * A default implementation of the user factory if the client does not provide one
+         */
+        private defaultUserFactory(subClaim, tokenData);
+        /**
          * Service needs an init function so runtime configuration can occur before
          * bootstrapping the service. This allows the user supplied LoginPromptFactory
          * to be registered
          */
-        init(): void;
+        init(): ng.IPromise<any>;
         /**
          * Handle token refresh timer
          */
@@ -179,7 +189,7 @@ declare module NgJwtAuth {
          * @param rawToken
          * @returns {IUser}
          */
-        processNewToken(rawToken: string): IUser;
+        processNewToken(rawToken: string): ng.IPromise<IUser>;
         private loadTokenFromStorage();
         /**
          * Check if the endpoint is a login method (used for skipping the authentication error interceptor)
@@ -203,7 +213,7 @@ declare module NgJwtAuth {
          * @param password
          * @returns {IPromise<boolean>}
          */
-        authenticateCredentials(username: string, password: string): ng.IPromise<any>;
+        authenticateCredentials(username: string, password: string): ng.IPromise<IUser>;
         /**
          * Exchange an arbitrary token with a jwt token
          * @param token
@@ -258,6 +268,12 @@ declare module NgJwtAuth {
          * @returns {NgJwtAuth.NgJwtAuthService}
          */
         registerLoginPromptFactory(loginPromptFactory: ILoginPromptFactory): NgJwtAuthService;
+        /**
+         * Register the user factory for extracting a user from data
+         * @param userFactory
+         * @returns {NgJwtAuth.NgJwtAuthService}
+         */
+        registerUserFactory(userFactory: IUserFactory): NgJwtAuthService;
         /**
          * Clear the token and service properties
          */

@@ -609,14 +609,16 @@ describe('Service Reloading', () => {
 
     let $httpBackend:ng.IHttpBackendService;
     let ngJwtAuthService:NgJwtAuth.NgJwtAuthService;
+    let $rootScope:ng.IRootScopeService;
 
     beforeEach(()=>{
 
         module('ngJwtAuth');
 
-        inject((_$httpBackend_, _ngJwtAuthService_) => {
+        inject((_$httpBackend_, _ngJwtAuthService_, _$rootScope_) => {
 
             $httpBackend = _$httpBackend_;
+            $rootScope = _$rootScope_;
             ngJwtAuthService = _ngJwtAuthService_; //register injected of service provider
 
         });
@@ -656,9 +658,7 @@ describe('Service Reloading', () => {
 
             window.localStorage.setItem((<any>defaultAuthServiceProvider).config.storageKeyName, fixtures.token);
 
-            ngJwtAuthService.init();
-
-            let userPromise = ngJwtAuthService.getPromisedUser();
+            let userPromise = ngJwtAuthService.init().then(() => ngJwtAuthService.getPromisedUser());
 
             expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
             return expect(ngJwtAuthService.loggedIn).to.be.true;
@@ -684,6 +684,8 @@ describe('Service Reloading', () => {
             ;
 
             ngJwtAuthService.init(); //initialise with the default token
+
+            $rootScope.$apply(); //flush the promises before continuing
 
             $httpBackend.expectGET('/api/auth/refresh', (headers) => {
                 return headers['Authorization'] == 'Bearer '+expiringToken;
