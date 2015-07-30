@@ -59,10 +59,11 @@ module NgJwtAuth {
         public init():ng.IPromise<any> {
 
             //attempt to load the token from storage
-            return this.loadTokenFromStorage().then(() => {
-                this.refreshTimerPromise = this.$interval(this.tickRefreshTime, this.config.checkExpiryEverySeconds * 1000, null, false);
-                return true;
-            });
+            return this.loadTokenFromStorage()
+                .finally(() => {
+                    this.refreshTimerPromise = this.$interval(this.tickRefreshTime, this.config.checkExpiryEverySeconds * 1000, null, false);
+                    return true;
+                });
 
         }
 

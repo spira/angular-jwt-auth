@@ -90,7 +90,8 @@ var NgJwtAuth;
         NgJwtAuthService.prototype.init = function () {
             var _this = this;
             //attempt to load the token from storage
-            return this.loadTokenFromStorage().then(function () {
+            return this.loadTokenFromStorage()
+                .finally(function () {
                 _this.refreshTimerPromise = _this.$interval(_this.tickRefreshTime, _this.config.checkExpiryEverySeconds * 1000, null, false);
                 return true;
             });
