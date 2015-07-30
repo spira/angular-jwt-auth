@@ -10,11 +10,12 @@ module NgJwtAuth {
         promptLogin():ng.IPromise<Object>;
         getUser():Object;
         getPromisedUser():ng.IPromise<Object>;
-        processNewToken(rawToken:string): IUser;
+        processNewToken(rawToken:string):ng.IPromise<IUser>;
         authenticateCredentials(username:string, password:string):ng.IPromise<Object>;
         exchangeToken(token:string):ng.IPromise<Object>;
         requireCredentialsAndAuthenticate():ng.IPromise<Object>;
         registerLoginPromptFactory(promiseFactory:ILoginPromptFactory):NgJwtAuthService;
+        registerUserFactory(userFactory:IUserFactory):NgJwtAuthService;
         logout():void;
     }
 
@@ -38,22 +39,24 @@ module NgJwtAuth {
         checkExpiryEverySeconds?: number;
     }
 
+    export interface IJwtClaims {
+        iss: string;
+        aud: string;
+        sub: string;
+        nbf?: number;
+        iat: number;
+        exp: number;
+        jti: string;
+    }
+
     export interface IJwtToken {
 
         header: {
             alg: string,
             typ: string
-        },
-        data: {
-            iss: string;
-            aud: string;
-            sub: string;
-            nbf?: number;
-            iat: number;
-            exp: number;
-            jti: string;
-        },
-        signature: string
+        };
+        data: IJwtClaims;
+        signature: string;
     }
 
     export interface IUser {
@@ -70,6 +73,10 @@ module NgJwtAuth {
 
     export interface ILoginPromptFactory {
         (deferredCredentials:ng.IDeferred<ICredentials>, loginSuccessPromise:ng.IPromise<IUser>, currentUser:IUser): ng.IPromise<any>;
+    }
+
+    export interface IUserFactory {
+        (subClaim:string, tokenData:IJwtClaims): ng.IPromise<IUser>;
     }
 
 }

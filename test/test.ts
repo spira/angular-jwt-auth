@@ -645,14 +645,16 @@ describe('Service Reloading', () => {
 
     let $httpBackend:ng.IHttpBackendService;
     let ngJwtAuthService:NgJwtAuth.NgJwtAuthService;
+    let $rootScope:ng.IRootScopeService;
 
     beforeEach(()=>{
 
         module('ngJwtAuth');
 
-        inject((_$httpBackend_, _ngJwtAuthService_) => {
+        inject((_$httpBackend_, _ngJwtAuthService_, _$rootScope_) => {
 
             $httpBackend = _$httpBackend_;
+            $rootScope = _$rootScope_;
             ngJwtAuthService = _ngJwtAuthService_; //register injected of service provider
 
         });
@@ -688,13 +690,37 @@ describe('Service Reloading', () => {
             clock.restore();
         });
 
+        it('should not fail when there is no token to load', () => {
+
+            ngJwtAuthService.logout();
+            let init = ngJwtAuthService.init();
+
+            $rootScope.$apply(); //force angular to run the promises
+
+            //let some time pass
+            let tickIntervalSeconds = 1000;
+            clock.tick(1000 * tickIntervalSeconds); //fast forward clock by the configured seconds
+            (<any>ngJwtAuthService).$interval.flush(1000 * tickIntervalSeconds); //fast forward intervals by the configured seconds
+
+            expect(init).eventually.to.be.rejectedWith(sinon.match.instanceOf(NgJwtAuth.NgJwtAuthException));
+
+        });
+
+        it('should fail when the token in storage is malformed (vendor collision perhaps)', () => {
+
+            window.localStorage.setItem((<any>defaultAuthServiceProvider).config.storageKeyName, 'this-is-not-a-jwt-token');
+
+            let init = ngJwtAuthService.init();
+
+            expect(init).eventually.to.be.rejectedWith(sinon.match.instanceOf(NgJwtAuth.NgJwtAuthException));
+
+        });
+
         it('should use the token from storage on init', () => {
 
             window.localStorage.setItem((<any>defaultAuthServiceProvider).config.storageKeyName, fixtures.token);
 
-            ngJwtAuthService.init();
-
-            let userPromise = ngJwtAuthService.getPromisedUser();
+            let userPromise = ngJwtAuthService.init().then(() => ngJwtAuthService.getPromisedUser());
 
             expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
             return expect(ngJwtAuthService.loggedIn).to.be.true;
@@ -720,6 +746,8 @@ describe('Service Reloading', () => {
             ;
 
             ngJwtAuthService.init(); //initialise with the default token
+
+            $rootScope.$apply(); //flush the promises before continuing
 
             $httpBackend.expectGET('/api/auth/refresh', (headers) => {
                 return headers['Authorization'] == 'Bearer '+expiringToken;
@@ -801,6 +829,39 @@ describe('Service Reloading', () => {
             expect(ngJwtAuthService.rawToken).to.not.equal(expiredToken);
 
         });
+
+    });
+
+    describe('Custom user factory', () => {
+
+        let mockUserFactory = (subClaim:string, tokenData:NgJwtAuth.IJwtClaims):ng.IPromise<NgJwtAuth.IUser> => {
+
+            let user = _.get(tokenData, '#user');
+            (<any>user).custom = 'this is a custom property';
+
+            return this.$q.when(user);
+        };
+
+        it('should be able to set a user factory', () => {
+
+            ngJwtAuthService.logout();
+
+            $httpBackend.expectGET('/api/auth/login', (headers) => {
+                return headers['Authorization'] == fixtures.authBasic;
+            }).respond({token: fixtures.token});
+
+            ngJwtAuthService.registerUserFactory(mockUserFactory);
+
+            let user = ngJwtAuthService.getPromisedUser();
+
+
+            $httpBackend.flush();
+
+            expect(user).eventually.not.to.deep.equal(fixtures.userResponse); //the user should differ from the standard User response
+            expect(user).eventually.to.have.property('custom'); //the user should have the new property
+
+        });
+
 
     });
 

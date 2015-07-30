@@ -3,15 +3,16 @@ module NgJwtAuth {
     export class NgJwtAuthService implements INgJwtAuthService {
 
         //list injected dependencies
-        private config: INgJwtAuthServiceConfig;
-        private $http: ng.IHttpService;
-        private $q: ng.IQService;
-        private $window: ng.IWindowService;
+        private config:INgJwtAuthServiceConfig;
+        private $http:ng.IHttpService;
+        private $q:ng.IQService;
+        private $window:ng.IWindowService;
         private $interval:ng.IIntervalService;
 
         //private properties
         private user:IUser;
 
+        private userFactory:IUserFactory;
         private loginPromptFactory:ILoginPromptFactory;
         private userLoggedInPromise:ng.IPromise<any>;
 
@@ -30,7 +31,7 @@ module NgJwtAuth {
          * @param _$window
          * @param _$interval
          */
-        constructor(_config:INgJwtAuthServiceConfig, _$http: ng.IHttpService, _$q: ng.IQService, _$window: ng.IWindowService, _$interval: ng.IIntervalService) {
+        constructor(_config:INgJwtAuthServiceConfig, _$http:ng.IHttpService, _$q:ng.IQService, _$window:ng.IWindowService, _$interval:ng.IIntervalService) {
 
             this.config = _config;
             this.$http = _$http;
@@ -38,6 +39,16 @@ module NgJwtAuth {
             this.$window = _$window;
             this.$interval = _$interval;
 
+            this.userFactory = this.defaultUserFactory;
+
+        }
+
+        /**
+         * A default implementation of the user factory if the client does not provide one
+         */
+        private defaultUserFactory(subClaim:string, tokenData:IJwtClaims):ng.IPromise<IUser> {
+
+            return this.$q.when(_.get(tokenData, this.config.tokenUser));
         }
 
         /**
@@ -45,12 +56,15 @@ module NgJwtAuth {
          * bootstrapping the service. This allows the user supplied LoginPromptFactory
          * to be registered
          */
-        public init():void {
+        public init():ng.IPromise<any> {
 
             //attempt to load the token from storage
-            this.loadTokenFromStorage();
+            return this.loadTokenFromStorage()
+                .finally(() => {
+                    this.refreshTimerPromise = this.$interval(this.tickRefreshTime, this.config.checkExpiryEverySeconds * 1000, null, false);
+                    return true;
+                });
 
-            this.refreshTimerPromise = this.$interval(this.tickRefreshTime, this.config.checkExpiryEverySeconds * 1000, null, false);
         }
 
         /**
@@ -58,7 +72,7 @@ module NgJwtAuth {
          */
         private tickRefreshTime = ():void => {
 
-            if (!this.userLoggedInPromise && this.tokenNeedsToRefreshNow()){
+            if (!this.userLoggedInPromise && this.tokenNeedsToRefreshNow()) {
                 this.refreshToken();
             }
 
@@ -70,13 +84,13 @@ module NgJwtAuth {
          */
         private tokenNeedsToRefreshNow():boolean {
 
-            if (!this.rawToken){
+            if (!this.rawToken) {
                 return false; //cant refresh if there isn't a token
             }
 
             let latestRefresh = moment(this.tokenData.data.exp * 1000).subtract(this.config.refreshBeforeSeconds, 'seconds'),
                 nextRefreshOpportunity = moment().add(this.config.checkExpiryEverySeconds)
-            ;
+                ;
 
             //needs to refresh if the the next time we could refresh is after the configured refresh before date
             return (latestRefresh <= nextRefreshOpportunity);
@@ -102,7 +116,7 @@ module NgJwtAuth {
          * Get the endpoint for refreshing a token
          * @returns {string}
          */
-        private getRefreshEndpoint():string{
+        private getRefreshEndpoint():string {
             return this.config.apiEndpoints.base + this.config.apiEndpoints.refresh;
         }
 
@@ -112,7 +126,7 @@ module NgJwtAuth {
          * @param password
          * @returns {string}
          */
-        private static getAuthHeader(username:string, password:string):string{
+        private static getAuthHeader(username:string, password:string):string {
             return 'Basic ' + btoa(username + ':' + password); //note btoa is NOT supported <= IE9
         }
 
@@ -120,7 +134,7 @@ module NgJwtAuth {
          * Build a token header string
          * @returns {string}
          */
-        private static getTokenHeader(token:string):string{
+        private static getTokenHeader(token:string):string {
             return 'Token ' + token;
         }
 
@@ -128,8 +142,8 @@ module NgJwtAuth {
          * Build a refresh header string
          * @returns {string}
          */
-        private getRefreshHeader():string{
-            if (!this.rawToken){
+        private getRefreshHeader():string {
+            if (!this.rawToken) {
                 throw new NgJwtAuthException("Token is not set, it cannot be refreshed");
             }
 
@@ -142,13 +156,13 @@ module NgJwtAuth {
          * @param authHeader
          * @returns {IPromise<TResult>}
          */
-        private retrieveAndProcessToken(endpoint:string, authHeader:string): ng.IPromise<any>{
+        private retrieveAndProcessToken(endpoint:string, authHeader:string):ng.IPromise<IUser> {
 
             var requestConfig:ng.IRequestConfig = {
                 method: 'GET',
-                url:  endpoint,
+                url: endpoint,
                 headers: {
-                    Authorization : authHeader
+                    Authorization: authHeader
                 },
                 responseType: 'json'
             };
@@ -156,27 +170,27 @@ module NgJwtAuth {
             return this.$http(requestConfig).then((result) => {
                 return _.get(result.data, this.config.tokenLocation);
             })
-            .then((token:string) => {
+                .then((token:string) => {
 
-                try {
+                    try {
 
-                    return this.processNewToken(token);
+                        return this.processNewToken(token);
 
-                }catch(error){
-                    return this.$q.reject(error);
-                }
+                    } catch (error) {
+                        return this.$q.reject(error);
+                    }
 
-            })
-            .catch((result) => {
+                })
+                .catch((result) => {
 
-                if (result.status === 401){
-                    //throw new NgJwtAuthException("Login attempt received unauthorised response");
-                    return this.$q.reject(new NgJwtAuthException("Login attempt received unauthorised response"));
-                }
+                    if (result.status === 401) {
+                        //throw new NgJwtAuthException("Login attempt received unauthorised response");
+                        return this.$q.reject(new NgJwtAuthException("Login attempt received unauthorised response"));
+                    }
 
-                //throw new NgJwtAuthException("The API reported an error");
-                return this.$q.reject(new NgJwtAuthException("The API reported an error"));
-            })
+                    //throw new NgJwtAuthException("The API reported an error");
+                    return this.$q.reject(new NgJwtAuthException("The API reported an error"));
+                })
 
         }
 
@@ -187,16 +201,16 @@ module NgJwtAuth {
          */
         private static readToken(rawToken:string):IJwtToken {
 
-            if ((rawToken.match(/\./g) || []).length !== 2){
+            if ((rawToken.match(/\./g) || []).length !== 2) {
                 throw new NgJwtAuthException("Raw token is has incorrect format. Format must be of form \"[header].[data].[signature]\"");
             }
 
             var pieces = rawToken.split('.');
 
             var jwt:IJwtToken = {
-                header : angular.fromJson(atob(pieces[0])),
-                data : angular.fromJson(atob(pieces[1])),
-                signature : pieces[2],
+                header: angular.fromJson(atob(pieces[0])),
+                data: angular.fromJson(atob(pieces[1])),
+                signature: pieces[2],
             };
 
             return jwt;
@@ -214,7 +228,7 @@ module NgJwtAuth {
 
                 return _.isObject(tokenData);
 
-            }catch(e){
+            } catch (e) {
                 return false;
             }
 
@@ -234,7 +248,7 @@ module NgJwtAuth {
          * @param rawToken
          * @returns {IUser}
          */
-        public processNewToken(rawToken:string) : IUser{
+        public processNewToken(rawToken:string):ng.IPromise<IUser> {
 
             this.rawToken = rawToken;
 
@@ -242,7 +256,7 @@ module NgJwtAuth {
 
             var expiryDate = moment(this.tokenData.data.exp * 1000);
 
-            if (expiryDate < moment()){
+            if (expiryDate < moment()) {
                 throw new NgJwtAuthTokenExpiredException("Token has expired");
             }
 
@@ -252,31 +266,26 @@ module NgJwtAuth {
 
             this.loggedIn = true;
 
-            this.user = this.getUserFromTokenData(this.tokenData);
-
-            return this.user;
-
+            return this.getUserFromTokenData(this.tokenData);
         }
 
-        private loadTokenFromStorage():boolean {
+        private loadTokenFromStorage():ng.IPromise<IUser> {
 
             let rawToken = this.$window.localStorage.getItem(this.config.storageKeyName);
 
-            if (!rawToken){
-                return false;
+            if (!rawToken) {
+                return this.$q.reject(new NgJwtAuthException("Could not process token from storage"));
             }
 
             try {
-                this.processNewToken(rawToken);
-                return true;
-            }catch(e){
-                if (e instanceof NgJwtAuthTokenExpiredException){
-                    this.requireCredentialsAndAuthenticate();
-
+                return this.processNewToken(rawToken);
+            } catch (e) {
+                if (e instanceof NgJwtAuthTokenExpiredException) {
+                    return this.requireCredentialsAndAuthenticate();
                 }
             }
 
-            return false;
+            return this.$q.reject(new NgJwtAuthException("Could not process token from storage"));
         }
 
         /**
@@ -284,7 +293,7 @@ module NgJwtAuth {
          * @param url
          * @returns {boolean}
          */
-        public isLoginMethod(url: string) : boolean{
+        public isLoginMethod(url:string):boolean {
 
             let loginMethods = [
                 this.getLoginEndpoint(),
@@ -294,7 +303,7 @@ module NgJwtAuth {
             return _.contains(loginMethods, url);
         }
 
-        public getUser() : IUser{
+        public getUser():IUser {
             return this.user;
         }
 
@@ -302,11 +311,11 @@ module NgJwtAuth {
          *
          * @returns {IHttpPromise<T>}
          */
-        public getPromisedUser(): ng.IPromise<IUser>{
+        public getPromisedUser():ng.IPromise<IUser> {
 
-            if (this.loggedIn){ //if we are already logged in, resolve the user immediately
+            if (this.loggedIn) { //if we are already logged in, resolve the user immediately
                 return this.$q.when(this.user);
-            }else{ //otherwise require login then return the user
+            } else { //otherwise require login then return the user
                 return this.requireCredentialsAndAuthenticate();
             }
 
@@ -328,7 +337,7 @@ module NgJwtAuth {
          * @param password
          * @returns {IPromise<boolean>}
          */
-        public authenticateCredentials(username:string, password:string):ng.IPromise<any> {
+        public authenticateCredentials(username:string, password:string):ng.IPromise<IUser> {
 
             let authHeader = NgJwtAuthService.getAuthHeader(username, password);
             let endpoint = this.getLoginEndpoint();
@@ -371,13 +380,13 @@ module NgJwtAuth {
          * 4. Then try to authenticateCredentials
          * @returns {IPromise<TResult>}
          */
-        public requireCredentialsAndAuthenticate():ng.IPromise<IUser>{
+        public requireCredentialsAndAuthenticate():ng.IPromise<IUser> {
 
-            if (!_.isFunction(this.loginPromptFactory)){
+            if (!_.isFunction(this.loginPromptFactory)) {
                 throw new NgJwtAuthException("You must set a loginPromptFactory with `ngJwtAuthService.registerLoginPromptFactory()` so the user can be prompted for their credentials");
             }
 
-            if (!this.userLoggedInPromise){
+            if (!this.userLoggedInPromise) {
                 let deferredCredentials = this.$q.defer();
 
                 let loginSuccess = this.$q.defer();
@@ -397,13 +406,13 @@ module NgJwtAuth {
 
                 this.userLoggedInPromise = this.loginPromptFactory(deferredCredentials, loginSuccess.promise, this.user)
                     .then(
-                        () => loginSuccess.promise, //when the user has completed the login, chain on the login success promise
-                        (err) => {
-                            deferredCredentials.reject(); //if the user aborted login, reject the credentials promise
-                            loginSuccess.reject();
-                            return this.$q.reject(err); //and reject the login promise
-                        }
-                    )
+                    () => loginSuccess.promise, //when the user has completed the login, chain on the login success promise
+                    (err) => {
+                        deferredCredentials.reject(); //if the user aborted login, reject the credentials promise
+                        loginSuccess.reject();
+                        return this.$q.reject(err); //and reject the login promise
+                    }
+                )
                 ;
 
             }
@@ -414,12 +423,12 @@ module NgJwtAuth {
                 })
                 .finally(() => {
 
-                    if (!!this.userLoggedInPromise){ //deregister the userLoggedInPromise
+                    if (!!this.userLoggedInPromise) { //deregister the userLoggedInPromise
                         this.userLoggedInPromise = null;
                     }
 
                 })
-            ;
+                ;
 
         }
 
@@ -428,9 +437,12 @@ module NgJwtAuth {
          * @param tokenData
          * @returns {T}
          */
-        private getUserFromTokenData(tokenData:IJwtToken):IUser {
+        private getUserFromTokenData(tokenData:IJwtToken):ng.IPromise<IUser> {
 
-            return <IUser>_.get(tokenData.data, this.config.tokenUser);
+            return this.userFactory(tokenData.data.sub, tokenData.data).then((user:IUser) => {
+                this.user = user;
+                return user;
+            });
         }
 
         /**
@@ -448,7 +460,7 @@ module NgJwtAuth {
          */
         private setJWTHeader(rawToken:String):void {
 
-            this.$http.defaults.headers.common.Authorization = 'Bearer '+rawToken;
+            this.$http.defaults.headers.common.Authorization = 'Bearer ' + rawToken;
         }
 
         /**
@@ -481,11 +493,24 @@ module NgJwtAuth {
          */
         public registerLoginPromptFactory(loginPromptFactory:ILoginPromptFactory):NgJwtAuthService {
 
-            if (_.isFunction(this.loginPromptFactory)){
+            if (_.isFunction(this.loginPromptFactory)) {
                 throw new NgJwtAuthException("You cannot redeclare the login prompt factory");
             }
 
             this.loginPromptFactory = loginPromptFactory;
+
+            return this;
+        }
+
+
+        /**
+         * Register the user factory for extracting a user from data
+         * @param userFactory
+         * @returns {NgJwtAuth.NgJwtAuthService}
+         */
+        public registerUserFactory(userFactory:IUserFactory):NgJwtAuthService {
+
+            this.userFactory = userFactory;
 
             return this;
         }

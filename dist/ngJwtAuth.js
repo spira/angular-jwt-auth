@@ -74,16 +74,27 @@ var NgJwtAuth;
             this.$q = _$q;
             this.$window = _$window;
             this.$interval = _$interval;
+            this.userFactory = this.defaultUserFactory;
         }
+        /**
+         * A default implementation of the user factory if the client does not provide one
+         */
+        NgJwtAuthService.prototype.defaultUserFactory = function (subClaim, tokenData) {
+            return this.$q.when(_.get(tokenData, this.config.tokenUser));
+        };
         /**
          * Service needs an init function so runtime configuration can occur before
          * bootstrapping the service. This allows the user supplied LoginPromptFactory
          * to be registered
          */
         NgJwtAuthService.prototype.init = function () {
+            var _this = this;
             //attempt to load the token from storage
-            this.loadTokenFromStorage();
-            this.refreshTimerPromise = this.$interval(this.tickRefreshTime, this.config.checkExpiryEverySeconds * 1000, null, false);
+            return this.loadTokenFromStorage()
+                .finally(function () {
+                _this.refreshTimerPromise = _this.$interval(_this.tickRefreshTime, _this.config.checkExpiryEverySeconds * 1000, null, false);
+                return true;
+            });
         };
         /**
          * Check if the token needs to refresh now
@@ -233,24 +244,22 @@ var NgJwtAuth;
             this.saveTokenToStorage(rawToken);
             this.setJWTHeader(rawToken);
             this.loggedIn = true;
-            this.user = this.getUserFromTokenData(this.tokenData);
-            return this.user;
+            return this.getUserFromTokenData(this.tokenData);
         };
         NgJwtAuthService.prototype.loadTokenFromStorage = function () {
             var rawToken = this.$window.localStorage.getItem(this.config.storageKeyName);
             if (!rawToken) {
-                return false;
+                return this.$q.reject(new NgJwtAuth.NgJwtAuthException("Could not process token from storage"));
             }
             try {
-                this.processNewToken(rawToken);
-                return true;
+                return this.processNewToken(rawToken);
             }
             catch (e) {
                 if (e instanceof NgJwtAuth.NgJwtAuthTokenExpiredException) {
-                    this.requireCredentialsAndAuthenticate();
+                    return this.requireCredentialsAndAuthenticate();
                 }
             }
-            return false;
+            return this.$q.reject(new NgJwtAuth.NgJwtAuthException("Could not process token from storage"));
         };
         /**
          * Check if the endpoint is a login method (used for skipping the authentication error interceptor)
@@ -366,7 +375,11 @@ var NgJwtAuth;
          * @returns {T}
          */
         NgJwtAuthService.prototype.getUserFromTokenData = function (tokenData) {
-            return _.get(tokenData.data, this.config.tokenUser);
+            var _this = this;
+            return this.userFactory(tokenData.data.sub, tokenData.data).then(function (user) {
+                _this.user = user;
+                return user;
+            });
         };
         /**
          * Save the token
@@ -412,6 +425,15 @@ var NgJwtAuth;
                 throw new NgJwtAuth.NgJwtAuthException("You cannot redeclare the login prompt factory");
             }
             this.loginPromptFactory = loginPromptFactory;
+            return this;
+        };
+        /**
+         * Register the user factory for extracting a user from data
+         * @param userFactory
+         * @returns {NgJwtAuth.NgJwtAuthService}
+         */
+        NgJwtAuthService.prototype.registerUserFactory = function (userFactory) {
+            this.userFactory = userFactory;
             return this;
         };
         /**
