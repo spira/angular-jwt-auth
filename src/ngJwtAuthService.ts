@@ -269,12 +269,12 @@ module NgJwtAuth {
             return this.getUserFromTokenData(this.tokenData);
         }
 
-        private loadTokenFromStorage():ng.IPromise<IUser> {
+        private loadTokenFromStorage():ng.IPromise<IUser|String> {
 
             let rawToken = this.$window.localStorage.getItem(this.config.storageKeyName);
 
             if (!rawToken) {
-                return this.$q.reject(new NgJwtAuthException("Could not process token from storage"));
+                return this.$q.when("No token in storage");
             }
 
             try {
@@ -283,9 +283,11 @@ module NgJwtAuth {
                 if (e instanceof NgJwtAuthTokenExpiredException) {
                     return this.requireCredentialsAndAuthenticate();
                 }
+
+                return this.$q.reject(e);
+
             }
 
-            return this.$q.reject(new NgJwtAuthException("Could not process token from storage"));
         }
 
         /**
