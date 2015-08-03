@@ -702,7 +702,7 @@ describe('Service Reloading', () => {
             clock.tick(1000 * tickIntervalSeconds); //fast forward clock by the configured seconds
             (<any>ngJwtAuthService).$interval.flush(1000 * tickIntervalSeconds); //fast forward intervals by the configured seconds
 
-            expect(init).eventually.to.be.rejectedWith(sinon.match.instanceOf(NgJwtAuth.NgJwtAuthException));
+            expect(init).eventually.to.be.fulfilled;
 
         });
 

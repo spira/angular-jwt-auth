@@ -249,7 +249,7 @@ var NgJwtAuth;
         NgJwtAuthService.prototype.loadTokenFromStorage = function () {
             var rawToken = this.$window.localStorage.getItem(this.config.storageKeyName);
             if (!rawToken) {
-                return this.$q.reject(new NgJwtAuth.NgJwtAuthException("Could not process token from storage"));
+                return this.$q.when("No token in storage");
             }
             try {
                 return this.processNewToken(rawToken);
@@ -258,8 +258,8 @@ var NgJwtAuth;
                 if (e instanceof NgJwtAuth.NgJwtAuthTokenExpiredException) {
                     return this.requireCredentialsAndAuthenticate();
                 }
+                return this.$q.reject(e);
             }
-            return this.$q.reject(new NgJwtAuth.NgJwtAuthException("Could not process token from storage"));
         };
         /**
          * Check if the endpoint is a login method (used for skipping the authentication error interceptor)
