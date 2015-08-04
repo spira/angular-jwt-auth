@@ -181,15 +181,18 @@ module NgJwtAuth {
                     }
 
                 })
-                .catch((result) => {
+                .catch((e:any) => {
 
-                    if (result.status === 401) {
-                        //throw new NgJwtAuthException("Login attempt received unauthorised response");
+                    if (_.isError(e)) {
+                        return this.$q.reject(new NgJwtAuthException(e.message));
+                    }
+
+                    if (e.status === 401) {
+
                         return this.$q.reject(new NgJwtAuthException("Login attempt received unauthorised response"));
                     }
 
-                    //throw new NgJwtAuthException("The API reported an error");
-                    return this.$q.reject(new NgJwtAuthException("The API reported an error"));
+                    return this.$q.reject(new NgJwtAuthException("The API reported an error - " + e.status + " " + e.statusText));
                 })
 
         }
