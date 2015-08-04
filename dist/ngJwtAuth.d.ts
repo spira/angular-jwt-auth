@@ -294,6 +294,8 @@ declare module NgJwtAuth {
     }
     class NgJwtAuthTokenExpiredException extends NgJwtAuthException {
     }
+    class NgJwtAuthCredentialsFailedException extends NgJwtAuthException {
+    }
     class NgJwtAuthServiceProvider implements ng.IServiceProvider, INgJwtAuthServiceProvider {
         private config;
         /**

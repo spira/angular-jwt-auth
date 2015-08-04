@@ -21,6 +21,7 @@ module NgJwtAuth {
     }
 
     export class NgJwtAuthTokenExpiredException extends NgJwtAuthException{}
+    export class NgJwtAuthCredentialsFailedException extends NgJwtAuthException{}
 
     export class NgJwtAuthServiceProvider implements ng.IServiceProvider, INgJwtAuthServiceProvider {
 
