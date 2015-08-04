@@ -36,11 +36,12 @@ module NgJwtAuth {
 
                 let newToken = updateHeader.replace('Bearer ', '');
 
-                if (!NgJwtAuth.NgJwtAuthService.validateToken(newToken)){
+                let ngJwtAuthService = this.getNgJwtAuthService();
+
+                if (!ngJwtAuthService.validateToken(newToken)){
                     return response; //if it is not a valid JWT, just return the response as it might be some other kind of token that is being updated.
                 }
 
-                let ngJwtAuthService = this.getNgJwtAuthService();
                 ngJwtAuthService.processNewToken(newToken);
             }
 

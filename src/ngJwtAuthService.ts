@@ -2,13 +2,6 @@ module NgJwtAuth {
 
     export class NgJwtAuthService implements INgJwtAuthService {
 
-        //list injected dependencies
-        private config:INgJwtAuthServiceConfig;
-        private $http:ng.IHttpService;
-        private $q:ng.IQService;
-        private $window:ng.IWindowService;
-        private $interval:ng.IIntervalService;
-
         //private properties
         private user:IUser;
 
@@ -25,19 +18,19 @@ module NgJwtAuth {
 
         /**
          * Construct the service with dependencies injected
-         * @param _config
-         * @param _$http
-         * @param _$q
-         * @param _$window
-         * @param _$interval
+         * @param config
+         * @param $http
+         * @param $q
+         * @param $window
+         * @param $interval
+         * @param base64
          */
-        constructor(_config:INgJwtAuthServiceConfig, _$http:ng.IHttpService, _$q:ng.IQService, _$window:ng.IWindowService, _$interval:ng.IIntervalService) {
-
-            this.config = _config;
-            this.$http = _$http;
-            this.$q = _$q;
-            this.$window = _$window;
-            this.$interval = _$interval;
+        constructor(private config:INgJwtAuthServiceConfig,
+                    private $http:ng.IHttpService,
+                    private $q:ng.IQService,
+                    private $window:ng.IWindowService,
+                    private $interval:ng.IIntervalService,
+                    private base64Service:IBase64Service) {
 
             this.userFactory = this.defaultUserFactory;
 
@@ -202,7 +195,7 @@ module NgJwtAuth {
          * @param rawToken
          * @returns {IJwtToken}
          */
-        private static readToken(rawToken:string):IJwtToken {
+        private readToken(rawToken:string):IJwtToken {
 
             if ((rawToken.match(/\./g) || []).length !== 2) {
                 throw new NgJwtAuthException("Raw token is has incorrect format. Format must be of form \"[header].[data].[signature]\"");
@@ -211,8 +204,8 @@ module NgJwtAuth {
             var pieces = rawToken.split('.');
 
             var jwt:IJwtToken = {
-                header: angular.fromJson(atob(pieces[0])),
-                data: angular.fromJson(atob(pieces[1])),
+                header: angular.fromJson(this.base64Service.urldecode(pieces[0])),
+                data: angular.fromJson(this.base64Service.urldecode(pieces[1])),
                 signature: pieces[2],
             };
 
@@ -224,10 +217,10 @@ module NgJwtAuth {
          * @param rawToken
          * @returns {any}
          */
-        public static validateToken(rawToken:string):boolean {
+        public validateToken(rawToken:string):boolean {
 
             try {
-                let tokenData = NgJwtAuthService.readToken(rawToken);
+                let tokenData = this.readToken(rawToken);
 
                 return _.isObject(tokenData);
 
@@ -255,7 +248,7 @@ module NgJwtAuth {
 
             this.rawToken = rawToken;
 
-            this.tokenData = NgJwtAuthService.readToken(rawToken);
+            this.tokenData = this.readToken(rawToken);
 
             var expiryDate = moment(this.tokenData.data.exp * 1000);
 

@@ -13,10 +13,10 @@ var NgJwtAuth;
                 var updateHeader = response.headers('Authorization-Update');
                 if (updateHeader) {
                     var newToken = updateHeader.replace('Bearer ', '');
-                    if (!NgJwtAuth.NgJwtAuthService.validateToken(newToken)) {
+                    var ngJwtAuthService = _this.getNgJwtAuthService();
+                    if (!ngJwtAuthService.validateToken(newToken)) {
                         return response; //if it is not a valid JWT, just return the response as it might be some other kind of token that is being updated.
                     }
-                    var ngJwtAuthService = _this.getNgJwtAuthService();
                     ngJwtAuthService.processNewToken(newToken);
                 }
                 return response;
@@ -51,14 +51,21 @@ var NgJwtAuth;
     var NgJwtAuthService = (function () {
         /**
          * Construct the service with dependencies injected
-         * @param _config
-         * @param _$http
-         * @param _$q
-         * @param _$window
-         * @param _$interval
+         * @param config
+         * @param $http
+         * @param $q
+         * @param $window
+         * @param $interval
+         * @param base64
          */
-        function NgJwtAuthService(_config, _$http, _$q, _$window, _$interval) {
+        function NgJwtAuthService(config, $http, $q, $window, $interval, base64Service) {
             var _this = this;
+            this.config = config;
+            this.$http = $http;
+            this.$q = $q;
+            this.$window = $window;
+            this.$interval = $interval;
+            this.base64Service = base64Service;
             //public properties
             this.loggedIn = false;
             /**
@@ -69,11 +76,6 @@ var NgJwtAuth;
                     _this.refreshToken();
                 }
             };
-            this.config = _config;
-            this.$http = _$http;
-            this.$q = _$q;
-            this.$window = _$window;
-            this.$interval = _$interval;
             this.userFactory = this.defaultUserFactory;
         }
         /**
@@ -197,14 +199,14 @@ var NgJwtAuth;
          * @param rawToken
          * @returns {IJwtToken}
          */
-        NgJwtAuthService.readToken = function (rawToken) {
+        NgJwtAuthService.prototype.readToken = function (rawToken) {
             if ((rawToken.match(/\./g) || []).length !== 2) {
                 throw new NgJwtAuth.NgJwtAuthException("Raw token is has incorrect format. Format must be of form \"[header].[data].[signature]\"");
             }
             var pieces = rawToken.split('.');
             var jwt = {
-                header: angular.fromJson(atob(pieces[0])),
-                data: angular.fromJson(atob(pieces[1])),
+                header: angular.fromJson(this.base64Service.urldecode(pieces[0])),
+                data: angular.fromJson(this.base64Service.urldecode(pieces[1])),
                 signature: pieces[2],
             };
             return jwt;
@@ -214,9 +216,9 @@ var NgJwtAuth;
          * @param rawToken
          * @returns {any}
          */
-        NgJwtAuthService.validateToken = function (rawToken) {
+        NgJwtAuthService.prototype.validateToken = function (rawToken) {
             try {
-                var tokenData = NgJwtAuthService.readToken(rawToken);
+                var tokenData = this.readToken(rawToken);
                 return _.isObject(tokenData);
             }
             catch (e) {
@@ -237,7 +239,7 @@ var NgJwtAuth;
          */
         NgJwtAuthService.prototype.processNewToken = function (rawToken) {
             this.rawToken = rawToken;
-            this.tokenData = NgJwtAuthService.readToken(rawToken);
+            this.tokenData = this.readToken(rawToken);
             var expiryDate = moment(this.tokenData.data.exp * 1000);
             if (expiryDate < moment()) {
                 throw new NgJwtAuth.NgJwtAuthTokenExpiredException("Token has expired");
@@ -493,8 +495,8 @@ var NgJwtAuth;
          * Initialise the service provider
          */
         function NgJwtAuthServiceProvider() {
-            this.$get = ['$http', '$q', '$window', '$interval', function NgJwtAuthServiceFactory($http, $q, $window, $interval) {
-                    return new NgJwtAuth.NgJwtAuthService(this.config, $http, $q, $window, $interval);
+            this.$get = ['$http', '$q', '$window', '$interval', 'base64', function NgJwtAuthServiceFactory($http, $q, $window, $interval, base64) {
+                    return new NgJwtAuth.NgJwtAuthService(this.config, $http, $q, $window, $interval, base64);
                 }];
             //initialise service config
             this.config = {
@@ -527,7 +529,7 @@ var NgJwtAuth;
         return NgJwtAuthServiceProvider;
     })();
     NgJwtAuth.NgJwtAuthServiceProvider = NgJwtAuthServiceProvider;
-    angular.module('ngJwtAuth', [])
+    angular.module('ngJwtAuth', ['ab-base64'])
         .provider('ngJwtAuthService', NgJwtAuthServiceProvider)
         .service('ngJwtAuthInterceptor', NgJwtAuth.NgJwtAuthInterceptor)
         .config(['$httpProvider', '$injector', function ($httpProvider) {
