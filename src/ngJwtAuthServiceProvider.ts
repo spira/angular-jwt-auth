@@ -65,15 +65,15 @@ module NgJwtAuth {
             return this;
         }
 
-        public $get = ['$http', '$q', '$window', '$interval', function NgJwtAuthServiceFactory($http, $q, $window, $interval) {
-            return new NgJwtAuthService(this.config, $http, $q, $window, $interval);
+        public $get = ['$http', '$q', '$window', '$interval', 'base64', function NgJwtAuthServiceFactory($http, $q, $window, $interval, base64) {
+            return new NgJwtAuthService(this.config, $http, $q, $window, $interval, base64);
         }];
 
     }
 
 
 
-    angular.module('ngJwtAuth', [])
+    angular.module('ngJwtAuth', ['ab-base64'])
         .provider('ngJwtAuthService', NgJwtAuthServiceProvider)
         .service('ngJwtAuthInterceptor', NgJwtAuthInterceptor)
         .config(['$httpProvider', '$injector', ($httpProvider:ng.IHttpProvider) => {

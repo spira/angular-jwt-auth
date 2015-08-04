@@ -79,4 +79,12 @@ module NgJwtAuth {
         (subClaim:string, tokenData:IJwtClaims): ng.IPromise<IUser>;
     }
 
+    export interface IBase64Service {
+        encode(string:string):string;
+        decode(string:string):string;
+
+        urldecode(string:string):string;
+        urldecode(string:string):string;
+    }
+
 }

@@ -84,6 +84,12 @@ declare module NgJwtAuth {
     interface IUserFactory {
         (subClaim: string, tokenData: IJwtClaims): ng.IPromise<IUser>;
     }
+    interface IBase64Service {
+        encode(string: string): string;
+        decode(string: string): string;
+        urldecode(string: string): string;
+        urldecode(string: string): string;
+    }
 }
 declare module NgJwtAuth {
     class NgJwtAuthService implements INgJwtAuthService {
@@ -92,6 +98,7 @@ declare module NgJwtAuth {
         private $q;
         private $window;
         private $interval;
+        private base64Service;
         private user;
         private userFactory;
         private loginPromptFactory;
@@ -102,13 +109,14 @@ declare module NgJwtAuth {
         rawToken: string;
         /**
          * Construct the service with dependencies injected
-         * @param _config
-         * @param _$http
-         * @param _$q
-         * @param _$window
-         * @param _$interval
+         * @param config
+         * @param $http
+         * @param $q
+         * @param $window
+         * @param $interval
+         * @param base64
          */
-        constructor(_config: INgJwtAuthServiceConfig, _$http: ng.IHttpService, _$q: ng.IQService, _$window: ng.IWindowService, _$interval: ng.IIntervalService);
+        constructor(config: INgJwtAuthServiceConfig, $http: ng.IHttpService, $q: ng.IQService, $window: ng.IWindowService, $interval: ng.IIntervalService, base64Service: IBase64Service);
         /**
          * A default implementation of the user factory if the client does not provide one
          */
@@ -172,13 +180,13 @@ declare module NgJwtAuth {
          * @param rawToken
          * @returns {IJwtToken}
          */
-        private static readToken(rawToken);
+        private readToken(rawToken);
         /**
          * Validate JWT Token
          * @param rawToken
          * @returns {any}
          */
-        static validateToken(rawToken: string): boolean;
+        validateToken(rawToken: string): boolean;
         /**
          * Prompt user for their login credentials, and attempt to login
          * @returns {ng.IPromise<IUser>}
@@ -308,6 +316,6 @@ declare module NgJwtAuth {
          * @returns {NgJwtAuth.NgJwtAuthServiceProvider}
          */
         configure(config: IEndpointDefinition): NgJwtAuthServiceProvider;
-        $get: (string | (($http: any, $q: any, $window: any, $interval: any) => NgJwtAuthService))[];
+        $get: (string | (($http: any, $q: any, $window: any, $interval: any, base64: any) => NgJwtAuthService))[];
     }
 }
