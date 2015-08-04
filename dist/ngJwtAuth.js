@@ -183,11 +183,11 @@ var NgJwtAuth;
                 }
             })
                 .catch(function (e) {
-                if (_.isError(e)) {
+                if (_.isError(e) || e instanceof _this.$window.Error) {
                     return _this.$q.reject(new NgJwtAuth.NgJwtAuthException(e.message));
                 }
                 if (e.status === 401) {
-                    return _this.$q.reject(new NgJwtAuth.NgJwtAuthException("Login attempt received unauthorised response"));
+                    return _this.$q.reject(new NgJwtAuth.NgJwtAuthCredentialsFailedException("Login attempt received unauthorised response"));
                 }
                 return _this.$q.reject(new NgJwtAuth.NgJwtAuthException("The API reported an error - " + e.status + " " + e.statusText));
             });
@@ -480,6 +480,14 @@ var NgJwtAuth;
         return NgJwtAuthTokenExpiredException;
     })(NgJwtAuthException);
     NgJwtAuth.NgJwtAuthTokenExpiredException = NgJwtAuthTokenExpiredException;
+    var NgJwtAuthCredentialsFailedException = (function (_super) {
+        __extends(NgJwtAuthCredentialsFailedException, _super);
+        function NgJwtAuthCredentialsFailedException() {
+            _super.apply(this, arguments);
+        }
+        return NgJwtAuthCredentialsFailedException;
+    })(NgJwtAuthException);
+    NgJwtAuth.NgJwtAuthCredentialsFailedException = NgJwtAuthCredentialsFailedException;
     var NgJwtAuthServiceProvider = (function () {
         /**
          * Initialise the service provider

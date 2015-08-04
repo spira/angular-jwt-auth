@@ -183,13 +183,13 @@ module NgJwtAuth {
                 })
                 .catch((e:any) => {
 
-                    if (_.isError(e)) {
+                    if (_.isError(e) || e instanceof (<any>this.$window).Error) {
                         return this.$q.reject(new NgJwtAuthException(e.message));
                     }
 
                     if (e.status === 401) {
 
-                        return this.$q.reject(new NgJwtAuthException("Login attempt received unauthorised response"));
+                        return this.$q.reject(new NgJwtAuthCredentialsFailedException("Login attempt received unauthorised response"));
                     }
 
                     return this.$q.reject(new NgJwtAuthException("The API reported an error - " + e.status + " " + e.statusText));

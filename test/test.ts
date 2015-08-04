@@ -283,7 +283,7 @@ describe('Service tests', () => {
 
             let authPromise = ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
 
-            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthCredentialsFailedException);
 
             $httpBackend.flush();
 
