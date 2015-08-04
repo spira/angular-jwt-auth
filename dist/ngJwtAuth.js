@@ -183,7 +183,7 @@ var NgJwtAuth;
                 }
             })
                 .catch(function (e) {
-                if (_.isError(e)) {
+                if (_.isError(e) || e instanceof _this.$window.Error) {
                     return _this.$q.reject(new NgJwtAuth.NgJwtAuthException(e.message));
                 }
                 if (e.status === 401) {

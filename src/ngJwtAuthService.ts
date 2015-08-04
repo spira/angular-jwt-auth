@@ -183,7 +183,7 @@ module NgJwtAuth {
                 })
                 .catch((e:any) => {
 
-                    if (_.isError(e)) {
+                    if (_.isError(e) || e instanceof (<any>this.$window).Error) {
                         return this.$q.reject(new NgJwtAuthException(e.message));
                     }
 
