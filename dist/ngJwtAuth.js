@@ -182,13 +182,14 @@ var NgJwtAuth;
                     return _this.$q.reject(error);
                 }
             })
-                .catch(function (result) {
-                if (result.status === 401) {
-                    //throw new NgJwtAuthException("Login attempt received unauthorised response");
+                .catch(function (e) {
+                if (_.isError(e)) {
+                    return _this.$q.reject(new NgJwtAuth.NgJwtAuthException(e.message));
+                }
+                if (e.status === 401) {
                     return _this.$q.reject(new NgJwtAuth.NgJwtAuthException("Login attempt received unauthorised response"));
                 }
-                //throw new NgJwtAuthException("The API reported an error");
-                return _this.$q.reject(new NgJwtAuth.NgJwtAuthException("The API reported an error"));
+                return _this.$q.reject(new NgJwtAuth.NgJwtAuthException("The API reported an error - " + e.status + " " + e.statusText));
             });
         };
         /**
