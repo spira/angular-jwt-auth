@@ -28,6 +28,7 @@ declare module NgJwtAuth {
         getPromisedUser(): ng.IPromise<Object>;
         processNewToken(rawToken: string): ng.IPromise<IUser>;
         authenticateCredentials(username: string, password: string): ng.IPromise<Object>;
+        validateToken(rawToken: string): boolean;
         exchangeToken(token: string): ng.IPromise<Object>;
         requireCredentialsAndAuthenticate(): ng.IPromise<Object>;
         registerLoginPromptFactory(promiseFactory: ILoginPromptFactory): NgJwtAuthService;
