@@ -69,7 +69,7 @@ angular.module('app', ['ngJwtAuth'])
     
     $scope.login = function(username, password){
         
-        ngJwtAuthService.authenticate(username, password)
+        ngJwtAuthService.authenticateCredentials(username, password)
             .then(function(authenticatedUser){
                 console.log("Login Success!", authenticatedUser);
             })
