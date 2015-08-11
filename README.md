@@ -65,7 +65,7 @@ angular.module('app', ['ngJwtAuth'])
 .run(['ngJwtAuthService', function(ngJwtAuthService){
     ngJwtAuthService.init();
 }])
-.controller('AppCtrl', ['ngJwtAuthService', function(ngJwtAuthService){
+.controller('AppCtrl', ['$scope', 'ngJwtAuthService', function($scope, ngJwtAuthService){
     
     $scope.login = function(username, password){
         
@@ -91,21 +91,22 @@ To handle prompting the user for authentication, angular-jwt-auth provides a reg
  giving the user a prompt to re-enter their credentials. If their login is successful, the API call that was previously
  rejected will be reattempted.
  
-Full typescript example using a modal from [angular materials `$mdDialog`](https://material.angularjs.org/latest/#/api/material.components.dialog/service/$mdDialog) :
+Full typescript example from the [Spira](https://github.com/spira/spira) project using a modal from [angular materials `$mdDialog`](https://material.angularjs.org/latest/#/api/material.components.dialog/service/$mdDialog) :
 
-Note this example is in typescript, but it is the same in plain javascript.
+Note this example is in typescript, but it is the same process in plain javascript.
 
 ```ts
-module app.guest.login {
+namespace app.guest.login {
 
     export const namespace = 'app.guest.login';
 
     class LoginConfig {
 
         static $inject = ['ngJwtAuthServiceProvider'];
-        constructor(private ngJwtAuthServiceProvider:NgJwtAuth.NgJwtAuthServiceProvider){
 
-            let config : NgJwtAuth.INgJwtAuthServiceConfig = {
+        constructor(private ngJwtAuthServiceProvider:NgJwtAuth.NgJwtAuthServiceProvider) {
+
+            let config:NgJwtAuth.INgJwtAuthServiceConfig = {
                 refreshBeforeSeconds: 60 * 10, //10 mins
                 checkExpiryEverySeconds: 60, //1 min
                 apiEndpoints: {
@@ -122,94 +123,71 @@ module app.guest.login {
 
     }
 
-    class LoginInit {
+    export class LoginController {
 
-        static $inject = ['ngJwtAuthService', '$mdDialog', '$timeout'];
-        constructor(
-            private ngJwtAuthService:NgJwtAuth.NgJwtAuthService,
-            private $mdDialog:ng.material.IDialogService,
-            private $timeout:ng.ITimeoutService
-        ) {
+        public socialLogin;
 
-            ngJwtAuthService
-                .registerLoginPromptFactory((deferredCredentials:ng.IDeferred<NgJwtAuth.ICredentials>, loginSuccessPromise:ng.IPromise<NgJwtAuth.IUser>, currentUser:NgJwtAuth.IUser): ng.IPromise<any> => {
+        static $inject = ['$rootScope', '$mdDialog', '$mdToast', 'ngJwtAuthService', 'deferredCredentials', 'loginSuccess', 'userService'];
 
-                    let dialogConfig:ng.material.IDialogOptions = {
-                        templateUrl: 'templates/app/guest/login/login-dialog.tpl.html',
-                        controller: namespace+'.controller',
-                        clickOutsideToClose: true,
-                        locals : {
-                            deferredCredentials: deferredCredentials,
-                            loginSuccess: {
-                                promise: loginSuccessPromise //nest the promise in a function as otherwise material will try to wait for it to resolve
-                            },
-                        }
-                    };
+        constructor(private $rootScope:global.IRootScope,
+                    private $mdDialog:ng.material.IDialogService,
+                    private $mdToast:ng.material.IToastService,
+                    private ngJwtAuthService:NgJwtAuth.NgJwtAuthService,
+                    private deferredCredentials:ng.IDeferred<NgJwtAuth.ICredentials>,
+                    private loginSuccess:{promise:ng.IPromise<NgJwtAuth.IUser>},
+                    private userService:common.services.user.UserService) {
 
-                    return $timeout(_.noop) //first do an empty timeout to allow the controllers to init if login prompt is fired from within a .run() phase
-                        .then(() => $mdDialog.show(dialogConfig));
+            this.handleLoginSuccessPromise();
 
-                })
-                .init(); //initialise the auth service (kicks off the timers etc)
         }
 
-    }
-
-    interface IScope extends ng.IScope
-    {
-        login(username:string, password:string):void;
-        cancelLoginDialog():void;
-        loginError:string;
-    }
-
-    class LoginController {
-
-        static $inject = ['$scope', '$rootScope', '$mdDialog', '$mdToast', 'ngJwtAuthService', 'deferredCredentials', 'loginSuccess'];
-        constructor(
-            private $scope : IScope,
-            private $rootScope : global.IRootScope,
-            private $mdDialog:ng.material.IDialogService,
-            private $mdToast:ng.material.IToastService,
-            private ngJwtAuthService:NgJwtAuth.NgJwtAuthService,
-            private deferredCredentials:ng.IDeferred<NgJwtAuth.ICredentials>,
-            private loginSuccess:{promise:ng.IPromise<NgJwtAuth.IUser>}
-        ) {
-
-            $scope.login = (username, password) => {
-
-                let credentials:NgJwtAuth.ICredentials = {
-                    username: username,
-                    password: password,
-                };
-
-                deferredCredentials.notify(credentials); //resolve the deferred credentials with the passed creds
-
-            };
-
-            $scope.cancelLoginDialog = () => {
-                ngJwtAuthService.logout(); //make sure the user is logged out
-                $mdDialog.cancel('closed');
-            }; //allow the user to manually close the dialog
-
+        /**
+         * Register the login success promise handler
+         */
+        private handleLoginSuccessPromise() {
 
             //register error handling and close on success
-            loginSuccess.promise
+            this.loginSuccess.promise
                 .then(
-                (user) => $mdDialog.hide(user), //on success hide the dialog, pass through the returned user object
+                (user) => this.$mdDialog.hide(user), //on success hide the dialog, pass through the returned user object
                 null,
                 (err:Error) => {
-                    console.log('got error', err);
-                    if (err instanceof NgJwtAuth.NgJwtAuthException){
+                    if (err instanceof NgJwtAuth.NgJwtAuthCredentialsFailedException) {
                         this.$mdToast.show(
-                            (<any>$mdToast).simple() //<any> added so the parent method doesn't throw error, see https://github.com/borisyankov/DefinitelyTyped/issues/4843#issuecomment-124443371
+                            (<any>this.$mdToast).simple() 
                                 .hideDelay(2000)
                                 .position('top')
                                 .content(err.message)
                                 .parent('#loginDialog')
                         );
+                    } else {
+                        console.error(err);
                     }
                 }
             );
+        }
+
+        /**
+         * allow the user to manually close the dialog
+         */
+        public cancelLoginDialog() {
+            this.ngJwtAuthService.logout(); //make sure the user is logged out
+            this.$mdDialog.cancel('closed');
+        }
+
+        /**
+         * Attempt login
+         * @param username
+         * @param password
+         */
+        public login(username, password) {
+
+            let credentials:NgJwtAuth.ICredentials = {
+                username: username,
+                password: password,
+            };
+
+            this.deferredCredentials.notify(credentials); //resolve the deferred credentials with the passed creds
 
         }
 
@@ -217,8 +195,10 @@ module app.guest.login {
 
     angular.module(namespace, [])
         .config(LoginConfig)
-        .run(LoginInit)
-        .controller(namespace+'.controller', LoginController);
+        .controller(namespace + '.controller', LoginController);
 
 }
 ```
+
+## Todo
+Better documentation with examples in javascript.
