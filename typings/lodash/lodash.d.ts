@@ -5625,7 +5625,7 @@ declare module _ {
             ...sources: any[]): TResult;
 
 
-        //@xiphiaz added defaultsDeep here
+        //@xiphiaz added defaultsDeep here for lodash 3.10.1
         defaultsDeep<T, TResult>(
             object: T,
             ...sources: any[]): TResult;
