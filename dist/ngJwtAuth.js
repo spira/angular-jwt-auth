@@ -79,6 +79,13 @@ var NgJwtAuth;
             this.userFactory = this.defaultUserFactory;
         }
         /**
+         * Get the current configuration
+         * @returns {INgJwtAuthServiceConfig}
+         */
+        NgJwtAuthService.prototype.getConfig = function () {
+            return this.config;
+        };
+        /**
          * A default implementation of the user factory if the client does not provide one
          */
         NgJwtAuthService.prototype.defaultUserFactory = function (subClaim, tokenData) {
@@ -511,6 +518,11 @@ var NgJwtAuth;
                 storageKeyName: 'NgJwtAuthToken',
                 refreshBeforeSeconds: 60 * 2,
                 checkExpiryEverySeconds: 60,
+                cookie: {
+                    enabled: false,
+                    name: 'ngJwtAuthToken',
+                    removeFromHeader: true
+                }
             };
         }
         /**
@@ -529,7 +541,7 @@ var NgJwtAuth;
         return NgJwtAuthServiceProvider;
     })();
     NgJwtAuth.NgJwtAuthServiceProvider = NgJwtAuthServiceProvider;
-    angular.module('ngJwtAuth', ['ab-base64'])
+    angular.module('ngJwtAuth', ['ab-base64', 'ngCookies'])
         .provider('ngJwtAuthService', NgJwtAuthServiceProvider)
         .service('ngJwtAuthInterceptor', NgJwtAuth.NgJwtAuthInterceptor)
         .config(['$httpProvider', '$injector', function ($httpProvider) {

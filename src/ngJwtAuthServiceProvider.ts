@@ -45,6 +45,11 @@ module NgJwtAuth {
                 storageKeyName: 'NgJwtAuthToken',
                 refreshBeforeSeconds: 60 * 2, //2 mins
                 checkExpiryEverySeconds: 60, //2 mins
+                cookie: {
+                    enabled: false,
+                    name: 'ngJwtAuthToken',
+                    removeFromHeader: true
+                }
             };
 
         }

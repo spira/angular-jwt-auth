@@ -11,7 +11,7 @@
     "angular-cookies": "~1.4.3"
   },
   "devDependencies": {
-    "angular-mocks": "~1.4.1",
+    "angular-mocks": "~1.4.3",
     "faker": "~0.0.2",
     "chance": "~0.7.6"
   },

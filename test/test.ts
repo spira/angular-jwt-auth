@@ -645,11 +645,17 @@ describe('Service tests', () => {
 
     describe.only('Cookie interaction', () => {
 
+        let config:NgJwtAuth.INgJwtAuthServiceConfig;
+
+        beforeEach(() => {
+            config = ngJwtAuthService.getConfig();
+        });
+
         it('should save a cookie when configured', () => {
 
             ngJwtAuthService.logout(); //logout
 
-            expect(ngJwtAuthService.config.cookie.enabled).to.be.true; //check the service is configured to save cookies
+            expect(config.cookie.enabled).to.be.true; //check the service is configured to save cookies
 
             let token = fixtures.token;
 
@@ -661,7 +667,7 @@ describe('Service tests', () => {
 
             $httpBackend.flush();
 
-            let cookie = $cookies.get(ngJwtAuthService.config.cookie.name);
+            let cookie = $cookies.get(config.cookie.name);
 
             expect(cookie).to.equal(token);
 
@@ -669,11 +675,11 @@ describe('Service tests', () => {
 
         it('should not send the cookie in the headers when configured to suppress it', () => {
 
-            expect(ngJwtAuthService.config.cookie.removeFromHeader).to.be.true; //check service is configured right
+            expect(config.cookie.removeFromHeader).to.be.true; //check service is configured right
 
 
             $httpBackend.expectGET('/any', (headers) => {
-                return !RegExp(ngJwtAuthService.config.cookie.name).test(headers['Cookie']);
+                return !RegExp(config.cookie.name).test(headers['Cookie']);
             }).respond('foobar');
 
             (<any>ngJwtAuthService).$http.get('/any');
@@ -687,7 +693,7 @@ describe('Service tests', () => {
 
             ngJwtAuthService.logout(); //logout
 
-            let cookie = $cookies.get(ngJwtAuthService.config.cookie.name);
+            let cookie = $cookies.get(config.cookie.name);
 
             expect(cookie).to.be.undefined;
 

@@ -37,6 +37,14 @@ module NgJwtAuth {
         }
 
         /**
+         * Get the current configuration
+         * @returns {INgJwtAuthServiceConfig}
+         */
+        public getConfig():INgJwtAuthServiceConfig{
+            return this.config;
+        }
+
+        /**
          * A default implementation of the user factory if the client does not provide one
          */
         private defaultUserFactory(subClaim:string, tokenData:IJwtClaims):ng.IPromise<IUser> {

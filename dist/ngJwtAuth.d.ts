@@ -21,6 +21,7 @@ declare module NgJwtAuth {
     interface INgJwtAuthService {
         loggedIn: boolean;
         rawToken: string;
+        getConfig(): INgJwtAuthServiceConfig;
         init(): void;
         isLoginMethod(url: string): boolean;
         promptLogin(): ng.IPromise<Object>;
@@ -44,6 +45,11 @@ declare module NgJwtAuth {
         tokenExchange?: string;
         refresh?: string;
     }
+    interface ICookieConfig {
+        enabled: boolean;
+        name: string;
+        removeFromHeader: boolean;
+    }
     interface INgJwtAuthServiceConfig {
         tokenLocation?: string;
         tokenUser?: string;
@@ -51,6 +57,7 @@ declare module NgJwtAuth {
         storageKeyName?: string;
         refreshBeforeSeconds?: number;
         checkExpiryEverySeconds?: number;
+        cookie?: ICookieConfig;
     }
     interface IJwtClaims {
         iss: string;
@@ -118,6 +125,11 @@ declare module NgJwtAuth {
          * @param base64
          */
         constructor(config: INgJwtAuthServiceConfig, $http: ng.IHttpService, $q: ng.IQService, $window: ng.IWindowService, $interval: ng.IIntervalService, base64Service: IBase64Service);
+        /**
+         * Get the current configuration
+         * @returns {INgJwtAuthServiceConfig}
+         */
+        getConfig(): INgJwtAuthServiceConfig;
         /**
          * A default implementation of the user factory if the client does not provide one
          */
