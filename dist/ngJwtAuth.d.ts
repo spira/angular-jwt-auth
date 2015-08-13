@@ -48,7 +48,6 @@ declare module NgJwtAuth {
     interface ICookieConfig {
         enabled: boolean;
         name?: string;
-        removeFromHeader?: boolean;
     }
     interface INgJwtAuthServiceConfig {
         tokenLocation?: string;

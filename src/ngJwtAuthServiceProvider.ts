@@ -48,7 +48,6 @@ module NgJwtAuth {
                 cookie: {
                     enabled: false,
                     name: 'ngJwtAuthToken',
-                    removeFromHeader: true
                 }
             };
 
