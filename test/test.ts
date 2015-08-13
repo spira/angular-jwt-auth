@@ -160,6 +160,7 @@ describe('Service tests', () => {
     let ngJwtAuthService:NgJwtAuth.NgJwtAuthService;
     let $rootScope:ng.IRootScopeService;
     let $cookies:ng.cookies.ICookiesService;
+    let $q:ng.IQService;
 
     window.localStorage.clear();
 
@@ -167,13 +168,14 @@ describe('Service tests', () => {
 
         module('ngJwtAuth');
 
-        inject((_$httpBackend_, _ngJwtAuthService_, _$http_, _$rootScope_, _$cookies_) => {
+        inject((_$httpBackend_, _ngJwtAuthService_, _$http_, _$rootScope_, _$cookies_, _$q_) => {
 
             if (!ngJwtAuthService){ //dont rebind, so each test gets the singleton
                 $httpBackend = _$httpBackend_;
                 $rootScope = _$rootScope_;
                 ngJwtAuthService = _ngJwtAuthService_; //register injected of service provider
                 $http = _$http_;
+                $q = _$q_;
                 $cookies = _$cookies_;
             }
         });
@@ -643,12 +645,29 @@ describe('Service tests', () => {
 
 
 
-    describe.only('Cookie interaction', () => {
+    describe('Cookie interaction', () => {
 
+        let originalConfig:NgJwtAuth.INgJwtAuthServiceConfig;
         let config:NgJwtAuth.INgJwtAuthServiceConfig;
 
         beforeEach(() => {
+            originalConfig = ngJwtAuthService.getConfig();
+
+            //force the configuration to be what we want for cookie tests
+            (<any>ngJwtAuthService).config = _.merge(originalConfig, {
+                cookie: {
+                    enabled: true,
+                    name: 'ngJwtAuthToken',
+                    removeFromHeader: true
+                }
+            });
+
             config = ngJwtAuthService.getConfig();
+
+        });
+
+        afterEach(() => {
+            (<any>ngJwtAuthService).config = originalConfig; //restore
         });
 
         it('should save a cookie when configured', () => {
@@ -663,7 +682,9 @@ describe('Service tests', () => {
                 return headers['Authorization'] == fixtures.authBasic;
             }).respond({token: token});
 
-            ngJwtAuthService.getPromisedUser();
+            ngJwtAuthService.requireCredentialsAndAuthenticate();
+
+            $rootScope.$apply();
 
             $httpBackend.flush();
 
@@ -679,7 +700,7 @@ describe('Service tests', () => {
 
 
             $httpBackend.expectGET('/any', (headers) => {
-                return !RegExp(config.cookie.name).test(headers['Cookie']);
+                return !RegExp(ngJwtAuthService.rawToken).test(headers['Cookie']);
             }).respond('foobar');
 
             (<any>ngJwtAuthService).$http.get('/any');
@@ -747,9 +768,13 @@ describe('Service Reloading', () => {
     describe('User reloaded before expiry', () => {
 
 
-        let clock:Sinon.SinonFakeTimers = sinon.useFakeTimers();
+        let clock:Sinon.SinonFakeTimers;
 
-        after(() => {
+        beforeEach(() => {
+            clock = sinon.useFakeTimers();
+        })
+
+        afterEach(() => {
             clock.restore();
         });
 

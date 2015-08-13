@@ -107,6 +107,7 @@ declare module NgJwtAuth {
         private $window;
         private $interval;
         private base64Service;
+        private $cookies;
         private user;
         private userFactory;
         private loginPromptFactory;
@@ -122,9 +123,10 @@ declare module NgJwtAuth {
          * @param $q
          * @param $window
          * @param $interval
-         * @param base64
+         * @param base64Service
+         * @param $cookies
          */
-        constructor(config: INgJwtAuthServiceConfig, $http: ng.IHttpService, $q: ng.IQService, $window: ng.IWindowService, $interval: ng.IIntervalService, base64Service: IBase64Service);
+        constructor(config: INgJwtAuthServiceConfig, $http: ng.IHttpService, $q: ng.IQService, $window: ng.IWindowService, $interval: ng.IIntervalService, base64Service: IBase64Service, $cookies: ng.cookies.ICookiesService);
         /**
          * Get the current configuration
          * @returns {INgJwtAuthServiceConfig}
@@ -265,7 +267,7 @@ declare module NgJwtAuth {
          * Save the token
          * @param rawToken
          */
-        private saveTokenToStorage(rawToken);
+        private saveTokenToStorage(rawToken, tokenData);
         /**
          * Set the authentication token for all new requests
          * @param rawToken
@@ -329,6 +331,6 @@ declare module NgJwtAuth {
          * @returns {NgJwtAuth.NgJwtAuthServiceProvider}
          */
         configure(config: IEndpointDefinition): NgJwtAuthServiceProvider;
-        $get: (string | (($http: any, $q: any, $window: any, $interval: any, base64: any) => NgJwtAuthService))[];
+        $get: (string | (($http: any, $q: any, $window: any, $interval: any, base64: any, $cookies: any) => NgJwtAuthService))[];
     }
 }
