@@ -657,8 +657,7 @@ describe('Service tests', () => {
             (<any>ngJwtAuthService).config = _.merge(originalConfig, {
                 cookie: {
                     enabled: true,
-                    name: 'ngJwtAuthToken',
-                    removeFromHeader: true
+                    name: 'ngJwtAuthToken'
                 }
             });
 
@@ -691,21 +690,6 @@ describe('Service tests', () => {
             let cookie = $cookies.get(config.cookie.name);
 
             expect(cookie).to.equal(token);
-
-        });
-
-        it('should not send the cookie in the headers when configured to suppress it', () => {
-
-            expect(config.cookie.removeFromHeader).to.be.true; //check service is configured right
-
-
-            $httpBackend.expectGET('/any', (headers) => {
-                return !RegExp(ngJwtAuthService.rawToken).test(headers['Cookie']);
-            }).respond('foobar');
-
-            (<any>ngJwtAuthService).$http.get('/any');
-
-            $httpBackend.flush();
 
         });
 
