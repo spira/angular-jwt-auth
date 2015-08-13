@@ -5623,6 +5623,12 @@ declare module _ {
         defaults<T, TResult>(
             object: T,
             ...sources: any[]): TResult;
+
+
+        //@xiphiaz added defaultsDeep here
+        defaultsDeep<T, TResult>(
+            object: T,
+            ...sources: any[]): TResult;
     }
 
     interface LoDashObjectWrapper<T> {
