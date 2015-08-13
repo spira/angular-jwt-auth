@@ -66,7 +66,7 @@ module NgJwtAuth {
                 throw new NgJwtAuthException("Invalid properties ["+mismatchedConfig.join(',')+"] passed to config)");
             }
 
-            this.config = _.defaults(config, this.config);
+            this.config = _.defaultsDeep(config, this.config);
             return this;
         }
 

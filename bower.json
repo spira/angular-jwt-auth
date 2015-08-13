@@ -4,7 +4,7 @@
   "description": "Angular JSON Web Token Authentication Module",
   "main": "dist/ngJwtAuth.js",
   "dependencies": {
-    "lodash": "~3.9.3",
+    "lodash": "3.10.1",
     "moment": "~2.10.3",
     "angular": ">=1.4",
     "angular-utf8-base64": "~0.0.5",
