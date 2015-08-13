@@ -56,9 +56,10 @@ var NgJwtAuth;
          * @param $q
          * @param $window
          * @param $interval
-         * @param base64
+         * @param base64Service
+         * @param $cookies
          */
-        function NgJwtAuthService(config, $http, $q, $window, $interval, base64Service) {
+        function NgJwtAuthService(config, $http, $q, $window, $interval, base64Service, $cookies) {
             var _this = this;
             this.config = config;
             this.$http = $http;
@@ -66,6 +67,7 @@ var NgJwtAuth;
             this.$window = $window;
             this.$interval = $interval;
             this.base64Service = base64Service;
+            this.$cookies = $cookies;
             //public properties
             this.loggedIn = false;
             /**
@@ -78,6 +80,13 @@ var NgJwtAuth;
             };
             this.userFactory = this.defaultUserFactory;
         }
+        /**
+         * Get the current configuration
+         * @returns {INgJwtAuthServiceConfig}
+         */
+        NgJwtAuthService.prototype.getConfig = function () {
+            return this.config;
+        };
         /**
          * A default implementation of the user factory if the client does not provide one
          */
@@ -244,7 +253,7 @@ var NgJwtAuth;
             if (expiryDate < moment()) {
                 throw new NgJwtAuth.NgJwtAuthTokenExpiredException("Token has expired");
             }
-            this.saveTokenToStorage(rawToken);
+            this.saveTokenToStorage(rawToken, this.tokenData);
             this.setJWTHeader(rawToken);
             this.loggedIn = true;
             return this.getUserFromTokenData(this.tokenData);
@@ -297,6 +306,9 @@ var NgJwtAuth;
         NgJwtAuthService.prototype.clearJWTToken = function () {
             this.rawToken = null;
             this.$window.localStorage.removeItem(this.config.storageKeyName);
+            if (this.config.cookie.enabled) {
+                this.$cookies.remove(this.config.cookie.name);
+            }
             this.unsetJWTHeader();
         };
         /**
@@ -388,8 +400,13 @@ var NgJwtAuth;
          * Save the token
          * @param rawToken
          */
-        NgJwtAuthService.prototype.saveTokenToStorage = function (rawToken) {
+        NgJwtAuthService.prototype.saveTokenToStorage = function (rawToken, tokenData) {
             this.$window.localStorage.setItem(this.config.storageKeyName, rawToken);
+            if (this.config.cookie.enabled) {
+                this.$cookies.put(this.config.cookie.name, rawToken, {
+                    expires: moment(tokenData.data.exp * 1000).toDate(),
+                });
+            }
         };
         /**
          * Set the authentication token for all new requests
@@ -495,8 +512,8 @@ var NgJwtAuth;
          * Initialise the service provider
          */
         function NgJwtAuthServiceProvider() {
-            this.$get = ['$http', '$q', '$window', '$interval', 'base64', function NgJwtAuthServiceFactory($http, $q, $window, $interval, base64) {
-                    return new NgJwtAuth.NgJwtAuthService(this.config, $http, $q, $window, $interval, base64);
+            this.$get = ['$http', '$q', '$window', '$interval', 'base64', '$cookies', function NgJwtAuthServiceFactory($http, $q, $window, $interval, base64, $cookies) {
+                    return new NgJwtAuth.NgJwtAuthService(this.config, $http, $q, $window, $interval, base64, $cookies);
                 }];
             //initialise service config
             this.config = {
@@ -511,6 +528,11 @@ var NgJwtAuth;
                 storageKeyName: 'NgJwtAuthToken',
                 refreshBeforeSeconds: 60 * 2,
                 checkExpiryEverySeconds: 60,
+                cookie: {
+                    enabled: false,
+                    name: 'ngJwtAuthToken',
+                    removeFromHeader: true
+                }
             };
         }
         /**
@@ -529,7 +551,7 @@ var NgJwtAuth;
         return NgJwtAuthServiceProvider;
     })();
     NgJwtAuth.NgJwtAuthServiceProvider = NgJwtAuthServiceProvider;
-    angular.module('ngJwtAuth', ['ab-base64'])
+    angular.module('ngJwtAuth', ['ab-base64', 'ngCookies'])
         .provider('ngJwtAuthService', NgJwtAuthServiceProvider)
         .service('ngJwtAuthInterceptor', NgJwtAuth.NgJwtAuthInterceptor)
         .config(['$httpProvider', '$injector', function ($httpProvider) {

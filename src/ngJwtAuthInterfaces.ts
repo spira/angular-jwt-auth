@@ -5,6 +5,7 @@ module NgJwtAuth {
     export interface INgJwtAuthService {
         loggedIn: boolean;
         rawToken:string;
+        getConfig():INgJwtAuthServiceConfig;
         init():void;
         isLoginMethod(url:string): boolean;
         promptLogin():ng.IPromise<Object>;
@@ -31,6 +32,12 @@ module NgJwtAuth {
         refresh?: string;
     }
 
+    export interface ICookieConfig {
+        enabled: boolean;
+        name: string;
+        removeFromHeader: boolean;
+    }
+
     export interface INgJwtAuthServiceConfig {
         tokenLocation?: string;
         tokenUser?: string;
@@ -38,7 +45,10 @@ module NgJwtAuth {
         storageKeyName?: string;
         refreshBeforeSeconds?: number;
         checkExpiryEverySeconds?: number;
+        cookie?:ICookieConfig;
     }
+
+
 
     export interface IJwtClaims {
         iss: string;

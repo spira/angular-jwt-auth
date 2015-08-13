@@ -23,17 +23,27 @@ module NgJwtAuth {
          * @param $q
          * @param $window
          * @param $interval
-         * @param base64
+         * @param base64Service
+         * @param $cookies
          */
         constructor(private config:INgJwtAuthServiceConfig,
                     private $http:ng.IHttpService,
                     private $q:ng.IQService,
                     private $window:ng.IWindowService,
                     private $interval:ng.IIntervalService,
-                    private base64Service:IBase64Service) {
+                    private base64Service:IBase64Service,
+                    private $cookies:ng.cookies.ICookiesService) {
 
             this.userFactory = this.defaultUserFactory;
 
+        }
+
+        /**
+         * Get the current configuration
+         * @returns {INgJwtAuthServiceConfig}
+         */
+        public getConfig():INgJwtAuthServiceConfig {
+            return this.config;
         }
 
         /**
@@ -256,7 +266,7 @@ module NgJwtAuth {
                 throw new NgJwtAuthTokenExpiredException("Token has expired");
             }
 
-            this.saveTokenToStorage(rawToken);
+            this.saveTokenToStorage(rawToken, this.tokenData);
 
             this.setJWTHeader(rawToken);
 
@@ -326,6 +336,12 @@ module NgJwtAuth {
         private clearJWTToken():void {
             this.rawToken = null;
             this.$window.localStorage.removeItem(this.config.storageKeyName);
+
+            if (this.config.cookie.enabled){
+
+                this.$cookies.remove(this.config.cookie.name);
+            }
+
             this.unsetJWTHeader();
         }
 
@@ -447,9 +463,17 @@ module NgJwtAuth {
          * Save the token
          * @param rawToken
          */
-        private saveTokenToStorage(rawToken:string):void {
+        private saveTokenToStorage(rawToken:string, tokenData:IJwtToken):void {
 
             this.$window.localStorage.setItem(this.config.storageKeyName, rawToken);
+
+            if (this.config.cookie.enabled){
+
+                this.$cookies.put(this.config.cookie.name, rawToken, {
+                    expires: moment(tokenData.data.exp * 1000).toDate(), //set the cookie expiry to the same as the jwt
+                });
+            }
+
         }
 
         /**
