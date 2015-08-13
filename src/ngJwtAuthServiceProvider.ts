@@ -73,7 +73,7 @@ module NgJwtAuth {
 
 
 
-    angular.module('ngJwtAuth', ['ab-base64'])
+    angular.module('ngJwtAuth', ['ab-base64', 'ngCookies'])
         .provider('ngJwtAuthService', NgJwtAuthServiceProvider)
         .service('ngJwtAuthInterceptor', NgJwtAuthInterceptor)
         .config(['$httpProvider', '$injector', ($httpProvider:ng.IHttpProvider) => {

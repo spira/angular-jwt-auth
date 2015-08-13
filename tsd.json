@@ -40,6 +40,9 @@
     },
     "chai-as-promised/chai-as-promised.d.ts": {
       "commit": "6f04d25ad38982d372cc3cda62fa4c0eef9e24d7"
+    },
+    "angularjs/angular-cookies.d.ts": {
+      "commit": "338f9db37074d197764e95a487ddb865c5f2d73c"
     }
   }
 }

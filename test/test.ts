@@ -159,6 +159,7 @@ describe('Service tests', () => {
     let $http:ng.IHttpService;
     let ngJwtAuthService:NgJwtAuth.NgJwtAuthService;
     let $rootScope:ng.IRootScopeService;
+    let $cookies:ng.cookies.ICookiesService;
 
     window.localStorage.clear();
 
@@ -166,13 +167,14 @@ describe('Service tests', () => {
 
         module('ngJwtAuth');
 
-        inject((_$httpBackend_, _ngJwtAuthService_, _$http_, _$rootScope_) => {
+        inject((_$httpBackend_, _ngJwtAuthService_, _$http_, _$rootScope_, _$cookies_) => {
 
             if (!ngJwtAuthService){ //dont rebind, so each test gets the singleton
                 $httpBackend = _$httpBackend_;
                 $rootScope = _$rootScope_;
                 ngJwtAuthService = _ngJwtAuthService_; //register injected of service provider
                 $http = _$http_;
+                $cookies = _$cookies_;
             }
         });
 
@@ -636,6 +638,61 @@ describe('Service tests', () => {
             expect(result).eventually.to.have.deep.property('data', 'foo');
 
         });
+
+    });
+
+
+
+    describe.only('Cookie interaction', () => {
+
+        it('should save a cookie when configured', () => {
+
+            ngJwtAuthService.logout(); //logout
+
+            expect(ngJwtAuthService.config.cookie.enabled).to.be.true; //check the service is configured to save cookies
+
+            let token = fixtures.token;
+
+            $httpBackend.expectGET('/api/auth/login', (headers) => {
+                return headers['Authorization'] == fixtures.authBasic;
+            }).respond({token: token});
+
+            ngJwtAuthService.getPromisedUser();
+
+            $httpBackend.flush();
+
+            let cookie = $cookies.get(ngJwtAuthService.config.cookie.name);
+
+            expect(cookie).to.equal(token);
+
+        });
+
+        it('should not send the cookie in the headers when configured to suppress it', () => {
+
+            expect(ngJwtAuthService.config.cookie.removeFromHeader).to.be.true; //check service is configured right
+
+
+            $httpBackend.expectGET('/any', (headers) => {
+                return !RegExp(ngJwtAuthService.config.cookie.name).test(headers['Cookie']);
+            }).respond('foobar');
+
+            (<any>ngJwtAuthService).$http.get('/any');
+
+            $httpBackend.flush();
+
+        });
+
+
+        it('should delete the cookie when logged out', () => {
+
+            ngJwtAuthService.logout(); //logout
+
+            let cookie = $cookies.get(ngJwtAuthService.config.cookie.name);
+
+            expect(cookie).to.be.undefined;
+
+        });
+
 
     });
 
