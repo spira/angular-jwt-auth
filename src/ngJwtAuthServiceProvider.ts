@@ -48,6 +48,7 @@ module NgJwtAuth {
                 cookie: {
                     enabled: false,
                     name: 'ngJwtAuthToken',
+                    topLevelDomain: false,
                 }
             };
 
@@ -69,8 +70,8 @@ module NgJwtAuth {
             return this;
         }
 
-        public $get = ['$http', '$q', '$window', '$interval', 'base64', '$cookies', function NgJwtAuthServiceFactory($http, $q, $window, $interval, base64, $cookies) {
-            return new NgJwtAuthService(this.config, $http, $q, $window, $interval, base64, $cookies);
+        public $get = ['$http', '$q', '$window', '$interval', 'base64', '$cookies', '$location', function NgJwtAuthServiceFactory($http, $q, $window, $interval, base64, $cookies, $location) {
+            return new NgJwtAuthService(this.config, $http, $q, $window, $interval, base64, $cookies, $location);
         }];
 
     }
