@@ -34,8 +34,8 @@ module NgJwtAuth {
 
     export interface ICookieConfig {
         enabled: boolean;
-        name: string;
-        removeFromHeader: boolean;
+        name?: string;
+        removeFromHeader?: boolean;
     }
 
     export interface INgJwtAuthServiceConfig {
