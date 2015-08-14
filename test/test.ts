@@ -82,10 +82,20 @@ let cookiesFactoryMock = (allowDomain) => {
                     return false;
                 }
 
-                cookieStore[key] = value;
+                cookieStore[key] = {
+                    value: value,
+                    conf: conf
+                };
             },
 
             get: (key) => {
+                if (!cookieStore[key]){
+                    return undefined;
+                }
+                return cookieStore[key].value;
+            },
+
+            getObject: (key) => {
                 return cookieStore[key];
             },
 
@@ -204,16 +214,18 @@ describe('Service tests', () => {
 
     window.localStorage.clear();
 
+    let cookieDomain = 'example.com';
+    let hostDomain = 'sub.example.com';
+
     beforeEach(()=>{
 
         module(function ($provide) {
 
-            $provide.factory('$cookies', cookiesFactoryMock('example.com'));
+            $provide.factory('$cookies', cookiesFactoryMock(cookieDomain));
 
-            $provide.factory('$location', locationFactoryMock('sub.example.com'));
+            $provide.factory('$location', locationFactoryMock(hostDomain));
 
         });
-
 
         angular.module('ngCookies',[]); //register the module as being overriden
 
@@ -794,7 +806,10 @@ describe('Service tests', () => {
 
                 let cookie = $cookies.get(config.cookie.name);
 
+                let cookieObject = $cookies.getObject(config.cookie.name);
+
                 expect(cookie).to.equal(token);
+                expect(cookieObject.conf.domain).to.equal(cookieDomain);
 
             });
 
