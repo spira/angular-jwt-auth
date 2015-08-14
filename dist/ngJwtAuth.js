@@ -58,8 +58,9 @@ var NgJwtAuth;
          * @param $interval
          * @param base64Service
          * @param $cookies
+         * @param $location
          */
-        function NgJwtAuthService(config, $http, $q, $window, $interval, base64Service, $cookies) {
+        function NgJwtAuthService(config, $http, $q, $window, $interval, base64Service, $cookies, $location) {
             var _this = this;
             this.config = config;
             this.$http = $http;
@@ -68,6 +69,7 @@ var NgJwtAuth;
             this.$interval = $interval;
             this.base64Service = base64Service;
             this.$cookies = $cookies;
+            this.$location = $location;
             //public properties
             this.loggedIn = false;
             /**
@@ -399,12 +401,42 @@ var NgJwtAuth;
         /**
          * Save the token
          * @param rawToken
+         * @param tokenData
          */
         NgJwtAuthService.prototype.saveTokenToStorage = function (rawToken, tokenData) {
             this.$window.localStorage.setItem(this.config.storageKeyName, rawToken);
             if (this.config.cookie.enabled) {
-                this.$cookies.put(this.config.cookie.name, rawToken, {
-                    expires: moment(tokenData.data.exp * 1000).toDate(),
+                this.saveCookie(rawToken, tokenData);
+            }
+        };
+        /**
+         * Save to cookie
+         * @param rawToken
+         * @param tokenData
+         */
+        NgJwtAuthService.prototype.saveCookie = function (rawToken, tokenData) {
+            var cookieKey = this.config.cookie.name, expires = moment(tokenData.data.exp * 1000).toDate(); //set the cookie expiry to the same as the jwt
+            if (this.config.cookie.topLevelDomain) {
+                var hostnameParts = this.$location.host().split('.');
+                var segmentCount = 1;
+                var testHostname = '';
+                do {
+                    //definitely typed does not have a definition for lodash's _.takeRight
+                    testHostname = _.takeRight(hostnameParts, segmentCount).join('.');
+                    segmentCount++;
+                    this.$cookies.put(cookieKey, rawToken, {
+                        domain: testHostname,
+                        expiry: expires,
+                    });
+                    if (this.$cookies.get(cookieKey)) {
+                        return; //so exit here
+                    }
+                } while (segmentCount < hostnameParts.length + 1); //try all the segment combinations, exit when all attempted
+                throw new NgJwtAuth.NgJwtAuthException("Could not set cookie for domain " + testHostname);
+            }
+            else {
+                this.$cookies.put(cookieKey, rawToken, {
+                    expires: expires,
                 });
             }
         };
@@ -512,8 +544,8 @@ var NgJwtAuth;
          * Initialise the service provider
          */
         function NgJwtAuthServiceProvider() {
-            this.$get = ['$http', '$q', '$window', '$interval', 'base64', '$cookies', function NgJwtAuthServiceFactory($http, $q, $window, $interval, base64, $cookies) {
-                    return new NgJwtAuth.NgJwtAuthService(this.config, $http, $q, $window, $interval, base64, $cookies);
+            this.$get = ['$http', '$q', '$window', '$interval', 'base64', '$cookies', '$location', function NgJwtAuthServiceFactory($http, $q, $window, $interval, base64, $cookies, $location) {
+                    return new NgJwtAuth.NgJwtAuthService(this.config, $http, $q, $window, $interval, base64, $cookies, $location);
                 }];
             //initialise service config
             this.config = {
@@ -531,6 +563,7 @@ var NgJwtAuth;
                 cookie: {
                     enabled: false,
                     name: 'ngJwtAuthToken',
+                    topLevelDomain: false,
                 }
             };
         }

@@ -56,6 +56,56 @@ let fixtures = {
     }
 };
 
+
+let locationFactoryMock = (hostname) => {
+    return () => {
+
+        return {
+            host: function () {
+                return hostname;
+            }
+        };
+    };
+};
+
+let cookiesFactoryMock = (allowDomain) => {
+
+    let cookieStore = {};
+
+    return () => {
+
+        return {
+            /* If you need more then $location.host(), add more methods */
+            put: (key, value, conf) => {
+
+                if (conf.domain && conf.domain !== allowDomain || value.split('.')[2] == 'always-fail-domain'){
+                    return false;
+                }
+
+                cookieStore[key] = {
+                    value: value,
+                    conf: conf
+                };
+            },
+
+            get: (key) => {
+                if (!cookieStore[key]){
+                    return undefined;
+                }
+                return cookieStore[key].value;
+            },
+
+            getObject: (key) => {
+                return cookieStore[key];
+            },
+
+            remove: (key) => {
+                delete cookieStore[key];
+            }
+        };
+    };
+};
+
 let defaultAuthServiceProvider:NgJwtAuth.NgJwtAuthServiceProvider;
 
 describe('Default configuration', function () {
@@ -164,7 +214,20 @@ describe('Service tests', () => {
 
     window.localStorage.clear();
 
+    let cookieDomain = 'example.com';
+    let hostDomain = 'sub.example.com';
+
     beforeEach(()=>{
+
+        module(function ($provide) {
+
+            $provide.factory('$cookies', cookiesFactoryMock(cookieDomain));
+
+            $provide.factory('$location', locationFactoryMock(hostDomain));
+
+        });
+
+        angular.module('ngCookies',[]); //register the module as being overriden
 
         module('ngJwtAuth');
 
@@ -705,6 +768,68 @@ describe('Service tests', () => {
         });
 
 
+        describe('Top level domain saving', () => {
+
+
+            beforeEach(() => {
+
+
+                ngJwtAuthService.logout(); //logout
+
+                //force the configuration to have tld = true
+                (<any>ngJwtAuthService).config = _.merge(originalConfig, {
+                    cookie: {
+                        enabled: true,
+                        name: 'ngJwtAuthToken',
+                        topLevelDomain:true,
+                    }
+                });
+
+
+            });
+
+            it('should be able to configure the cookie to be saved to the top level domain', () => {
+
+                expect(config.cookie.enabled).to.be.true; //check the service is configured to save cookies
+
+                let token = fixtures.token;
+
+                $httpBackend.expectGET('/api/auth/login', (headers) => {
+                    return headers['Authorization'] == fixtures.authBasic;
+                }).respond({token: token});
+
+                ngJwtAuthService.requireCredentialsAndAuthenticate();
+
+                $rootScope.$apply();
+
+                $httpBackend.flush();
+
+                let cookie = $cookies.get(config.cookie.name);
+
+                let cookieObject = $cookies.getObject(config.cookie.name);
+
+                expect(cookie).to.equal(token);
+                expect(cookieObject.conf.domain).to.equal(cookieDomain);
+
+            });
+
+            it('should throw exception when storing a cookie fails', () => {
+
+                let expectedExceptionFn = () => {
+
+                    ngJwtAuthService.processNewToken(fixtures.buildToken({
+                        signature: 'always-fail-domain'
+                    }));
+
+                };
+
+                expect(expectedExceptionFn).to.throw(NgJwtAuth.NgJwtAuthException);
+
+            });
+
+        })
+
+
     });
 
 });
@@ -716,6 +841,14 @@ describe('Service Reloading', () => {
     let $rootScope:ng.IRootScopeService;
 
     beforeEach(()=>{
+
+        module(function ($provide) {
+
+            $provide.factory('$cookies', cookiesFactoryMock('example.com'));
+
+            $provide.factory('$location', locationFactoryMock('sub.example.com'));
+
+        });
 
         module('ngJwtAuth');
 

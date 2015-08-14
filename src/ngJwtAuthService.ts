@@ -25,6 +25,7 @@ module NgJwtAuth {
          * @param $interval
          * @param base64Service
          * @param $cookies
+         * @param $location
          */
         constructor(private config:INgJwtAuthServiceConfig,
                     private $http:ng.IHttpService,
@@ -32,7 +33,8 @@ module NgJwtAuth {
                     private $window:ng.IWindowService,
                     private $interval:ng.IIntervalService,
                     private base64Service:IBase64Service,
-                    private $cookies:ng.cookies.ICookiesService) {
+                    private $cookies:ng.cookies.ICookiesService,
+                    private $location:ng.ILocationService) {
 
             this.userFactory = this.defaultUserFactory;
 
@@ -337,7 +339,7 @@ module NgJwtAuth {
             this.rawToken = null;
             this.$window.localStorage.removeItem(this.config.storageKeyName);
 
-            if (this.config.cookie.enabled){
+            if (this.config.cookie.enabled) {
 
                 this.$cookies.remove(this.config.cookie.name);
             }
@@ -462,18 +464,58 @@ module NgJwtAuth {
         /**
          * Save the token
          * @param rawToken
+         * @param tokenData
          */
         private saveTokenToStorage(rawToken:string, tokenData:IJwtToken):void {
 
             this.$window.localStorage.setItem(this.config.storageKeyName, rawToken);
 
-            if (this.config.cookie.enabled){
-
-                this.$cookies.put(this.config.cookie.name, rawToken, {
-                    expires: moment(tokenData.data.exp * 1000).toDate(), //set the cookie expiry to the same as the jwt
-                });
+            if (this.config.cookie.enabled) {
+                this.saveCookie(rawToken, tokenData);
             }
 
+        }
+
+        /**
+         * Save to cookie
+         * @param rawToken
+         * @param tokenData
+         */
+        private saveCookie(rawToken, tokenData):void {
+
+            let cookieKey = this.config.cookie.name,
+                expires = moment(tokenData.data.exp * 1000).toDate(); //set the cookie expiry to the same as the jwt
+
+            if (this.config.cookie.topLevelDomain) {
+
+                let hostnameParts = this.$location.host().split('.');
+                let segmentCount = 1;
+                let testHostname = '';
+                do {
+                    //definitely typed does not have a definition for lodash's _.takeRight
+                    testHostname = (<any>_).takeRight(hostnameParts, segmentCount).join('.');
+
+                    segmentCount++;
+                    this.$cookies.put(cookieKey, rawToken, {
+                        domain: testHostname,
+                        expiry: expires,
+                    });
+
+                    if (this.$cookies.get(cookieKey)) { //saving the cookie worked, it must be the top level domain
+                        return; //so exit here
+                    }
+
+                } while (segmentCount < hostnameParts.length + 1); //try all the segment combinations, exit when all attempted
+
+                throw new NgJwtAuthException("Could not set cookie for domain " + testHostname);
+
+            } else { //use the default domain
+
+                this.$cookies.put(cookieKey, rawToken, {
+                    expires: expires,
+                });
+
+            }
         }
 
         /**

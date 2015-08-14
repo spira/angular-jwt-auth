@@ -35,6 +35,7 @@ module NgJwtAuth {
     export interface ICookieConfig {
         enabled: boolean;
         name?: string;
+        topLevelDomain?:boolean;
     }
 
     export interface INgJwtAuthServiceConfig {

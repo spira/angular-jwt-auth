@@ -48,6 +48,7 @@ declare module NgJwtAuth {
     interface ICookieConfig {
         enabled: boolean;
         name?: string;
+        topLevelDomain?: boolean;
     }
     interface INgJwtAuthServiceConfig {
         tokenLocation?: string;
@@ -107,6 +108,7 @@ declare module NgJwtAuth {
         private $interval;
         private base64Service;
         private $cookies;
+        private $location;
         private user;
         private userFactory;
         private loginPromptFactory;
@@ -124,8 +126,9 @@ declare module NgJwtAuth {
          * @param $interval
          * @param base64Service
          * @param $cookies
+         * @param $location
          */
-        constructor(config: INgJwtAuthServiceConfig, $http: ng.IHttpService, $q: ng.IQService, $window: ng.IWindowService, $interval: ng.IIntervalService, base64Service: IBase64Service, $cookies: ng.cookies.ICookiesService);
+        constructor(config: INgJwtAuthServiceConfig, $http: ng.IHttpService, $q: ng.IQService, $window: ng.IWindowService, $interval: ng.IIntervalService, base64Service: IBase64Service, $cookies: ng.cookies.ICookiesService, $location: ng.ILocationService);
         /**
          * Get the current configuration
          * @returns {INgJwtAuthServiceConfig}
@@ -265,8 +268,15 @@ declare module NgJwtAuth {
         /**
          * Save the token
          * @param rawToken
+         * @param tokenData
          */
         private saveTokenToStorage(rawToken, tokenData);
+        /**
+         * Save to cookie
+         * @param rawToken
+         * @param tokenData
+         */
+        private saveCookie(rawToken, tokenData);
         /**
          * Set the authentication token for all new requests
          * @param rawToken
@@ -330,6 +340,6 @@ declare module NgJwtAuth {
          * @returns {NgJwtAuth.NgJwtAuthServiceProvider}
          */
         configure(config: IEndpointDefinition): NgJwtAuthServiceProvider;
-        $get: (string | (($http: any, $q: any, $window: any, $interval: any, base64: any, $cookies: any) => NgJwtAuthService))[];
+        $get: (string | (($http: any, $q: any, $window: any, $interval: any, base64: any, $cookies: any, $location: any) => NgJwtAuthService))[];
     }
 }
