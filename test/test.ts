@@ -786,8 +786,6 @@ describe('Service tests', () => {
                     return headers['Authorization'] == fixtures.authBasic;
                 }).respond({token: token});
 
-                console.log('attempting login');
-
                 ngJwtAuthService.requireCredentialsAndAuthenticate();
 
                 $rootScope.$apply();
