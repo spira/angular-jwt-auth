@@ -415,7 +415,7 @@ var NgJwtAuth;
          * @param tokenData
          */
         NgJwtAuthService.prototype.saveCookie = function (rawToken, tokenData) {
-            var cookieKey = this.config.cookie.name, expires = moment(tokenData.data.exp * 1000).toDate(); //set the cookie expiry to the same as the jwt
+            var cookieKey = this.config.cookie.name, expires = new Date(tokenData.data.exp * 1000); //set the cookie expiry to the same as the jwt
             if (this.config.cookie.topLevelDomain) {
                 var hostnameParts = this.$location.host().split('.');
                 var segmentCount = 1;

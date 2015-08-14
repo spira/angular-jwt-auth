@@ -484,7 +484,7 @@ module NgJwtAuth {
         private saveCookie(rawToken, tokenData):void {
 
             let cookieKey = this.config.cookie.name,
-                expires = moment(tokenData.data.exp * 1000).toDate(); //set the cookie expiry to the same as the jwt
+                expires = new Date(tokenData.data.exp*1000); //set the cookie expiry to the same as the jwt
 
             if (this.config.cookie.topLevelDomain) {
 

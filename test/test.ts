@@ -756,6 +756,14 @@ describe('Service tests', () => {
 
         });
 
+        it('should have a valid expiry date', () => {
+
+            let expiry = $cookies.getObject(config.cookie.name).conf.expires;
+
+            expect(expiry).to.be.instanceOf(Date);
+
+        });
+
 
         it('should delete the cookie when logged out', () => {
 
