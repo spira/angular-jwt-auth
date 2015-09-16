@@ -3,16 +3,16 @@ module NgJwtAuth {
     export class NgJwtAuthService implements INgJwtAuthService {
 
         //private properties
-        private user:IUser;
-
         private userFactory:IUserFactory;
         private loginPromptFactory:ILoginPromptFactory;
+        private loginListeners:ILoginListener[] = [];
         private userLoggedInPromise:ng.IPromise<any>;
 
         private refreshTimerPromise:ng.IPromise<any>;
         private tokenData:IJwtToken;
 
         //public properties
+        public user:IUser;
         public loggedIn:boolean = false;
         public rawToken:string;
 
@@ -173,8 +173,8 @@ module NgJwtAuth {
             };
 
             return this.$http(requestConfig).then((result) => {
-                return _.get(result.data, this.config.tokenLocation);
-            })
+                    return _.get(result.data, this.config.tokenLocation);
+                })
                 .then((token:string) => {
 
                     try {
@@ -274,7 +274,11 @@ module NgJwtAuth {
 
             this.loggedIn = true;
 
-            return this.getUserFromTokenData(this.tokenData);
+            let userFromToken = this.getUserFromTokenData(this.tokenData);
+
+            userFromToken.then((user) => this.handleLogin(user));
+
+            return userFromToken;
         }
 
         private loadTokenFromStorage():ng.IPromise<IUser|String> {
@@ -449,16 +453,29 @@ module NgJwtAuth {
         }
 
         /**
+         * Handle the login event
+         * @param user
+         */
+        private handleLogin(user:IUser):void {
+
+            _.each(this.loginListeners, (listener:ILoginListener) => {
+                listener(user);
+            });
+
+        }
+
+        /**
          * Find the user object within the path
          * @param tokenData
          * @returns {T}
          */
         private getUserFromTokenData(tokenData:IJwtToken):ng.IPromise<IUser> {
 
-            return this.userFactory(tokenData.data.sub, tokenData.data).then((user:IUser) => {
-                this.user = user;
-                return user;
-            });
+            return this.userFactory(tokenData.data.sub, tokenData.data)
+                .then((user:IUser) => {
+                    this.user = user;
+                    return user;
+                });
         }
 
         /**
@@ -587,6 +604,16 @@ module NgJwtAuth {
             this.loggedIn = false;
             this.user = null;
         }
+
+
+        /**
+         * Register a login listener function
+         * @param loginListener
+         */
+        public registerLoginListener(loginListener:ILoginListener):void {
+            this.loginListeners.push(loginListener);
+        }
+
     }
 
 }

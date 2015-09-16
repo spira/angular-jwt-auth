@@ -70,7 +70,7 @@ var NgJwtAuth;
             this.base64Service = base64Service;
             this.$cookies = $cookies;
             this.$location = $location;
-            //public properties
+            this.loginListeners = [];
             this.loggedIn = false;
             /**
              * Handle token refresh timer
@@ -249,6 +249,7 @@ var NgJwtAuth;
          * @returns {IUser}
          */
         NgJwtAuthService.prototype.processNewToken = function (rawToken) {
+            var _this = this;
             this.rawToken = rawToken;
             this.tokenData = this.readToken(rawToken);
             var expiryDate = moment(this.tokenData.data.exp * 1000);
@@ -258,7 +259,9 @@ var NgJwtAuth;
             this.saveTokenToStorage(rawToken, this.tokenData);
             this.setJWTHeader(rawToken);
             this.loggedIn = true;
-            return this.getUserFromTokenData(this.tokenData);
+            var userFromToken = this.getUserFromTokenData(this.tokenData);
+            userFromToken.then(function (user) { return _this.handleLogin(user); });
+            return userFromToken;
         };
         NgJwtAuthService.prototype.loadTokenFromStorage = function () {
             var rawToken = this.$window.localStorage.getItem(this.config.storageKeyName);
@@ -387,13 +390,23 @@ var NgJwtAuth;
             });
         };
         /**
+         * Handle the login event
+         * @param user
+         */
+        NgJwtAuthService.prototype.handleLogin = function (user) {
+            _.each(this.loginListeners, function (listener) {
+                listener(user);
+            });
+        };
+        /**
          * Find the user object within the path
          * @param tokenData
          * @returns {T}
          */
         NgJwtAuthService.prototype.getUserFromTokenData = function (tokenData) {
             var _this = this;
-            return this.userFactory(tokenData.data.sub, tokenData.data).then(function (user) {
+            return this.userFactory(tokenData.data.sub, tokenData.data)
+                .then(function (user) {
                 _this.user = user;
                 return user;
             });
@@ -496,11 +509,18 @@ var NgJwtAuth;
             this.loggedIn = false;
             this.user = null;
         };
+        /**
+         * Register a login listener function
+         * @param loginListener
+         */
+        NgJwtAuthService.prototype.registerLoginListener = function (loginListener) {
+            this.loginListeners.push(loginListener);
+        };
         return NgJwtAuthService;
     })();
     NgJwtAuth.NgJwtAuthService = NgJwtAuthService;
 })(NgJwtAuth || (NgJwtAuth = {}));
-var __extends = this.__extends || function (d, b) {
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
