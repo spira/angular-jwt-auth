@@ -42,6 +42,7 @@
     "karma-mocha": "^0.2.0",
     "karma-mocha-reporter": "^1.0.2",
     "karma-phantomjs-launcher": "^0.1.4",
+    "sinon": "1.14.1",
     "karma-sinon": "^1.0.4",
     "karma-sinon-chai": "^1.0.0",
     "lodash": "^3.9.3",
@@ -51,7 +52,6 @@
     "mocha": "^2.2.5",
     "requirejs": "^2.1.18",
     "run-sequence": "^1.1.1",
-    "sinon": "^1.15.4",
     "tsd": "^0.6.3",
     "typescript": "^1.5.0-beta"
   }
