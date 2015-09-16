@@ -90,6 +90,10 @@ module NgJwtAuth {
         (subClaim:string, tokenData:IJwtClaims): ng.IPromise<IUser>;
     }
 
+    export interface ILoginListener {
+        (user:IUser):any;
+    }
+
     export interface IBase64Service {
         encode(string:string):string;
         decode(string:string):string;

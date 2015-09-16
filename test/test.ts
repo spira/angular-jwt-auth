@@ -329,6 +329,35 @@ describe('Service tests', () => {
 
     });
 
+    describe('Login listening', () => {
+
+        let mockListener = sinon.stub();
+
+        it('should be able to register a login listener', () => {
+
+            ngJwtAuthService.registerLoginListener(mockListener);
+
+            expect(mockListener).not.to.have.been.called;
+
+        });
+
+        it('should notify the login listener with the logged in user object', () => {
+
+            $httpBackend.expectGET('/api/auth/login').respond({token: fixtures.token});
+
+            let authPromise = ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
+
+            expect(authPromise).to.eventually.deep.equal(fixtures.userResponse);
+
+            $httpBackend.flush();
+            $rootScope.$apply();
+
+            expect(mockListener).to.have.been.calledWith(fixtures.userResponse);
+
+        });
+
+    });
+
     describe('Failed authentication', () => {
 
 
@@ -897,7 +926,7 @@ describe('Service Reloading', () => {
 
         beforeEach(() => {
             clock = sinon.useFakeTimers();
-        })
+        });
 
         afterEach(() => {
             clock.restore();
