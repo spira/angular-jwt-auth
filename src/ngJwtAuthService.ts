@@ -172,8 +172,17 @@ module NgJwtAuth {
                 responseType: 'json'
             };
 
-            return this.$http(requestConfig).then((result) => {
-                    return _.get(result.data, this.config.tokenLocation);
+            return this.$http(requestConfig).then((result:ng.IHttpPromiseCallbackArg<any>) => {
+
+                    if (result && result.data){
+                        let token = _.get(result.data, this.config.tokenLocation);
+
+                        if (_.isString(token)){
+                            return token;
+                        }
+                    }
+
+                    return this.$q.reject(new NgJwtAuthException("Token could not be found in response body"));
                 })
                 .then((token:string) => {
 

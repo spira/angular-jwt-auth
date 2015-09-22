@@ -361,9 +361,35 @@ describe('Service tests', () => {
     describe('Failed authentication', () => {
 
 
-        it('should fail promise when server response with an error code', () => {
+        it('should fail promise when server responds with an error code', () => {
 
             $httpBackend.expectGET('/api/auth/login').respond(404);
+
+            let authPromise = ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
+
+            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+
+            $httpBackend.flush();
+
+        });
+
+
+        it('should fail promise when server responds without a token', () => {
+
+            $httpBackend.expectGET('/api/auth/login').respond({notATokenKey: 'anything'});
+
+            let authPromise = ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
+
+            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+
+            $httpBackend.flush();
+
+        });
+
+
+        it('should fail promise when server responds with a non-string token', () => {
+
+            $httpBackend.expectGET('/api/auth/login').respond({token: {foo:'bar'}});
 
             let authPromise = ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
 
