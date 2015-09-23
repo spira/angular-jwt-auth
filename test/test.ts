@@ -696,6 +696,55 @@ describe('Service tests', () => {
 
         });
 
+        it('should stop the refresh timer when attempted refresh fails', () => {
+
+            $httpBackend.expectGET('/api/auth/login').respond({token: fixtures.token});
+            ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
+            $httpBackend.flush();
+
+            $httpBackend.expectGET('/api/auth/refresh', (headers) => {
+                return headers['Authorization'] == 'Bearer '+fixtures.token;
+            }).respond(500);
+
+            let refreshPromise = ngJwtAuthService.refreshToken();
+
+            expect(refreshPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+
+            refreshPromise.catch(()=>{
+                expect((<any>ngJwtAuthService).refreshTimerPromise).to.be.null;
+            });
+
+            $httpBackend.flush();
+
+        });
+
+        it('should restart the refresh timer when after failed refresh user re-attempts login', () => {
+
+            $httpBackend.expectGET('/api/auth/login').respond({token: fixtures.token});
+            ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
+            $httpBackend.flush();
+
+            $httpBackend.expectGET('/api/auth/refresh', (headers) => {
+                return headers['Authorization'] == 'Bearer '+fixtures.token;
+            }).respond(500);
+
+            let refreshPromise = ngJwtAuthService.refreshToken();
+
+            expect(refreshPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+
+            $httpBackend.flush();
+
+            $httpBackend.expectGET('/api/auth/login').respond({token: fixtures.token});
+            let authPromise = ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
+
+            authPromise.then(()=>{
+                expect((<any>ngJwtAuthService).refreshTimerPromise).not.to.be.null;
+            });
+
+            $httpBackend.flush();
+
+        });
+
     });
 
 

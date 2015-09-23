@@ -147,7 +147,15 @@ declare module NgJwtAuth {
          * bootstrapping the service. This allows the user supplied LoginPromptFactory
          * to be registered
          */
-        init(): ng.IPromise<any>;
+        init(): ng.IPromise<boolean>;
+        /**
+         * Register the refresh timer
+         */
+        private startRefreshTimer();
+        /**
+         * Cancel the refresh timer
+         */
+        private cancelRefreshTimer();
         /**
          * Handle token refresh timer
          */
