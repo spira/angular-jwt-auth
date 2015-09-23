@@ -104,10 +104,27 @@ var NgJwtAuth;
             var _this = this;
             //attempt to load the token from storage
             return this.loadTokenFromStorage()
-                .finally(function () {
-                _this.refreshTimerPromise = _this.$interval(_this.tickRefreshTime, _this.config.checkExpiryEverySeconds * 1000, null, false);
+                .then(function () {
+                _this.startRefreshTimer();
                 return true;
             });
+        };
+        /**
+         * Register the refresh timer
+         */
+        NgJwtAuthService.prototype.startRefreshTimer = function () {
+            //if the timer is already set, clear it so the timing is reset
+            if (!!this.refreshTimerPromise) {
+                this.cancelRefreshTimer();
+            }
+            this.refreshTimerPromise = this.$interval(this.tickRefreshTime, this.config.checkExpiryEverySeconds * 1000, null, false);
+        };
+        /**
+         * Cancel the refresh timer
+         */
+        NgJwtAuthService.prototype.cancelRefreshTimer = function () {
+            this.$interval.cancel(this.refreshTimerPromise);
+            this.refreshTimerPromise = null;
         };
         /**
          * Check if the token needs to refresh now
@@ -265,6 +282,7 @@ var NgJwtAuth;
             this.saveTokenToStorage(rawToken, this.tokenData);
             this.setJWTHeader(rawToken);
             this.loggedIn = true;
+            this.startRefreshTimer();
             var userFromToken = this.getUserFromTokenData(this.tokenData);
             userFromToken.then(function (user) { return _this.handleLogin(user); });
             return userFromToken;
@@ -348,9 +366,14 @@ var NgJwtAuth;
          * @returns {ng.IPromise<any>}
          */
         NgJwtAuthService.prototype.refreshToken = function () {
+            var _this = this;
             var authHeader = this.getRefreshHeader();
             var endpoint = this.getRefreshEndpoint();
-            return this.retrieveAndProcessToken(endpoint, authHeader);
+            return this.retrieveAndProcessToken(endpoint, authHeader)
+                .catch(function (err) {
+                _this.cancelRefreshTimer(); //if token refreshing fails, stop the refresh timer
+                return _this.$q.reject(err);
+            });
         };
         /**
          * Require that the user logs in again for a request

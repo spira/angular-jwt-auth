@@ -61,15 +61,35 @@ module NgJwtAuth {
          * bootstrapping the service. This allows the user supplied LoginPromptFactory
          * to be registered
          */
-        public init():ng.IPromise<any> {
+        public init():ng.IPromise<boolean> {
 
             //attempt to load the token from storage
             return this.loadTokenFromStorage()
-                .finally(() => {
-                    this.refreshTimerPromise = this.$interval(this.tickRefreshTime, this.config.checkExpiryEverySeconds * 1000, null, false);
+                .then(() => {
+                    this.startRefreshTimer();
                     return true;
                 });
 
+        }
+
+        /**
+         * Register the refresh timer
+         */
+        private startRefreshTimer() {
+            //if the timer is already set, clear it so the timing is reset
+            if (!!this.refreshTimerPromise){
+                this.cancelRefreshTimer();
+            }
+            this.refreshTimerPromise = this.$interval(this.tickRefreshTime, this.config.checkExpiryEverySeconds * 1000, null, false);
+        }
+
+
+        /**
+         * Cancel the refresh timer
+         */
+        private cancelRefreshTimer():void {
+            this.$interval.cancel(this.refreshTimerPromise);
+            this.refreshTimerPromise = null;
         }
 
         /**
@@ -283,6 +303,8 @@ module NgJwtAuth {
 
             this.loggedIn = true;
 
+            this.startRefreshTimer();
+
             let userFromToken = this.getUserFromTokenData(this.tokenData);
 
             userFromToken.then((user) => this.handleLogin(user));
@@ -397,7 +419,11 @@ module NgJwtAuth {
             let authHeader = this.getRefreshHeader();
             let endpoint = this.getRefreshEndpoint();
 
-            return this.retrieveAndProcessToken(endpoint, authHeader);
+            return this.retrieveAndProcessToken(endpoint, authHeader)
+                .catch((err) => {
+                    this.cancelRefreshTimer(); //if token refreshing fails, stop the refresh timer
+                    return this.$q.reject(err);
+                });
 
         }
 
