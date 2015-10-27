@@ -747,7 +747,63 @@ describe('Service tests', () => {
 
     });
 
+    describe('Get token for known user id', () => {
 
+        beforeEach(() => {
+            ngJwtAuthService.logout(); //make sure that the service is not logged in.
+        });
+
+        /**
+         * Note this feature should be implemented very carefully as it is a security risk as it means users
+         * can log in as other users (impersonation). The responsibility is on the implementing app to strongly
+         * control permissions to access this endpoint to avoid security risks
+         */
+        it('should be able to retrieve a token given a known user id', () => {
+
+
+            let userToImpersonate = fixtures.userResponse;
+
+            userToImpersonate.userId = 2;
+            userToImpersonate._self = '/users/2';
+
+            let expectedToken = fixtures.buildToken({
+                data: {
+                    sub: userToImpersonate.userId,
+                    '#user': userToImpersonate
+                }
+            });
+
+            ngJwtAuthService.logout(); //make sure user is logged out
+            let validToken = fixtures.token;
+
+            //get the user a valid token
+            $httpBackend.expectGET('/api/auth/login', (headers) => {
+                return headers['Authorization'] == fixtures.authBasic;
+            }).respond({token: validToken});
+
+            let user = ngJwtAuthService.getPromisedUser();
+
+            $httpBackend.flush();
+
+            expect(user).eventually.to.deep.equal(fixtures.userResponse);
+
+            $httpBackend.expectGET('/api/auth/user/'+userToImpersonate.userId, (headers) => {
+                return headers['Authorization'] == 'Bearer ' + validToken;
+            }).respond({token: expectedToken});
+
+            let impersonateUserPromise = ngJwtAuthService.loginAsUser(userToImpersonate.userId);
+
+            expect(impersonateUserPromise).to.eventually.deep.equal(userToImpersonate);
+
+            impersonateUserPromise.then(() => {
+                expect(ngJwtAuthService.getPromisedUser()).to.eventually.deep.equal(userToImpersonate);
+            });
+
+            $httpBackend.flush();
+
+        });
+
+    });
 
 
     describe('API Response Authorization update', () => {
