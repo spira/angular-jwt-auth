@@ -141,7 +141,7 @@ module NgJwtAuth {
          * Get the endpoint for getting a user's token (impersonation)
          * @returns {string}
          */
-        private getLoginAsUserEndpoint(userIdentifier:string):string {
+        private getLoginAsUserEndpoint(userIdentifier:string|number):string {
             return this.config.apiEndpoints.base + this.config.apiEndpoints.loginAsUser + '/' + userIdentifier;
         }
 
@@ -171,6 +171,10 @@ module NgJwtAuth {
             return 'Token ' + token;
         }
 
+        /**
+         * Get the standard header for a jwt token request
+         * @returns {string}
+         */
         private getBearerHeader():string {
             if (!this.rawToken) {
                 throw new NgJwtAuthException("Token is not set");
@@ -674,7 +678,7 @@ module NgJwtAuth {
          * can log in as other users (impersonation). The responsibility is on the implementing app to strongly
          * control permissions to access this endpoint to avoid security risks
          */
-        public loginAsUser(userIdentifier:string):ng.IPromise<IUser> {
+        public loginAsUser(userIdentifier:string|number):ng.IPromise<IUser> {
 
             if (!this.loggedIn){
                 throw new NgJwtAuthException("You must be logged in to retrieve a user's token");

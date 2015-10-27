@@ -28,7 +28,7 @@ declare module NgJwtAuth {
         getUser(): Object;
         getPromisedUser(): ng.IPromise<Object>;
         processNewToken(rawToken: string): ng.IPromise<IUser>;
-        loginAsUser(userIdentifier: string): ng.IPromise<IUser>;
+        loginAsUser(userIdentifier: string | number): ng.IPromise<IUser>;
         authenticateCredentials(username: string, password: string): ng.IPromise<Object>;
         validateToken(rawToken: string): boolean;
         exchangeToken(token: string): ng.IPromise<Object>;
@@ -199,6 +199,10 @@ declare module NgJwtAuth {
          * @returns {string}
          */
         private static getTokenHeader(token);
+        /**
+         * Get the standard header for a jwt token request
+         * @returns {string}
+         */
         private getBearerHeader();
         /**
          * Build a refresh header string
@@ -349,7 +353,7 @@ declare module NgJwtAuth {
          * can log in as other users (impersonation). The responsibility is on the implementing app to strongly
          * control permissions to access this endpoint to avoid security risks
          */
-        loginAsUser(userIdentifier: string): ng.IPromise<IUser>;
+        loginAsUser(userIdentifier: string | number): ng.IPromise<IUser>;
     }
 }
 declare module NgJwtAuth {

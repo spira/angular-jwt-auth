@@ -182,6 +182,10 @@ var NgJwtAuth;
         NgJwtAuthService.getTokenHeader = function (token) {
             return 'Token ' + token;
         };
+        /**
+         * Get the standard header for a jwt token request
+         * @returns {string}
+         */
         NgJwtAuthService.prototype.getBearerHeader = function () {
             if (!this.rawToken) {
                 throw new NgJwtAuth.NgJwtAuthException("Token is not set");

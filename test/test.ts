@@ -753,6 +753,27 @@ describe('Service tests', () => {
             ngJwtAuthService.logout(); //make sure that the service is not logged in.
         });
 
+        it('should not allow login as user if the user is not logged in already', () => {
+
+            let expectedExceptionFn = () => {
+
+                ngJwtAuthService.loginAsUser('any');
+            };
+
+            expect(expectedExceptionFn).to.throw(NgJwtAuth.NgJwtAuthException);
+        });
+
+        it('should not be able to retrieve a bearer token if the user is not logged in', () => {
+
+            let expectedExceptionFn = () => {
+
+                //method is private so <any> allows access
+                (<any>ngJwtAuthService).getBearerHeader();
+            };
+
+            expect(expectedExceptionFn).to.throw(NgJwtAuth.NgJwtAuthException);
+        });
+
         /**
          * Note this feature should be implemented very carefully as it is a security risk as it means users
          * can log in as other users (impersonation). The responsibility is on the implementing app to strongly
@@ -773,7 +794,6 @@ describe('Service tests', () => {
                 }
             });
 
-            ngJwtAuthService.logout(); //make sure user is logged out
             let validToken = fixtures.token;
 
             //get the user a valid token
