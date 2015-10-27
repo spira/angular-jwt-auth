@@ -153,6 +153,13 @@ var NgJwtAuth;
             return this.config.apiEndpoints.base + this.config.apiEndpoints.tokenExchange;
         };
         /**
+         * Get the endpoint for getting a user's token (impersonation)
+         * @returns {string}
+         */
+        NgJwtAuthService.prototype.getLoginAsUserEndpoint = function (userIdentifier) {
+            return this.config.apiEndpoints.base + this.config.apiEndpoints.loginAsUser + '/' + userIdentifier;
+        };
+        /**
          * Get the endpoint for refreshing a token
          * @returns {string}
          */
@@ -174,6 +181,16 @@ var NgJwtAuth;
          */
         NgJwtAuthService.getTokenHeader = function (token) {
             return 'Token ' + token;
+        };
+        /**
+         * Get the standard header for a jwt token request
+         * @returns {string}
+         */
+        NgJwtAuthService.prototype.getBearerHeader = function () {
+            if (!this.rawToken) {
+                throw new NgJwtAuth.NgJwtAuthException("Token is not set");
+            }
+            return 'Bearer ' + this.rawToken;
         };
         /**
          * Build a refresh header string
@@ -545,6 +562,23 @@ var NgJwtAuth;
         NgJwtAuthService.prototype.registerLoginListener = function (loginListener) {
             this.loginListeners.push(loginListener);
         };
+        /**
+         * Get a user's token given their identifier
+         * @param userIdentifier
+         * @returns {ng.IPromise<IUser>}
+         *
+         * Note this feature should be implemented very carefully as it is a security risk as it means users
+         * can log in as other users (impersonation). The responsibility is on the implementing app to strongly
+         * control permissions to access this endpoint to avoid security risks
+         */
+        NgJwtAuthService.prototype.loginAsUser = function (userIdentifier) {
+            if (!this.loggedIn) {
+                throw new NgJwtAuth.NgJwtAuthException("You must be logged in to retrieve a user's token");
+            }
+            var authHeader = this.getBearerHeader();
+            var endpoint = this.getLoginAsUserEndpoint(userIdentifier);
+            return this.retrieveAndProcessToken(endpoint, authHeader);
+        };
         return NgJwtAuthService;
     })();
     NgJwtAuth.NgJwtAuthService = NgJwtAuthService;
@@ -604,6 +638,7 @@ var NgJwtAuth;
                     base: '/api/auth',
                     login: '/login',
                     tokenExchange: '/token',
+                    loginAsUser: '/user',
                     refresh: '/refresh',
                 },
                 storageKeyName: 'NgJwtAuthToken',

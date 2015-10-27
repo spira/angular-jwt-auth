@@ -28,6 +28,7 @@ declare module NgJwtAuth {
         getUser(): Object;
         getPromisedUser(): ng.IPromise<Object>;
         processNewToken(rawToken: string): ng.IPromise<IUser>;
+        loginAsUser(userIdentifier: string | number): ng.IPromise<IUser>;
         authenticateCredentials(username: string, password: string): ng.IPromise<Object>;
         validateToken(rawToken: string): boolean;
         exchangeToken(token: string): ng.IPromise<Object>;
@@ -42,6 +43,7 @@ declare module NgJwtAuth {
     interface IEndpointDefinition {
         base?: string;
         login?: string;
+        loginAsUser?: string;
         tokenExchange?: string;
         refresh?: string;
     }
@@ -176,6 +178,11 @@ declare module NgJwtAuth {
          */
         private getTokenExchangeEndpoint();
         /**
+         * Get the endpoint for getting a user's token (impersonation)
+         * @returns {string}
+         */
+        private getLoginAsUserEndpoint(userIdentifier);
+        /**
          * Get the endpoint for refreshing a token
          * @returns {string}
          */
@@ -192,6 +199,11 @@ declare module NgJwtAuth {
          * @returns {string}
          */
         private static getTokenHeader(token);
+        /**
+         * Get the standard header for a jwt token request
+         * @returns {string}
+         */
+        private getBearerHeader();
         /**
          * Build a refresh header string
          * @returns {string}
@@ -332,6 +344,16 @@ declare module NgJwtAuth {
          * @param loginListener
          */
         registerLoginListener(loginListener: ILoginListener): void;
+        /**
+         * Get a user's token given their identifier
+         * @param userIdentifier
+         * @returns {ng.IPromise<IUser>}
+         *
+         * Note this feature should be implemented very carefully as it is a security risk as it means users
+         * can log in as other users (impersonation). The responsibility is on the implementing app to strongly
+         * control permissions to access this endpoint to avoid security risks
+         */
+        loginAsUser(userIdentifier: string | number): ng.IPromise<IUser>;
     }
 }
 declare module NgJwtAuth {

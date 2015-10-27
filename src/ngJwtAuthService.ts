@@ -138,6 +138,14 @@ module NgJwtAuth {
         }
 
         /**
+         * Get the endpoint for getting a user's token (impersonation)
+         * @returns {string}
+         */
+        private getLoginAsUserEndpoint(userIdentifier:string|number):string {
+            return this.config.apiEndpoints.base + this.config.apiEndpoints.loginAsUser + '/' + userIdentifier;
+        }
+
+        /**
          * Get the endpoint for refreshing a token
          * @returns {string}
          */
@@ -161,6 +169,18 @@ module NgJwtAuth {
          */
         private static getTokenHeader(token:string):string {
             return 'Token ' + token;
+        }
+
+        /**
+         * Get the standard header for a jwt token request
+         * @returns {string}
+         */
+        private getBearerHeader():string {
+            if (!this.rawToken) {
+                throw new NgJwtAuthException("Token is not set");
+            }
+
+            return 'Bearer ' + this.rawToken;
         }
 
         /**
@@ -647,6 +667,27 @@ module NgJwtAuth {
          */
         public registerLoginListener(loginListener:ILoginListener):void {
             this.loginListeners.push(loginListener);
+        }
+
+        /**
+         * Get a user's token given their identifier
+         * @param userIdentifier
+         * @returns {ng.IPromise<IUser>}
+         *
+         * Note this feature should be implemented very carefully as it is a security risk as it means users
+         * can log in as other users (impersonation). The responsibility is on the implementing app to strongly
+         * control permissions to access this endpoint to avoid security risks
+         */
+        public loginAsUser(userIdentifier:string|number):ng.IPromise<IUser> {
+
+            if (!this.loggedIn){
+                throw new NgJwtAuthException("You must be logged in to retrieve a user's token");
+            }
+
+            let authHeader = this.getBearerHeader();
+            let endpoint = this.getLoginAsUserEndpoint(userIdentifier);
+
+            return this.retrieveAndProcessToken(endpoint, authHeader);
         }
 
     }

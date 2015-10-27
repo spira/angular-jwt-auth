@@ -40,6 +40,7 @@ module NgJwtAuth {
                     base: '/api/auth',
                     login: '/login',
                     tokenExchange: '/token',
+                    loginAsUser: '/user',
                     refresh: '/refresh',
                 },
                 storageKeyName: 'NgJwtAuthToken',
