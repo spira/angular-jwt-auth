@@ -613,7 +613,7 @@ module NgJwtAuth {
          *
          * @param rejection
          */
-        public handleInterceptedUnauthorisedResponse(rejection:ng.IHttpPromiseCallbackArg):ng.IPromise<ng.IHttpPromise<any>> {
+        public handleInterceptedUnauthorisedResponse(rejection:ng.IHttpPromiseCallbackArg<any>):ng.IPromise<ng.IHttpPromise<any>> {
 
             return this.requireCredentialsAndAuthenticate()
                 .then(() => {
