@@ -322,7 +322,7 @@ declare module NgJwtAuth {
          *
          * @param rejection
          */
-        handleInterceptedUnauthorisedResponse(rejection: any): void;
+        handleInterceptedUnauthorisedResponse(rejection: ng.IHttpPromiseCallbackArg): ng.IPromise<ng.IHttpPromise<any>>;
         /**
          * Register the login prompt factory
          * @param loginPromptFactory

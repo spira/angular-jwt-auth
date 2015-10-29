@@ -521,8 +521,10 @@ var NgJwtAuth;
          */
         NgJwtAuthService.prototype.handleInterceptedUnauthorisedResponse = function (rejection) {
             var _this = this;
-            this.requireCredentialsAndAuthenticate()
-                .then(function (user) {
+            return this.requireCredentialsAndAuthenticate()
+                .then(function () {
+                //update with the new header
+                rejection.config.headers.Authorization = _this.getBearerHeader();
                 return _this.$http(rejection.config);
             });
         };

@@ -506,18 +506,27 @@ describe('Service tests', () => {
 
         });
 
-        it('should prompt a login promise to be resolved when a 401 occurs, then retry the method', () => {
+        it('should prompt a login promise to be resolved when a 401 occurs, then retry the method with updated headers', () => {
             $httpBackend.expectGET('/any').respond(401);
 
             let $http = (<any>ngJwtAuthService).$http; //get the injected http method
 
-            $http.get('/any'); //try to get a resource
+            //try to get a resource
+            $http.get('/any', {
+                headers: {
+                    Authorization: "Bearer " + fixtures.buildToken({signature:'old-token'}),
+                }
+            });
+
+            let newToken = fixtures.buildToken({signature:'new-token'});
 
             $httpBackend.expectGET('/api/auth/login', (headers) => {
                 return headers['Authorization'] == fixtures.authBasic;
-            }).respond({token: fixtures.token});
+            }).respond({token: newToken});
 
-            $httpBackend.expectGET('/any').respond('ok');
+            $httpBackend.expectGET('/any', (headers) => {
+                return headers['Authorization'] == 'Bearer ' + newToken;
+            }).respond('ok');
 
             $httpBackend.flush();
 

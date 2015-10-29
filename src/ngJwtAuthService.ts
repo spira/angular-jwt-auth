@@ -613,10 +613,13 @@ module NgJwtAuth {
          *
          * @param rejection
          */
-        public handleInterceptedUnauthorisedResponse(rejection:any):void {
+        public handleInterceptedUnauthorisedResponse(rejection:ng.IHttpPromiseCallbackArg):ng.IPromise<ng.IHttpPromise<any>> {
 
-            this.requireCredentialsAndAuthenticate()
-                .then((user:IUser) => {
+            return this.requireCredentialsAndAuthenticate()
+                .then(() => {
+                    //update with the new header
+                    rejection.config.headers.Authorization = this.getBearerHeader();
+
                     return this.$http(rejection.config);
                 })
             ;
