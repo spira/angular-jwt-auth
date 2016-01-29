@@ -74,9 +74,15 @@ module NgJwtAuth {
 
     export interface IUser {
         userId: any;
-        email: string,
-        firstName?: string,
-        lastName?: string,
+        email: string;
+        firstName?: string;
+        lastName?: string;
+        emailConfirmed?: string;
+        country?: string;
+        regionCode?: string;
+        avatarImgUrl?: string;
+        avatarImgId?: string;
+        timezoneIdentifier?: string;
     }
 
     export interface ICredentials {
