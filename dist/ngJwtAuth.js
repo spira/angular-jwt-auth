@@ -447,9 +447,7 @@ var NgJwtAuth;
          * @param user
          */
         NgJwtAuthService.prototype.handleLogin = function (user) {
-            _.each(this.loginListeners, function (listener) {
-                listener(user);
-            });
+            _.invoke(this.loginListeners, _.call, null, user);
         };
         /**
          * Find the user object within the path
@@ -562,10 +560,9 @@ var NgJwtAuth;
         NgJwtAuthService.prototype.logout = function () {
             this.clearJWTToken();
             this.loggedIn = false;
+            //call all logout listeners
+            _.invoke(this.logoutListeners, _.call, null, this.user);
             this.user = null;
-            _.each(this.logoutListeners, function (listener) {
-                listener();
-            });
         };
         /**
          * Register a login listener function
