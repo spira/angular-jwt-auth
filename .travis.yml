@@ -13,6 +13,9 @@ cache:
     - node_modules
     - bower_components
 
+before_install:
+  - nvm install 5.4.0 && nvm use 5.4.0 && npm install -g npm
+
 install:
   - travis_retry npm install -g gulp
   - travis_retry npm install
