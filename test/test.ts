@@ -358,6 +358,28 @@ describe('Service tests', () => {
 
     });
 
+    describe('Logout listening', () => {
+
+        let mockListener = sinon.stub();
+
+        it('should be able to register a logout listener', () => {
+
+            ngJwtAuthService.registerLogoutListener(mockListener);
+
+            expect(mockListener).not.to.have.been.called;
+
+        });
+
+        it('should notify the logout listener', () => {
+
+            ngJwtAuthService.logout();
+
+            expect(mockListener).to.have.been.called;
+
+        });
+
+    });
+
     describe('Failed authentication', () => {
 
 

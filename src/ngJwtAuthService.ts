@@ -6,6 +6,7 @@ module NgJwtAuth {
         private userFactory:IUserFactory;
         private loginPromptFactory:ILoginPromptFactory;
         private loginListeners:ILoginListener[] = [];
+        private logoutListeners:Function[] = [];
         private userLoggedInPromise:ng.IPromise<any>;
 
         private refreshTimerPromise:ng.IPromise<any>;
@@ -661,6 +662,10 @@ module NgJwtAuth {
             this.clearJWTToken();
             this.loggedIn = false;
             this.user = null;
+
+            _.each(this.logoutListeners, (listener:Function) => {
+                listener();
+            });
         }
 
 
@@ -670,6 +675,14 @@ module NgJwtAuth {
          */
         public registerLoginListener(loginListener:ILoginListener):void {
             this.loginListeners.push(loginListener);
+        }
+
+        /**
+         * Register a logout listener function
+         * @param logoutListener
+         */
+        public registerLogoutListener(logoutListener:Function):void {
+            this.logoutListeners.push(logoutListener);
         }
 
         /**

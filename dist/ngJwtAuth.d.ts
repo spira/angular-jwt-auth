@@ -117,6 +117,7 @@ declare module NgJwtAuth {
         private userFactory;
         private loginPromptFactory;
         private loginListeners;
+        private logoutListeners;
         private userLoggedInPromise;
         private refreshTimerPromise;
         private tokenData;
@@ -344,6 +345,11 @@ declare module NgJwtAuth {
          * @param loginListener
          */
         registerLoginListener(loginListener: ILoginListener): void;
+        /**
+         * Register a logout listener function
+         * @param logoutListener
+         */
+        registerLogoutListener(logoutListener: Function): void;
         /**
          * Get a user's token given their identifier
          * @param userIdentifier
