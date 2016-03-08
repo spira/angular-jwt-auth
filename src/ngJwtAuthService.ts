@@ -5,7 +5,8 @@ module NgJwtAuth {
         //private properties
         private userFactory:IUserFactory;
         private loginPromptFactory:ILoginPromptFactory;
-        private loginListeners:ILoginListener[] = [];
+        private loginListeners:IUserEventListener[] = [];
+        private logoutListeners:IUserEventListener[] = [];
         private userLoggedInPromise:ng.IPromise<any>;
 
         private refreshTimerPromise:ng.IPromise<any>;
@@ -513,9 +514,7 @@ module NgJwtAuth {
          */
         private handleLogin(user:IUser):void {
 
-            _.each(this.loginListeners, (listener:ILoginListener) => {
-                listener(user);
-            });
+            _.invoke(this.loginListeners, _.call, null, user);
 
         }
 
@@ -660,6 +659,9 @@ module NgJwtAuth {
         public logout():void {
             this.clearJWTToken();
             this.loggedIn = false;
+
+            //call all logout listeners with user that is logged out
+            _.invoke(this.logoutListeners, _.call, null, this.user);
             this.user = null;
         }
 
@@ -668,8 +670,16 @@ module NgJwtAuth {
          * Register a login listener function
          * @param loginListener
          */
-        public registerLoginListener(loginListener:ILoginListener):void {
+        public registerLoginListener(loginListener:IUserEventListener):void {
             this.loginListeners.push(loginListener);
+        }
+
+        /**
+         * Register a logout listener function
+         * @param logoutListener
+         */
+        public registerLogoutListener(logoutListener:IUserEventListener):void {
+            this.logoutListeners.push(logoutListener);
         }
 
         /**

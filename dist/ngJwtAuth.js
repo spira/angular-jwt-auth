@@ -1,3 +1,8 @@
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
 var NgJwtAuth;
 (function (NgJwtAuth) {
     var NgJwtAuthInterceptor = (function () {
@@ -42,7 +47,7 @@ var NgJwtAuth;
          */
         NgJwtAuthInterceptor.$inject = ['$q', '$injector'];
         return NgJwtAuthInterceptor;
-    })();
+    }());
     NgJwtAuth.NgJwtAuthInterceptor = NgJwtAuthInterceptor;
 })(NgJwtAuth || (NgJwtAuth = {}));
 /// <reference path="../typings/tsd.d.ts" />
@@ -71,6 +76,7 @@ var NgJwtAuth;
             this.$cookies = $cookies;
             this.$location = $location;
             this.loginListeners = [];
+            this.logoutListeners = [];
             this.loggedIn = false;
             /**
              * Handle token refresh timer
@@ -406,22 +412,23 @@ var NgJwtAuth;
                 throw new NgJwtAuth.NgJwtAuthException("You must set a loginPromptFactory with `ngJwtAuthService.registerLoginPromptFactory()` so the user can be prompted for their credentials");
             }
             if (!this.userLoggedInPromise) {
-                var deferredCredentials = this.$q.defer();
-                var loginSuccess = this.$q.defer();
-                deferredCredentials.promise
+                var deferredCredentials_1 = this.$q.defer();
+                var loginSuccess_1 = this.$q.defer();
+                deferredCredentials_1.promise
                     .then(null, null, function (credentials) {
                     return _this.authenticateCredentials(credentials.username, credentials.password).then(function (user) {
                         //credentials were successful; resolve the promises
-                        deferredCredentials.resolve(user);
-                        loginSuccess.resolve(user);
+                        deferredCredentials_1.resolve(user);
+                        loginSuccess_1.resolve(user);
                     }, function (err) {
-                        loginSuccess.notify(err);
+                        loginSuccess_1.notify(err);
                     });
                 });
-                this.userLoggedInPromise = this.loginPromptFactory(deferredCredentials, loginSuccess.promise, this.user)
-                    .then(function () { return loginSuccess.promise; }, function (err) {
-                    deferredCredentials.reject(); //if the user aborted login, reject the credentials promise
-                    loginSuccess.reject();
+                this.userLoggedInPromise = this.loginPromptFactory(deferredCredentials_1, loginSuccess_1.promise, this.user)
+                    .then(function () { return loginSuccess_1.promise; }, //when the user has completed the login, chain on the login success promise
+                function (err) {
+                    deferredCredentials_1.reject(); //if the user aborted login, reject the credentials promise
+                    loginSuccess_1.reject();
                     return _this.$q.reject(err); //and reject the login promise
                 });
             }
@@ -440,9 +447,7 @@ var NgJwtAuth;
          * @param user
          */
         NgJwtAuthService.prototype.handleLogin = function (user) {
-            _.each(this.loginListeners, function (listener) {
-                listener(user);
-            });
+            _.invoke(this.loginListeners, _.call, null, user);
         };
         /**
          * Find the user object within the path
@@ -555,6 +560,8 @@ var NgJwtAuth;
         NgJwtAuthService.prototype.logout = function () {
             this.clearJWTToken();
             this.loggedIn = false;
+            //call all logout listeners
+            _.invoke(this.logoutListeners, _.call, null, this.user);
             this.user = null;
         };
         /**
@@ -563,6 +570,13 @@ var NgJwtAuth;
          */
         NgJwtAuthService.prototype.registerLoginListener = function (loginListener) {
             this.loginListeners.push(loginListener);
+        };
+        /**
+         * Register a logout listener function
+         * @param logoutListener
+         */
+        NgJwtAuthService.prototype.registerLogoutListener = function (logoutListener) {
+            this.logoutListeners.push(logoutListener);
         };
         /**
          * Get a user's token given their identifier
@@ -582,15 +596,9 @@ var NgJwtAuth;
             return this.retrieveAndProcessToken(endpoint, authHeader);
         };
         return NgJwtAuthService;
-    })();
+    }());
     NgJwtAuth.NgJwtAuthService = NgJwtAuthService;
 })(NgJwtAuth || (NgJwtAuth = {}));
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
 var NgJwtAuth;
 (function (NgJwtAuth) {
     var NgJwtAuthException = (function (_super) {
@@ -606,7 +614,7 @@ var NgJwtAuth;
             return this.name + ': ' + this.message;
         };
         return NgJwtAuthException;
-    })(Error);
+    }(Error));
     NgJwtAuth.NgJwtAuthException = NgJwtAuthException;
     var NgJwtAuthTokenExpiredException = (function (_super) {
         __extends(NgJwtAuthTokenExpiredException, _super);
@@ -614,7 +622,7 @@ var NgJwtAuth;
             _super.apply(this, arguments);
         }
         return NgJwtAuthTokenExpiredException;
-    })(NgJwtAuthException);
+    }(NgJwtAuthException));
     NgJwtAuth.NgJwtAuthTokenExpiredException = NgJwtAuthTokenExpiredException;
     var NgJwtAuthCredentialsFailedException = (function (_super) {
         __extends(NgJwtAuthCredentialsFailedException, _super);
@@ -622,7 +630,7 @@ var NgJwtAuth;
             _super.apply(this, arguments);
         }
         return NgJwtAuthCredentialsFailedException;
-    })(NgJwtAuthException);
+    }(NgJwtAuthException));
     NgJwtAuth.NgJwtAuthCredentialsFailedException = NgJwtAuthCredentialsFailedException;
     var NgJwtAuthServiceProvider = (function () {
         /**
@@ -667,7 +675,7 @@ var NgJwtAuth;
             return this;
         };
         return NgJwtAuthServiceProvider;
-    })();
+    }());
     NgJwtAuth.NgJwtAuthServiceProvider = NgJwtAuthServiceProvider;
     angular.module('ngJwtAuth', ['ab-base64', 'ngCookies'])
         .provider('ngJwtAuthService', NgJwtAuthServiceProvider)

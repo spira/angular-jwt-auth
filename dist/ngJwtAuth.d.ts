@@ -94,8 +94,8 @@ declare module NgJwtAuth {
     interface IUserFactory {
         (subClaim: string, tokenData: IJwtClaims): ng.IPromise<IUser>;
     }
-    interface ILoginListener {
-        (user: IUser): any;
+    interface IUserEventListener {
+        (user: IUser): void;
     }
     interface IBase64Service {
         encode(string: string): string;
@@ -117,6 +117,7 @@ declare module NgJwtAuth {
         private userFactory;
         private loginPromptFactory;
         private loginListeners;
+        private logoutListeners;
         private userLoggedInPromise;
         private refreshTimerPromise;
         private tokenData;
@@ -343,7 +344,12 @@ declare module NgJwtAuth {
          * Register a login listener function
          * @param loginListener
          */
-        registerLoginListener(loginListener: ILoginListener): void;
+        registerLoginListener(loginListener: IUserEventListener): void;
+        /**
+         * Register a logout listener function
+         * @param logoutListener
+         */
+        registerLogoutListener(logoutListener: IUserEventListener): void;
         /**
          * Get a user's token given their identifier
          * @param userIdentifier
