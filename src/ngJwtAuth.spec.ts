@@ -228,7 +228,7 @@ describe('Service tests', () => {
     let cookieDomain = 'example.com';
     let hostDomain = 'sub.example.com';
 
-    beforeEach(()=>{
+    beforeEach(() => {
 
         angular.mock.module(function ($provide) {
 
@@ -238,24 +238,24 @@ describe('Service tests', () => {
 
         });
 
-        angular.module('ngCookies',[]); //register the angular.mock.module as being overriden
+        angular.module('ngCookies', []); //register the angular.mock.module as being overriden
 
         angular.mock.module('ngJwtAuth');
 
         inject((_$httpBackend_, _ngJwtAuthService_, _$http_, _$rootScope_, _$cookies_, _$q_) => {
 
-            if (!ngJwtAuthService){ //dont rebind, so each test gets the singleton
+            if (!ngJwtAuthService) { //dont rebind, so each test gets the singleton
                 $httpBackend = _$httpBackend_;
                 $rootScope = _$rootScope_;
                 ngJwtAuthService = _ngJwtAuthService_; //register injected of service provider
                 $http = _$http_;
                 $q = _$q_;
                 $cookies = _$cookies_;
+
             }
         });
 
         ngJwtAuthService.init();
-
     });
 
     afterEach(() => {
@@ -284,6 +284,7 @@ describe('Service tests', () => {
 
     describe('Authentication', () => {
 
+        //@todo resolve why http service is not mocked. Likely due to the one-time binding.
         it('should process a token and return a user', () => {
 
             $httpBackend.expectGET('/api/auth/login').respond({token: fixtures.token});
@@ -328,7 +329,7 @@ describe('Service tests', () => {
             expect(ngJwtAuthService.getUser()).to.be.null;
 
             $httpBackend.expectGET('/any', (headers) => {
-                return !_.contains(headers, 'Authorization'); //Authorization header has been unset
+                return !_.includes(headers, 'Authorization'); //Authorization header has been unset
             }).respond('foobar');
 
             (<any>ngJwtAuthService).$http.get('/any');

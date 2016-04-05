@@ -382,7 +382,7 @@ export class NgJwtAuthService {
             this.getTokenExchangeEndpoint(),
         ];
 
-        return _.contains(loginMethods, url);
+        return _.includes(loginMethods, url);
     }
 
     public getUser():IUser {
