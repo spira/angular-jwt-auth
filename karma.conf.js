@@ -1,12 +1,19 @@
+require('phantomjs-polyfill');
+
 module.exports = function(config) {
     config.set({
 
         frameworks: ['chai-as-promised', 'mocha', 'sinon', 'sinon-chai'],
-        //plugins: ['karma-mocha', 'karma-phantomjs-launcher', 'karma-coverage', 'karma-sinon-chai'],
 
         preprocessors: {
-            'dist/**/*.js': ['coverage']
+            'dist/**/*.js': ['commonjs', 'coverage']
         },
+
+        files: [
+            './node_modules/phantomjs-polyfill/bind-polyfill.js',
+            'dist/**/*.js',
+            'test/tmp/test/**/*.spec.js'
+        ],
 
         reporters: ['mocha', 'coverage'],
 
@@ -16,7 +23,8 @@ module.exports = function(config) {
 
         autoWatch: false,
         browsers: [
-            'PhantomJS'
+            // 'PhantomJS',
+            'Chrome',
         ],
 
         client: {
@@ -26,7 +34,7 @@ module.exports = function(config) {
             }
         },
 
-        logLevel: config.LOG_INFO,
+        logLevel: config.LOG_VERBOSE,
 
         coverageReporter: {
             // specify a common output directory

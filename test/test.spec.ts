@@ -1,8 +1,13 @@
-/// <reference path="../typings/tsd.d.ts" />
-/// <reference path="../dist/ngJwtAuth.d.ts" />
+import {
+    NgJwtAuthServiceProvider, NgJwtAuthException,
+    NgJwtAuthCredentialsFailedException
+} from "../src/ngJwtAuthServiceProvider";
+import {NgJwtAuthService} from "../src/ngJwtAuthService";
+import {INgJwtAuthServiceConfig, IJwtToken, ICredentials, IJwtClaims, IUser} from "../src/ngJwtAuthInterfaces";
 
-
-let expect = chai.expect;
+import {expect} from "chai";
+import {Chance} from "chance";
+import * as _ from "lodash";
 
 let seededChance = new Chance(1);
 let fixtures = {
@@ -42,7 +47,7 @@ let fixtures = {
             signature: 'this-is-the-signed-hash'
         };
 
-        let token:NgJwtAuth.IJwtToken = <any>_.merge(defaultConfig, overrides);
+        let token:IJwtToken = <any>_.merge(defaultConfig, overrides);
 
         return btoa(JSON.stringify(token.data))
             + '.' + btoa(JSON.stringify(token.data))
@@ -106,15 +111,15 @@ let cookiesFactoryMock = (allowDomain) => {
     };
 };
 
-let defaultAuthServiceProvider:NgJwtAuth.NgJwtAuthServiceProvider;
+let defaultAuthServiceProvider:NgJwtAuthServiceProvider;
 
 describe('Default configuration', function () {
 
-    let defaultAuthService:NgJwtAuth.NgJwtAuthService;
+    let defaultAuthService:NgJwtAuthService;
 
     beforeEach(() => {
 
-        module('ngJwtAuth', (_ngJwtAuthServiceProvider_) => {
+        angular.mock.module('ngJwtAuth', (_ngJwtAuthServiceProvider_) => {
             defaultAuthServiceProvider = _ngJwtAuthServiceProvider_; //register injection of service provider
         });
 
@@ -148,9 +153,9 @@ describe('Default configuration', function () {
 
 describe('Custom configuration', function () {
 
-    let authServiceProvider:NgJwtAuth.NgJwtAuthServiceProvider;
-    let customAuthService:NgJwtAuth.NgJwtAuthService;
-    let partialCustomConfig:NgJwtAuth.INgJwtAuthServiceConfig = {
+    let authServiceProvider:NgJwtAuthServiceProvider;
+    let customAuthService:NgJwtAuthService;
+    let partialCustomConfig:INgJwtAuthServiceConfig = {
         tokenLocation: 'token-custom',
         tokenUser: '#user-custom',
         apiEndpoints: {
@@ -164,7 +169,7 @@ describe('Custom configuration', function () {
 
     beforeEach(() => {
 
-        module('ngJwtAuth', (_ngJwtAuthServiceProvider_) => {
+        angular.mock.module('ngJwtAuth', (_ngJwtAuthServiceProvider_) => {
             authServiceProvider = _ngJwtAuthServiceProvider_; //register injection of service provider
 
             authServiceProvider.configure(partialCustomConfig);
@@ -178,7 +183,7 @@ describe('Custom configuration', function () {
             authServiceProvider.configure(<any>{invalid:'config'});
         };
 
-        expect(testInvalidConfigurationFn).to.throw(NgJwtAuth.NgJwtAuthException);
+        expect(testInvalidConfigurationFn).to.throw(NgJwtAuthException);
 
     });
 
@@ -207,7 +212,7 @@ describe('Service tests', () => {
 
     let $httpBackend:ng.IHttpBackendService;
     let $http:ng.IHttpService;
-    let ngJwtAuthService:NgJwtAuth.NgJwtAuthService;
+    let ngJwtAuthService:NgJwtAuthService;
     let $rootScope:ng.IRootScopeService;
     let $cookies:ng.cookies.ICookiesService;
     let $q:ng.IQService;
@@ -219,7 +224,7 @@ describe('Service tests', () => {
 
     beforeEach(()=>{
 
-        module(function ($provide) {
+        angular.mock.module(function ($provide) {
 
             $provide.factory('$cookies', cookiesFactoryMock(cookieDomain));
 
@@ -227,9 +232,9 @@ describe('Service tests', () => {
 
         });
 
-        angular.module('ngCookies',[]); //register the module as being overriden
+        angular.mock.module('ngCookies',[]); //register the angular.mock.module as being overriden
 
-        module('ngJwtAuth');
+        angular.mock.module('ngJwtAuth');
 
         inject((_$httpBackend_, _ngJwtAuthService_, _$http_, _$rootScope_, _$cookies_, _$q_) => {
 
@@ -389,7 +394,7 @@ describe('Service tests', () => {
 
             let authPromise = ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
 
-            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuthException);
 
             $httpBackend.flush();
 
@@ -402,7 +407,7 @@ describe('Service tests', () => {
 
             let authPromise = ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
 
-            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuthException);
 
             $httpBackend.flush();
 
@@ -415,7 +420,7 @@ describe('Service tests', () => {
 
             let authPromise = ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
 
-            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuthException);
 
             $httpBackend.flush();
 
@@ -427,7 +432,7 @@ describe('Service tests', () => {
 
             let authPromise = ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
 
-            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthCredentialsFailedException);
+            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuthCredentialsFailedException);
 
             $httpBackend.flush();
 
@@ -439,7 +444,7 @@ describe('Service tests', () => {
 
             let authPromise = ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
 
-            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuthException);
 
             $httpBackend.flush();
 
@@ -467,9 +472,9 @@ describe('Service tests', () => {
         let rejectPromise = false;
         let loginSuccess:ng.IPromise<any> = null;
         let spy = {
-            loginPromptFactory: (deferredCredentials:ng.IDeferred<NgJwtAuth.ICredentials>, loginSuccessPromise:ng.IPromise<NgJwtAuth.IUser>, currentUser:NgJwtAuth.IUser): ng.IPromise<any> => {
+            loginPromptFactory: (deferredCredentials:ng.IDeferred<ICredentials>, loginSuccessPromise:ng.IPromise<IUser>, currentUser:IUser): ng.IPromise<any> => {
 
-                let credentials:NgJwtAuth.ICredentials = {
+                let credentials:ICredentials = {
                     username: fixtures.user.email,
                     password: fixtures.user.password,
                 };
@@ -503,7 +508,7 @@ describe('Service tests', () => {
                 ngJwtAuthService.promptLogin();
             };
 
-            expect(testLoginPromptFactoryFn).to.throw(NgJwtAuth.NgJwtAuthException);
+            expect(testLoginPromptFactoryFn).to.throw(NgJwtAuthException);
 
         });
 
@@ -524,7 +529,7 @@ describe('Service tests', () => {
             };
 
 
-            expect(setFactoryFn).to.throw(NgJwtAuth.NgJwtAuthException);
+            expect(setFactoryFn).to.throw(NgJwtAuthException);
 
         });
 
@@ -661,7 +666,7 @@ describe('Service tests', () => {
 
             userPromise.then(() => {
                 progressSpy.should.have.been.calledTwice;
-                progressSpy.should.have.been.calledWith(sinon.match.instanceOf(NgJwtAuth.NgJwtAuthException));
+                progressSpy.should.have.been.calledWith(sinon.match.instanceOf(NgJwtAuthException));
                 done();
             });
 
@@ -703,7 +708,7 @@ describe('Service tests', () => {
                 ngJwtAuthService.refreshToken();
             };
 
-            expect(refreshFn).to.throw(NgJwtAuth.NgJwtAuthException); //if not logged it, exception should be thrown on attempt to refresh
+            expect(refreshFn).to.throw(NgJwtAuthException); //if not logged it, exception should be thrown on attempt to refresh
 
             $httpBackend.expectGET('/api/auth/login').respond({token: fixtures.token});
             ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
@@ -739,7 +744,7 @@ describe('Service tests', () => {
 
             let refreshPromise = ngJwtAuthService.refreshToken();
 
-            expect(refreshPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+            expect(refreshPromise).to.eventually.be.rejectedWith(NgJwtAuthException);
 
             refreshPromise.catch(()=>{
                 expect((<any>ngJwtAuthService).refreshTimerPromise).to.be.null;
@@ -761,7 +766,7 @@ describe('Service tests', () => {
 
             let refreshPromise = ngJwtAuthService.refreshToken();
 
-            expect(refreshPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+            expect(refreshPromise).to.eventually.be.rejectedWith(NgJwtAuthException);
 
             $httpBackend.flush();
 
@@ -791,7 +796,7 @@ describe('Service tests', () => {
                 ngJwtAuthService.loginAsUser('any');
             };
 
-            expect(expectedExceptionFn).to.throw(NgJwtAuth.NgJwtAuthException);
+            expect(expectedExceptionFn).to.throw(NgJwtAuthException);
         });
 
         it('should not be able to retrieve a bearer token if the user is not logged in', () => {
@@ -802,7 +807,7 @@ describe('Service tests', () => {
                 (<any>ngJwtAuthService).getBearerHeader();
             };
 
-            expect(expectedExceptionFn).to.throw(NgJwtAuth.NgJwtAuthException);
+            expect(expectedExceptionFn).to.throw(NgJwtAuthException);
         });
 
         /**
@@ -921,8 +926,8 @@ describe('Service tests', () => {
 
     describe('Cookie interaction', () => {
 
-        let originalConfig:NgJwtAuth.INgJwtAuthServiceConfig;
-        let config:NgJwtAuth.INgJwtAuthServiceConfig;
+        let originalConfig:INgJwtAuthServiceConfig;
+        let config:INgJwtAuthServiceConfig;
 
         beforeEach(() => {
             originalConfig = ngJwtAuthService.getConfig();
@@ -1042,7 +1047,7 @@ describe('Service tests', () => {
 
                 };
 
-                expect(expectedExceptionFn).to.throw(NgJwtAuth.NgJwtAuthException);
+                expect(expectedExceptionFn).to.throw(NgJwtAuthException);
 
             });
 
@@ -1056,12 +1061,12 @@ describe('Service tests', () => {
 describe('Service Reloading', () => {
 
     let $httpBackend:ng.IHttpBackendService;
-    let ngJwtAuthService:NgJwtAuth.NgJwtAuthService;
+    let ngJwtAuthService:NgJwtAuthService;
     let $rootScope:ng.IRootScopeService;
 
     beforeEach(()=>{
 
-        module(function ($provide) {
+        angular.mock.module(function ($provide) {
 
             $provide.factory('$cookies', cookiesFactoryMock('example.com'));
 
@@ -1069,7 +1074,7 @@ describe('Service Reloading', () => {
 
         });
 
-        module('ngJwtAuth');
+        angular.mock.module('ngJwtAuth');
 
         inject((_$httpBackend_, _ngJwtAuthService_, _$rootScope_) => {
 
@@ -1082,9 +1087,9 @@ describe('Service Reloading', () => {
         let $q = (<any>ngJwtAuthService).$q;
 
 
-        ngJwtAuthService.registerLoginPromptFactory((deferredCredentials:ng.IDeferred<NgJwtAuth.ICredentials>, loginSuccessPromise:ng.IPromise<NgJwtAuth.IUser>, currentUser:NgJwtAuth.IUser): ng.IPromise<any> => {
+        ngJwtAuthService.registerLoginPromptFactory((deferredCredentials:ng.IDeferred<ICredentials>, loginSuccessPromise:ng.IPromise<IUser>, currentUser:IUser): ng.IPromise<any> => {
 
-            let credentials:NgJwtAuth.ICredentials = {
+            let credentials:ICredentials = {
                 username: fixtures.user.email,
                 password: fixtures.user.password,
             };
@@ -1136,7 +1141,7 @@ describe('Service Reloading', () => {
 
             let init = ngJwtAuthService.init();
 
-            expect(init).eventually.to.be.rejectedWith(sinon.match.instanceOf(NgJwtAuth.NgJwtAuthException));
+            expect(init).eventually.to.be.rejectedWith(sinon.match.instanceOf(NgJwtAuthException));
 
         });
 
@@ -1258,7 +1263,7 @@ describe('Service Reloading', () => {
 
     describe('Custom user factory', () => {
 
-        let mockUserFactory = (subClaim:string, tokenData:NgJwtAuth.IJwtClaims):ng.IPromise<NgJwtAuth.IUser> => {
+        let mockUserFactory = (subClaim:string, tokenData:IJwtClaims):ng.IPromise<IUser> => {
 
             let user = _.get(tokenData, '#user');
             (<any>user).custom = 'this is a custom property';
