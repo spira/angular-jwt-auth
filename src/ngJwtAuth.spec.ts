@@ -5,11 +5,17 @@ import {
 import {NgJwtAuthService} from "../src/ngJwtAuthService";
 import {INgJwtAuthServiceConfig, IJwtToken, ICredentials, IJwtClaims, IUser} from "../src/ngJwtAuthInterfaces";
 
-import {expect} from "chai";
+
 import {Chance} from "chance";
 import * as _ from "lodash";
+import * as moment from "moment";
+import "angular";
+import "angular-mocks";
+import "." //@todo double check this is right
 
-let seededChance = new Chance(1);
+let expect:Chai.ExpectStatic = chai.expect;
+
+let seededChance:Chance.Chance = new Chance(1);
 let fixtures = {
     user : {
         _self: '/users/1',
@@ -232,7 +238,7 @@ describe('Service tests', () => {
 
         });
 
-        angular.mock.module('ngCookies',[]); //register the angular.mock.module as being overriden
+        angular.module('ngCookies',[]); //register the angular.mock.module as being overriden
 
         angular.mock.module('ngJwtAuth');
 
