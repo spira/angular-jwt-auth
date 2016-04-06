@@ -27,6 +27,7 @@ before_deploy:
 - pr-bumper bump
 deploy:
   provider: npm
+  email: "zak.henry@gmail.com"
   on:
     branch: master
     tags: false
