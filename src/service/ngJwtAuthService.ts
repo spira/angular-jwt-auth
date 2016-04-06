@@ -10,12 +10,12 @@ import {
     INgJwtAuthServiceConfig,
     IBase64Service,
     IJwtClaims, ICredentials,
-} from "./ngJwtAuthInterfaces";
+} from "../ngJwtAuthInterfaces";
 
 import {
     NgJwtAuthException, NgJwtAuthCredentialsFailedException,
     NgJwtAuthTokenExpiredException
-} from "./ngJwtAuthServiceProvider";
+} from "../provider/ngJwtAuthServiceProvider";
 
 export class NgJwtAuthService {
 
@@ -216,11 +216,11 @@ export class NgJwtAuthService {
      * Retrieve the token from the remote API
      * @param endpoint
      * @param authHeader
-     * @returns {IPromise<TResult>}
+     * @returns {IPromise<IUser>}
      */
     private retrieveAndProcessToken(endpoint:string, authHeader:string):ng.IPromise<IUser> {
 
-        var requestConfig:ng.IRequestConfig = {
+        let requestConfig:ng.IRequestConfig = {
             method: 'GET',
             url: endpoint,
             headers: {
@@ -279,9 +279,9 @@ export class NgJwtAuthService {
             throw new NgJwtAuthException("Raw token is has incorrect format. Format must be of form \"[header].[data].[signature]\"");
         }
 
-        var pieces = rawToken.split('.');
+        let pieces = rawToken.split('.');
 
-        var jwt:IJwtToken = {
+        let jwt:IJwtToken = {
             header: angular.fromJson(this.base64Service.urldecode(pieces[0])),
             data: angular.fromJson(this.base64Service.urldecode(pieces[1])),
             signature: pieces[2],
@@ -328,7 +328,7 @@ export class NgJwtAuthService {
 
         this.tokenData = this.readToken(rawToken);
 
-        var expiryDate = moment(this.tokenData.data.exp * 1000);
+        let expiryDate = moment(this.tokenData.data.exp * 1000);
 
         if (expiryDate < moment()) {
             throw new NgJwtAuthTokenExpiredException("Token has expired");
@@ -391,7 +391,7 @@ export class NgJwtAuthService {
 
     /**
      *
-     * @returns {IHttpPromise<T>}
+     * @returns {IHttpPromise<IUser>}
      */
     public getPromisedUser():ng.IPromise<IUser> {
 
@@ -469,7 +469,7 @@ export class NgJwtAuthService {
      * 2. If not, execute the credential promise factory
      * 3. Wait until the credentials are resolved
      * 4. Then try to authenticateCredentials
-     * @returns {IPromise<TResult>}
+     * @returns {IPromise<IUser>}
      */
     public requireCredentialsAndAuthenticate():ng.IPromise<IUser> {
 
@@ -536,7 +536,7 @@ export class NgJwtAuthService {
     /**
      * Find the user object within the path
      * @param tokenData
-     * @returns {T}
+     * @returns {ng.IPromise<IUser>}
      */
     private getUserFromTokenData(tokenData:IJwtToken):ng.IPromise<IUser> {
 
@@ -640,7 +640,7 @@ export class NgJwtAuthService {
     /**
      * Register the login prompt factory
      * @param loginPromptFactory
-     * @returns {NgJwtAuth.NgJwtAuthService}
+     * @returns {NgJwtAuthService}
      */
     public registerLoginPromptFactory(loginPromptFactory:ILoginPromptFactory):NgJwtAuthService {
 
@@ -656,7 +656,7 @@ export class NgJwtAuthService {
     /**
      * Register the user factory for extracting a user from data
      * @param userFactory
-     * @returns {NgJwtAuth.NgJwtAuthService}
+     * @returns {NgJwtAuthService}
      */
     public registerUserFactory(userFactory:IUserFactory):NgJwtAuthService {
 

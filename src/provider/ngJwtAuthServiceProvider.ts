@@ -1,33 +1,36 @@
-
-import {INgJwtAuthServiceConfig, IEndpointDefinition} from "./ngJwtAuthInterfaces";
-import {NgJwtAuthService} from "./ngJwtAuthService";
+import {INgJwtAuthServiceConfig, IEndpointDefinition} from "../ngJwtAuthInterfaces";
+import {NgJwtAuthService} from "../service/ngJwtAuthService";
 
 export declare class Error {
-    public name: string;
-    public message: string;
-    public stack: string;
-    constructor(message?: string);
+    public name:string;
+    public message:string;
+    public stack:string;
+
+    constructor(message?:string);
 }
 
 export class NgJwtAuthException extends Error {
 
-    constructor(public message: string) {
+    constructor(public message:string) {
         super(message);
         this.name = 'NgJwtAuthException';
         this.message = message;
         this.stack = (<any>new Error()).stack;
     }
+
     toString() {
         return this.name + ': ' + this.message;
     }
 }
 
-export class NgJwtAuthTokenExpiredException extends NgJwtAuthException{}
-export class NgJwtAuthCredentialsFailedException extends NgJwtAuthException{}
+export class NgJwtAuthTokenExpiredException extends NgJwtAuthException {
+}
+export class NgJwtAuthCredentialsFailedException extends NgJwtAuthException {
+}
 
 export class NgJwtAuthServiceProvider implements ng.IServiceProvider {
 
-    private config: INgJwtAuthServiceConfig;
+    private config:INgJwtAuthServiceConfig;
 
     /**
      * Initialise the service provider
@@ -60,13 +63,13 @@ export class NgJwtAuthServiceProvider implements ng.IServiceProvider {
     /**
      * Set the configuration
      * @param config
-     * @returns {NgJwtAuth.NgJwtAuthServiceProvider}
+     * @returns {NgJwtAuthServiceProvider}
      */
-    public configure(config:IEndpointDefinition) : NgJwtAuthServiceProvider {
+    public configure(config:IEndpointDefinition):NgJwtAuthServiceProvider {
 
         let mismatchedConfig = _.difference(_.keys(config), _.keys(this.config));
-        if (mismatchedConfig.length > 0){
-            throw new NgJwtAuthException("Invalid properties ["+mismatchedConfig.join(',')+"] passed to config)");
+        if (mismatchedConfig.length > 0) {
+            throw new NgJwtAuthException("Invalid properties [" + mismatchedConfig.join(',') + "] passed to config)");
         }
 
         this.config = _.defaultsDeep(config, this.config);

@@ -1,11 +1,10 @@
+import {NgJwtAuthService} from "../service/ngJwtAuthService";
 
-
-import {NgJwtAuthService} from "./ngJwtAuthService";
+export const authorizationUpdateHeader:string = 'Authorization-Update';
 
 export class NgJwtAuthInterceptor {
 
     //list injected dependencies
-    private $http:ng.IHttpService;
     private $q:ng.IQService;
     private $injector:ng.auto.IInjectorService;
     private ngJwtAuthService:NgJwtAuthService;
@@ -15,8 +14,7 @@ export class NgJwtAuthInterceptor {
      * @param _$q
      * @param _$injector
      */
-    static $inject = ['$q', '$injector'];
-
+    static $inject:string[] = ['$q', '$injector'];
     constructor(_$q:ng.IQService, _$injector:ng.auto.IInjectorService) {
 
         this.$q = _$q;
@@ -32,7 +30,7 @@ export class NgJwtAuthInterceptor {
 
     public response = (response:ng.IHttpPromiseCallbackArg<any>):ng.IHttpPromiseCallbackArg<any> => {
 
-        let updateHeader = response.headers('Authorization-Update');
+        let updateHeader = response.headers(authorizationUpdateHeader);
 
         if (updateHeader) {
 

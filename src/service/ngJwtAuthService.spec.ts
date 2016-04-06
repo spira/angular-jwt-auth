@@ -1,218 +1,19 @@
 import {
     NgJwtAuthServiceProvider, NgJwtAuthException,
     NgJwtAuthCredentialsFailedException
-} from "../src/ngJwtAuthServiceProvider";
-import {NgJwtAuthService} from "../src/ngJwtAuthService";
-import {INgJwtAuthServiceConfig, IJwtToken, ICredentials, IJwtClaims, IUser} from "../src/ngJwtAuthInterfaces";
+} from "../provider/ngJwtAuthServiceProvider";
+import {NgJwtAuthService} from "./ngJwtAuthService";
+import {INgJwtAuthServiceConfig, ICredentials, IJwtClaims, IUser} from "../ngJwtAuthInterfaces";
 
-
-import {Chance} from "chance";
 import * as _ from "lodash";
 import * as moment from "moment";
 import "angular";
 import "angular-mocks";
-import "." //@todo double check this is right
+import "../index" //@todo double check this is right
+
+import {cookiesFactoryMock, locationFactoryMock, fixtures} from "../fixtures.spec"
 
 let expect:Chai.ExpectStatic = chai.expect;
-
-let seededChance:Chance.Chance = new Chance(1);
-let fixtures = {
-    user : {
-        _self: '/users/1',
-        userId: 1,
-        email: 'joe.bloggs@example.com',
-        firstName: seededChance.first(),
-        lastName: seededChance.last(),
-        password: 'password',
-        phone: seededChance.phone()
-    },
-
-    get userResponse(){
-        return _.omit(fixtures.user, 'password');
-    },
-
-    get authBasic(){
-        return 'Basic '+btoa(fixtures.user.email+':'+fixtures.user.password)
-    },
-
-    buildToken: (overrides = {}) => {
-        let defaultConfig = {
-            header: {
-                alg: 'RS256',
-                typ: 'JWT'
-            },
-            data: {
-                iss: 'api.spira.io',
-                aud: 'spira.io',
-                sub: fixtures.user.userId,
-                iat: Number(moment().format('X')),
-                exp: Number(moment().add(1, 'hours').format('X')),
-                jti: 'random-hash',
-                '#user': fixtures.userResponse,
-            },
-            signature: 'this-is-the-signed-hash'
-        };
-
-        let token:IJwtToken = <any>_.merge(defaultConfig, overrides);
-
-        return btoa(JSON.stringify(token.data))
-            + '.' + btoa(JSON.stringify(token.data))
-            + '.' + token.signature
-        ;
-    },
-
-    get token(){
-
-        return fixtures.buildToken(); //no customisations
-    }
-};
-
-
-let locationFactoryMock = (hostname) => {
-    return () => {
-
-        return {
-            host: function () {
-                return hostname;
-            }
-        };
-    };
-};
-
-let cookiesFactoryMock = (allowDomain) => {
-
-    let cookieStore = {};
-
-    return () => {
-
-        return {
-            /* If you need more then $location.host(), add more methods */
-            put: (key, value, conf) => {
-
-                if (conf.domain && conf.domain !== allowDomain || value.split('.')[2] == 'always-fail-domain'){
-                    return false;
-                }
-
-                cookieStore[key] = {
-                    value: value,
-                    conf: conf
-                };
-            },
-
-            get: (key) => {
-                if (!cookieStore[key]){
-                    return undefined;
-                }
-                return cookieStore[key].value;
-            },
-
-            getObject: (key) => {
-                return cookieStore[key];
-            },
-
-            remove: (key) => {
-                delete cookieStore[key];
-            }
-        };
-    };
-};
-
-let defaultAuthServiceProvider:NgJwtAuthServiceProvider;
-
-describe('Default configuration', function () {
-
-    let defaultAuthService:NgJwtAuthService;
-
-    beforeEach(() => {
-
-        angular.mock.module('ngJwtAuth', (_ngJwtAuthServiceProvider_) => {
-            defaultAuthServiceProvider = _ngJwtAuthServiceProvider_; //register injection of service provider
-        });
-
-    });
-
-    it('should have the default endpoints', () => {
-        expect((<any>defaultAuthServiceProvider).config.apiEndpoints.base).to.equal('/api/auth');
-        expect((<any>defaultAuthServiceProvider).config.apiEndpoints.login).to.equal('/login');
-        expect((<any>defaultAuthServiceProvider).config.apiEndpoints.refresh).to.equal('/refresh');
-    });
-
-    beforeEach(()=>{
-        inject(function(_ngJwtAuthService_){
-            defaultAuthService = _ngJwtAuthService_;
-        })
-    });
-
-    it('should have the default login endpoint', function() {
-        expect((<any>defaultAuthService).getLoginEndpoint()).to.equal('/api/auth/login');
-    });
-
-    it('should have the default token exchange endpoint', function() {
-        expect((<any>defaultAuthService).getTokenExchangeEndpoint()).to.equal('/api/auth/token');
-    });
-
-    it('should have the default refresh endpoint', function() {
-        expect((<any>defaultAuthService).getRefreshEndpoint()).to.equal('/api/auth/refresh');
-    });
-
-});
-
-describe('Custom configuration', function () {
-
-    let authServiceProvider:NgJwtAuthServiceProvider;
-    let customAuthService:NgJwtAuthService;
-    let partialCustomConfig:INgJwtAuthServiceConfig = {
-        tokenLocation: 'token-custom',
-        tokenUser: '#user-custom',
-        apiEndpoints: {
-            base: '/api/auth-custom',
-            login: '/login-custom',
-            tokenExchange: '/token-custom',
-            refresh: '/refresh-custom',
-        },
-        //storageKeyName: 'NgJwtAuthToken-custom', //intentionally commented out as this will be tested to be the default
-    };
-
-    beforeEach(() => {
-
-        angular.mock.module('ngJwtAuth', (_ngJwtAuthServiceProvider_) => {
-            authServiceProvider = _ngJwtAuthServiceProvider_; //register injection of service provider
-
-            authServiceProvider.configure(partialCustomConfig);
-        });
-
-    });
-
-    it('should throw an exception when invalid configuration is passed', () => {
-
-        let testInvalidConfigurationFn = () => {
-            authServiceProvider.configure(<any>{invalid:'config'});
-        };
-
-        expect(testInvalidConfigurationFn).to.throw(NgJwtAuthException);
-
-    });
-
-    it('should be able to partially configure the service provider', () => {
-
-        expect((<any>authServiceProvider).config.apiEndpoints).to.deep.equal(partialCustomConfig.apiEndpoints); //assert that the custom value has come across
-
-        expect((<any>authServiceProvider).config.storageKeyName).to.deep.equal((<any>authServiceProvider).config.storageKeyName); //assert that the default was not overridden
-
-    });
-
-    beforeEach(()=>{
-        inject((_ngJwtAuthService_) => {
-            customAuthService = _ngJwtAuthService_;
-        })
-    });
-
-    it('should have the configured login endpoint', function() {
-        expect((<any>customAuthService).getLoginEndpoint()).to.equal('/api/auth-custom/login-custom');
-    });
-
-});
-
 
 describe('Service tests', () => {
 
@@ -230,21 +31,21 @@ describe('Service tests', () => {
 
     beforeEach(() => {
 
-        angular.mock.module(function ($provide) {
+        if (!ngJwtAuthService) { //dont rebind, so each test gets the same singleton
+            angular.mock.module(($provide:ng.auto.IProvideService) => {
 
-            $provide.factory('$cookies', cookiesFactoryMock(cookieDomain));
+                $provide.factory('$cookies', cookiesFactoryMock(cookieDomain));
 
-            $provide.factory('$location', locationFactoryMock(hostDomain));
+                $provide.factory('$location', locationFactoryMock(hostDomain));
 
-        });
+            });
 
-        angular.module('ngCookies', []); //register the angular.mock.module as being overriden
+            angular.module('ngCookies', []); //register the module as being overriden
 
-        angular.mock.module('ngJwtAuth');
+            angular.mock.module('ngJwtAuth');
 
-        inject((_$httpBackend_, _ngJwtAuthService_, _$http_, _$rootScope_, _$cookies_, _$q_) => {
+            inject((_$httpBackend_, _ngJwtAuthService_, _$http_, _$rootScope_, _$cookies_, _$q_) => {
 
-            if (!ngJwtAuthService) { //dont rebind, so each test gets the singleton
                 $httpBackend = _$httpBackend_;
                 $rootScope = _$rootScope_;
                 ngJwtAuthService = _ngJwtAuthService_; //register injected of service provider
@@ -252,10 +53,11 @@ describe('Service tests', () => {
                 $q = _$q_;
                 $cookies = _$cookies_;
 
-            }
-        });
+            });
 
-        ngJwtAuthService.init();
+            ngJwtAuthService.init();
+        }
+
     });
 
     afterEach(() => {
@@ -668,7 +470,7 @@ describe('Service tests', () => {
 
             expect(spy.loginPromptFactory).to.have.callCount(6);
 
-            var progressSpy = sinon.spy();
+            let progressSpy = sinon.spy();
             loginSuccess.then(null, null, progressSpy);
 
             userPromise.then(() => {
@@ -823,7 +625,6 @@ describe('Service tests', () => {
          * control permissions to access this endpoint to avoid security risks
          */
         it('should be able to retrieve a token given a known user id', () => {
-
 
             let userToImpersonate = fixtures.userResponse;
 
@@ -1144,7 +945,7 @@ describe('Service Reloading', () => {
 
         it('should fail when the token in storage is malformed (vendor collision perhaps)', () => {
 
-            window.localStorage.setItem((<any>defaultAuthServiceProvider).config.storageKeyName, 'this-is-not-a-jwt-token');
+            window.localStorage.setItem((<any>NgJwtAuthServiceProvider).config.storageKeyName, 'this-is-not-a-jwt-token');
 
             let init = ngJwtAuthService.init();
 
@@ -1154,7 +955,7 @@ describe('Service Reloading', () => {
 
         it('should use the token from storage on init', () => {
 
-            window.localStorage.setItem((<any>defaultAuthServiceProvider).config.storageKeyName, fixtures.token);
+            window.localStorage.setItem((<any>NgJwtAuthServiceProvider).config.storageKeyName, fixtures.token);
 
             let userPromise = ngJwtAuthService.init().then(() => ngJwtAuthService.getPromisedUser());
 
@@ -1245,7 +1046,7 @@ describe('Service Reloading', () => {
 
         before(()=>{
             ngJwtAuthService.logout(); //clear the authservice state
-            window.localStorage.setItem((<any>defaultAuthServiceProvider).config.storageKeyName, expiredToken);
+            window.localStorage.setItem((<any>NgJwtAuthServiceProvider).config.storageKeyName, expiredToken);
         });
 
         it('should prompt the user to log in when the loaded token has expired on init', () => {
