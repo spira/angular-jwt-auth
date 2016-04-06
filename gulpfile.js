@@ -22,7 +22,6 @@ var gulpCore = require('gulp'),
     gulp = plugins.help(gulpCore),
     _ = require('lodash'),
     path = require('path'),
-    bowerJson = require('./bower.json'),
     packageJson = require('./package.json')
     ;
 
@@ -98,7 +97,7 @@ gulp.task('js:app', function () {
             target: "ES5",
             noExternalResolve: true,
             typescript: require('typescript'),
-            out: path.basename(bowerJson.main),
+            out: path.basename(packageJson.main),
             declarationFiles: true
         }, undefined, plugins.typescript.reporter.longReporter()));
 

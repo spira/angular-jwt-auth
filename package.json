@@ -10,8 +10,9 @@
     "url": "https://github.com/spira/angular-jwt-auth"
   },
   "scripts": {
-    "build": "tsc --declaration --pretty --listFiles",
+    "start": "webpack --config webpack/webpack.dev.js --watch --NODE_ENV=dev",
     "test": "karma start --NODE_ENV=test",
+    "build": "webpack --config webpack/webpack.build.js --NODE_ENV=production",
     "postinstall": "typings i"
   },
   "dependencies": {
