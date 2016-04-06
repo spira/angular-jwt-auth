@@ -28,7 +28,8 @@ before_deploy:
 deploy:
   provider: npm
   on:
-    tags: true
+    branch: master
+    tags: false
   api_key:
     secure: aQCcMzb4VCbedVdkz75n7/hN+ovFz8iOKdApcA1VvyP2j/CudOyCbTr8BGB48K7YTs83ZYWeTSXSU/lC3/b8Z8C768nWW6gK9e15lx5+ENFBfMyRI5CY84z6AfW3dNB3vmUObKeEACSJGuchldKtPE1B2+Ysmw5h9qH9kEjoJpRxMalg2bSlbvA1ZMPjnLk4Mr0sOVPGtQaEtR7VZOmpQNxPfyTDEAFxZlMYjJOWFpH9987tkgyYmTI9n5J74zb8hQLwLEJ3D7GWOf/skJ37/IDOsqpncxOGGvqrvvC1uCJHAPm/Qx1vbrILv8bU5b08kfBP8Zbkf/4qfH/N7eeBu32CUU3yXCVh1WKW/eSeBwq7giP0YXPlEiFZrWVNdzJc2vmdR4ZihgTL2OOj+ThYIGhZWaJRhYUBOrJRYM5nhDkudOcDEylH3hLrLVZnzHJDrZ2yAtLyOfqRmHLTwITTEMO+RvzD5oPoYX69ZJ6EBn18Fr6LHlM1Xo3WlwuXugdC76fUM1UxtmW0OKNROCXF+zUHxc8lOBBHLhsI1pLR5R/khj1zuQwhYp5YL+ly2lxWhCR9DSySBWbbW4Yj7m8e0Sg7gKkcvx9JTzHSkcWfnvRJDXDk0FMZF9S71ldBwgPH2s9FjjU4lXMf0PglvTcJbQIxT/byMZCEnarFb3Fqe5s=
 env:
