@@ -6,3 +6,4 @@ tmp
 .idea
 typings
 dist
+!.npmignore
