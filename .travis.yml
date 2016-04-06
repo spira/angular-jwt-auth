@@ -28,6 +28,7 @@ before_deploy:
 deploy:
   provider: npm
   email: zak.henry@gmail.com
+  skip_cleanup: true
   on:
     branch: master
     tags: false
