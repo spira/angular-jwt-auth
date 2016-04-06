@@ -101,8 +101,7 @@ Full typescript example from the [Spira](https://github.com/spira/spira) project
 Note this example is in typescript, but it is the same process in plain javascript.
 
 ```ts
-    
-    namespace app.guest.login {
+namespace app.guest.login {
 
     export const namespace = 'app.guest.login';
 
@@ -201,4 +200,5 @@ Note this example is in typescript, but it is the same process in plain javascri
 ```
 
 ## Todo
-Better documentation with examples in javascript.
+* Better documentation with examples in typescript.
+* Site hosted on github showing off examples with material
