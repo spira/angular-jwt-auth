@@ -19,25 +19,30 @@ The module has the following features
 
 ## Installation
 
-Install through bower:
+Install through npm:
 
 ```sh
-bower install angular-jwt-auth --save
+npm install angular-jwt-auth --save
 ```
 
 ## Usage
 
 * Require the `ngJwtAuth` module in your angular application
 
-```js
+```ts
+import "angular"
+import "angular-jwt-auth"
 angular.module('app', ['ngJwtAuth'])
 ```
 
 * (Optionally) configure the service provider
 
-```js
+```ts
+
+import {NgJwtAuthServiceProvider} from "angular-jwt-auth"
+
 angular.module('app', ['ngJwtAuth'])
-.config(['ngJwtAuthServiceProvider', function(ngJwtAuthServiceProvider){
+.config(['ngJwtAuthServiceProvider', function(ngJwtAuthServiceProvider:NgJwtAuthServiceProvider){
     ngJwtAuthServiceProvider
         .configure({
             tokenLocation: 'token-custom',
@@ -60,7 +65,7 @@ It is _highly_ recommended that you register a login prompt factory (See below),
 this will allow the interceptor to prompt your users for their login details when an api
 request that returns status code 401.
 
-```js
+```ts
 angular.module('app', ['ngJwtAuth'])
 .run(['ngJwtAuthService', function(ngJwtAuthService){
     ngJwtAuthService.init();
@@ -96,77 +101,72 @@ Full typescript example from the [Spira](https://github.com/spira/spira) project
 Note this example is in typescript, but it is the same process in plain javascript.
 
 ```ts
-namespace app.guest.login {
+    
+    namespace app.guest.login {
 
     export const namespace = 'app.guest.login';
 
     class LoginConfig {
 
-        static $inject = ['ngJwtAuthServiceProvider'];
-
-        constructor(private ngJwtAuthServiceProvider:NgJwtAuth.NgJwtAuthServiceProvider) {
-
-            let config:NgJwtAuth.INgJwtAuthServiceConfig = {
-                refreshBeforeSeconds: 60 * 10, //10 mins
-                checkExpiryEverySeconds: 60, //1 min
-                apiEndpoints: {
-                    base: '/api/auth/jwt',
-                    login: '/login',
-                    tokenExchange: '/token',
-                    refresh: '/refresh',
-                },
-            };
-
-            ngJwtAuthServiceProvider.configure(config);
-
+        static $inject:string[] = ['ngJwtAuthServiceProvider',];
+        constructor(private ngJwtAuthServiceProvider:NgJwtAuthServiceProvider) {
+    
+            ngJwtAuthServiceProvider
+                .configure({
+                    tokenLocation: 'token-custom',
+                    apiEndpoints: {
+                        base: '/api',
+                        login: '/login-custom',
+                        tokenExchange: '/token-custom',
+                        refresh: '/refresh-custom',
+                    }
+                });
+    
         }
 
     }
 
-    export class LoginController {
-
-        public socialLogin;
-
+    class LoginController {
+    
         static $inject = ['$rootScope', '$mdDialog', '$mdToast', 'ngJwtAuthService', 'deferredCredentials', 'loginSuccess', 'userService'];
-
         constructor(private $rootScope:global.IRootScope,
                     private $mdDialog:ng.material.IDialogService,
                     private $mdToast:ng.material.IToastService,
-                    private ngJwtAuthService:NgJwtAuth.NgJwtAuthService,
+                    private ngJwtAuthService:NgJwtAuthService,
                     private deferredCredentials:ng.IDeferred<NgJwtAuth.ICredentials>,
                     private loginSuccess:{promise:ng.IPromise<NgJwtAuth.IUser>},
                     private userService:common.services.user.UserService) {
-
+    
             this.handleLoginSuccessPromise();
-
+    
         }
-
+    
         /**
          * Register the login success promise handler
          */
         private handleLoginSuccessPromise() {
-
+    
             //register error handling and close on success
             this.loginSuccess.promise
                 .then(
-                (user) => this.$mdDialog.hide(user), //on success hide the dialog, pass through the returned user object
-                null,
-                (err:Error) => {
-                    if (err instanceof NgJwtAuth.NgJwtAuthCredentialsFailedException) {
-                        this.$mdToast.show(
-                            (<any>this.$mdToast).simple() 
-                                .hideDelay(2000)
-                                .position('top')
-                                .content(err.message)
-                                .parent('#loginDialog')
-                        );
-                    } else {
-                        console.error(err);
+                    (user) => this.$mdDialog.hide(user), //on success hide the dialog, pass through the returned user object
+                    null,
+                    (err:Error) => {
+                        if (err instanceof NgJwtAuthCredentialsFailedException) {
+                            this.$mdToast.show(
+                                (<any>this.$mdToast).simple()
+                                    .hideDelay(2000)
+                                    .position('top')
+                                    .content(err.message)
+                                    .parent('#loginDialog')
+                            );
+                        } else {
+                            console.error(err);
+                        }
                     }
-                }
-            );
+                );
         }
-
+    
         /**
          * allow the user to manually close the dialog
          */
@@ -174,23 +174,23 @@ namespace app.guest.login {
             this.ngJwtAuthService.logout(); //make sure the user is logged out
             this.$mdDialog.cancel('closed');
         }
-
+    
         /**
          * Attempt login
          * @param username
          * @param password
          */
         public login(username, password) {
-
-            let credentials:NgJwtAuth.ICredentials = {
+    
+            let credentials:ICredentials = {
                 username: username,
                 password: password,
             };
-
+    
             this.deferredCredentials.notify(credentials); //resolve the deferred credentials with the passed creds
-
+    
         }
-
+    
     }
 
     angular.module(namespace, [])

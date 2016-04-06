@@ -1,9 +1,0 @@
-{
-  "name": "test",
-  "description": "testing our component",
-  "main": "index.html",
-  "private": true,
-  "dependencies": {
-    "angular-jwt-auth": "~0.0.0"
-  }
-}

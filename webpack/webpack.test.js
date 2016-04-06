@@ -23,5 +23,8 @@ module.exports = {
                 loader: 'istanbul-instrumenter'
             }
         ]
+    },
+    ts: {
+        configFileName: 'tsconfig.test.json'
     }
 };

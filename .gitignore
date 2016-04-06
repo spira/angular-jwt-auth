@@ -5,3 +5,4 @@ reports
 tmp
 .idea
 typings
+dist
