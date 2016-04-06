@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+        "target": "es5",
+        "noImplicitAny": false,
+        "removeComments": false,
+        "sourceMap": true,
+        "module": "commonjs",
+        "experimentalDecorators": true,
+        "outDir": "dist"
+    },
+    "exclude": [
+        "out",
+        "node_modules",
+        "dist",
+        "dev",
+        "typings/main.d.ts",
+        "typings/main",
+        "reports",
+        "examples"
+    ],
+    "version": "1.8.9"
+}

@@ -21,93 +21,39 @@ var gulpCore = require('gulp'),
     }),
     gulp = plugins.help(gulpCore),
     _ = require('lodash'),
-    path = require('path'),
-    bowerJson = require('./bower.json'),
-    packageJson = require('./package.json')
-    ;
+    path = require('path')
+;
 
 
-var tsDefinitions = './typings/**/*.d.ts';
+var tsDefinitions = './typings/browser/**/*.d.ts';
 var sources = {
-    tsd: './typings/**/*.d.ts',
     app: {
-        ts: [tsDefinitions, './src/**/*.ts']
-    },
-    test: {
-        ts: [tsDefinitions, './test/**/*.ts']
+        ts: [tsDefinitions, './src/**/*.ts', '!**/*.spec.ts', '!src/test.ts']
     }
 };
 
 var destinations = {
     app: './dist',
-    testTmp: './test/tmp',
     coverage: 'reports/**/lcov.info'
 };
 
-gulp.task('test', 'runs test sequence for frontend', function (cb) {
-    return plugins.runSequence('clean', 'js:app', 'js:test', 'test:karma', cb);
-});
 
-gulp.task('js:test', function () {
+gulp.task('typescript', function () {
 
-    var tsResult = gulp.src(sources.test.ts)
-        .pipe(plugins.typescript({
-            target: "ES5",
-            typescript: require('typescript')
-        }));
-
-    return tsResult.js.pipe(gulp.dest(destinations.testTmp))
-
-});
-
-gulp.task('test:karma', function () {
-
-    var vendorFiles = plugins.mainBowerFiles({
-        includeDev: true,
-        paths: {
-            bowerDirectory: 'bower_components',
-            bowerJson: 'bower.json'
-        }
+    var tsProject = plugins.typescript.createProject('tsconfig.build.json', {
+        declarationFiles: true,
+        noExternalResolve: true
     });
 
-    vendorFiles = vendorFiles.map(function (path) {
-        return path.replace(/\\/g, "\/").replace(/^.+bower_components\//i, './bower_components/');
-    });
-
-    var testFiles = [].concat(
-        vendorFiles, destinations.testTmp + '**/*.js', destinations.app + '**/*.js'
-    );
-
-    gulp.src(testFiles)
-        .pipe(plugins.karma({
-            configFile: 'karma.conf.js',
-            action: 'run'
-        }))
-        .on('error', function (err) {
-            // Make sure failed tests cause gulp to exit non-zero
-            throw err;
-        });
-
-});
-
-gulp.task('js:app', function () {
-
-    var tsResult = gulp.src(sources.app.ts)
+    var tsStream = gulp.src(sources.app.ts)
         .pipe(plugins.sourcemaps.init())
-        .pipe(plugins.typescript({
-            target: "ES5",
-            noExternalResolve: true,
-            typescript: require('typescript'),
-            out: path.basename(bowerJson.main),
-            declarationFiles: true
-        }, undefined, plugins.typescript.reporter.longReporter()));
+        .pipe(plugins.typescript(tsProject, undefined, plugins.typescript.reporter.longReporter()));
 
     return plugins.merge2([
-        tsResult.dts
-            .pipe(plugins.replace('<reference path="typings', '<reference path="../typings'))
+        tsStream.dts
             .pipe(gulp.dest(destinations.app)),
 
-        tsResult.js
+        tsStream.js
             .pipe(plugins.sourcemaps.write('./', {includeContent: false, sourceRoot: '../src/'}))
             .pipe(gulp.dest(destinations.app))
     ]);
@@ -116,7 +62,7 @@ gulp.task('js:app', function () {
 
 // deletes the dist folder for a clean build
 gulp.task('clean', function () {
-    return plugins.del(['./dist', destinations.testTmp], function (err, deletedFiles) {
+    return plugins.del([destinations.app], function (err, deletedFiles) {
         if (deletedFiles.length) {
             plugins.util.log('Deleted', plugins.util.colors.red(deletedFiles.join(' ,')));
         } else {
@@ -126,7 +72,8 @@ gulp.task('clean', function () {
 });
 
 gulp.task('build', [
-    'js:app'
+    'clean',
+    'typescript'
 ]);
 
 gulp.task('bump', function (cb) {
@@ -176,13 +123,9 @@ gulp.task('bump', function (cb) {
     });
 });
 
-// watch scripts, styles, and templates
-gulp.task('watch', function () {
-    gulp.watch(sources.app.ts, ['js:app']);
-});
 
 // default
-gulp.task('default', ['build', 'watch']);
+gulp.task('default', ['build']);
 
 gulp.task('coveralls', 'submits code coverage to coveralls', [], function () {
     gulp.src(destinations.coverage)

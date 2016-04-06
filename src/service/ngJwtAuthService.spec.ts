@@ -1,213 +1,25 @@
-/// <reference path="../typings/tsd.d.ts" />
-/// <reference path="../dist/ngJwtAuth.d.ts" />
+import {
+    NgJwtAuthServiceProvider, NgJwtAuthException,
+    NgJwtAuthCredentialsFailedException
+} from "../provider/ngJwtAuthServiceProvider";
+import {NgJwtAuthService} from "./ngJwtAuthService";
+import {INgJwtAuthServiceConfig, ICredentials, IJwtClaims, IUser} from "../ngJwtAuthInterfaces";
 
+import * as _ from "lodash";
+import * as moment from "moment";
+import "angular";
+import "angular-mocks";
+import "../index" //@todo double check this is right
 
-let expect = chai.expect;
+import {cookiesFactoryMock, locationFactoryMock, fixtures} from "../fixtures.spec"
 
-let seededChance = new Chance(1);
-let fixtures = {
-    user : {
-        _self: '/users/1',
-        userId: 1,
-        email: 'joe.bloggs@example.com',
-        firstName: seededChance.first(),
-        lastName: seededChance.last(),
-        password: 'password',
-        phone: seededChance.phone()
-    },
-
-    get userResponse(){
-        return _.omit(fixtures.user, 'password');
-    },
-
-    get authBasic(){
-        return 'Basic '+btoa(fixtures.user.email+':'+fixtures.user.password)
-    },
-
-    buildToken: (overrides = {}) => {
-        let defaultConfig = {
-            header: {
-                alg: 'RS256',
-                typ: 'JWT'
-            },
-            data: {
-                iss: 'api.spira.io',
-                aud: 'spira.io',
-                sub: fixtures.user.userId,
-                iat: Number(moment().format('X')),
-                exp: Number(moment().add(1, 'hours').format('X')),
-                jti: 'random-hash',
-                '#user': fixtures.userResponse,
-            },
-            signature: 'this-is-the-signed-hash'
-        };
-
-        let token:NgJwtAuth.IJwtToken = <any>_.merge(defaultConfig, overrides);
-
-        return btoa(JSON.stringify(token.data))
-            + '.' + btoa(JSON.stringify(token.data))
-            + '.' + token.signature
-        ;
-    },
-
-    get token(){
-
-        return fixtures.buildToken(); //no customisations
-    }
-};
-
-
-let locationFactoryMock = (hostname) => {
-    return () => {
-
-        return {
-            host: function () {
-                return hostname;
-            }
-        };
-    };
-};
-
-let cookiesFactoryMock = (allowDomain) => {
-
-    let cookieStore = {};
-
-    return () => {
-
-        return {
-            /* If you need more then $location.host(), add more methods */
-            put: (key, value, conf) => {
-
-                if (conf.domain && conf.domain !== allowDomain || value.split('.')[2] == 'always-fail-domain'){
-                    return false;
-                }
-
-                cookieStore[key] = {
-                    value: value,
-                    conf: conf
-                };
-            },
-
-            get: (key) => {
-                if (!cookieStore[key]){
-                    return undefined;
-                }
-                return cookieStore[key].value;
-            },
-
-            getObject: (key) => {
-                return cookieStore[key];
-            },
-
-            remove: (key) => {
-                delete cookieStore[key];
-            }
-        };
-    };
-};
-
-let defaultAuthServiceProvider:NgJwtAuth.NgJwtAuthServiceProvider;
-
-describe('Default configuration', function () {
-
-    let defaultAuthService:NgJwtAuth.NgJwtAuthService;
-
-    beforeEach(() => {
-
-        module('ngJwtAuth', (_ngJwtAuthServiceProvider_) => {
-            defaultAuthServiceProvider = _ngJwtAuthServiceProvider_; //register injection of service provider
-        });
-
-    });
-
-    it('should have the default endpoints', () => {
-        expect((<any>defaultAuthServiceProvider).config.apiEndpoints.base).to.equal('/api/auth');
-        expect((<any>defaultAuthServiceProvider).config.apiEndpoints.login).to.equal('/login');
-        expect((<any>defaultAuthServiceProvider).config.apiEndpoints.refresh).to.equal('/refresh');
-    });
-
-    beforeEach(()=>{
-        inject(function(_ngJwtAuthService_){
-            defaultAuthService = _ngJwtAuthService_;
-        })
-    });
-
-    it('should have the default login endpoint', function() {
-        expect((<any>defaultAuthService).getLoginEndpoint()).to.equal('/api/auth/login');
-    });
-
-    it('should have the default token exchange endpoint', function() {
-        expect((<any>defaultAuthService).getTokenExchangeEndpoint()).to.equal('/api/auth/token');
-    });
-
-    it('should have the default refresh endpoint', function() {
-        expect((<any>defaultAuthService).getRefreshEndpoint()).to.equal('/api/auth/refresh');
-    });
-
-});
-
-describe('Custom configuration', function () {
-
-    let authServiceProvider:NgJwtAuth.NgJwtAuthServiceProvider;
-    let customAuthService:NgJwtAuth.NgJwtAuthService;
-    let partialCustomConfig:NgJwtAuth.INgJwtAuthServiceConfig = {
-        tokenLocation: 'token-custom',
-        tokenUser: '#user-custom',
-        apiEndpoints: {
-            base: '/api/auth-custom',
-            login: '/login-custom',
-            tokenExchange: '/token-custom',
-            refresh: '/refresh-custom',
-        },
-        //storageKeyName: 'NgJwtAuthToken-custom', //intentionally commented out as this will be tested to be the default
-    };
-
-    beforeEach(() => {
-
-        module('ngJwtAuth', (_ngJwtAuthServiceProvider_) => {
-            authServiceProvider = _ngJwtAuthServiceProvider_; //register injection of service provider
-
-            authServiceProvider.configure(partialCustomConfig);
-        });
-
-    });
-
-    it('should throw an exception when invalid configuration is passed', () => {
-
-        let testInvalidConfigurationFn = () => {
-            authServiceProvider.configure(<any>{invalid:'config'});
-        };
-
-        expect(testInvalidConfigurationFn).to.throw(NgJwtAuth.NgJwtAuthException);
-
-    });
-
-    it('should be able to partially configure the service provider', () => {
-
-        expect((<any>authServiceProvider).config.apiEndpoints).to.deep.equal(partialCustomConfig.apiEndpoints); //assert that the custom value has come across
-
-        expect((<any>authServiceProvider).config.storageKeyName).to.deep.equal((<any>authServiceProvider).config.storageKeyName); //assert that the default was not overridden
-
-    });
-
-    beforeEach(()=>{
-        inject((_ngJwtAuthService_) => {
-            customAuthService = _ngJwtAuthService_;
-        })
-    });
-
-    it('should have the configured login endpoint', function() {
-        expect((<any>customAuthService).getLoginEndpoint()).to.equal('/api/auth-custom/login-custom');
-    });
-
-});
-
+let expect:Chai.ExpectStatic = chai.expect;
 
 describe('Service tests', () => {
 
     let $httpBackend:ng.IHttpBackendService;
     let $http:ng.IHttpService;
-    let ngJwtAuthService:NgJwtAuth.NgJwtAuthService;
+    let ngJwtAuthService:NgJwtAuthService;
     let $rootScope:ng.IRootScopeService;
     let $cookies:ng.cookies.ICookiesService;
     let $q:ng.IQService;
@@ -217,9 +29,9 @@ describe('Service tests', () => {
     let cookieDomain = 'example.com';
     let hostDomain = 'sub.example.com';
 
-    beforeEach(()=>{
+    beforeEach(() => {
 
-        module(function ($provide) {
+        angular.mock.module(($provide:ng.auto.IProvideService) => {
 
             $provide.factory('$cookies', cookiesFactoryMock(cookieDomain));
 
@@ -227,23 +39,57 @@ describe('Service tests', () => {
 
         });
 
-        angular.module('ngCookies',[]); //register the module as being overriden
+        angular.module('ngCookies', []); //register the module as being overriden
 
-        module('ngJwtAuth');
+        angular.mock.module('ngJwtAuth');
 
         inject((_$httpBackend_, _ngJwtAuthService_, _$http_, _$rootScope_, _$cookies_, _$q_) => {
 
-            if (!ngJwtAuthService){ //dont rebind, so each test gets the singleton
-                $httpBackend = _$httpBackend_;
-                $rootScope = _$rootScope_;
-                ngJwtAuthService = _ngJwtAuthService_; //register injected of service provider
-                $http = _$http_;
-                $q = _$q_;
-                $cookies = _$cookies_;
-            }
+            $httpBackend = _$httpBackend_;
+            $rootScope = _$rootScope_;
+            $http = _$http_;
+            $q = _$q_;
+            $cookies = _$cookies_;
+
+            ngJwtAuthService = _ngJwtAuthService_; //register injected of service provider
+
         });
 
         ngJwtAuthService.init();
+
+        let reject = false;
+        let loginSuccess = null;
+
+        fixtures.loginPrompt = {
+            getLoginSuccessPromise: ():ng.IPromise<any> => {
+                return loginSuccess;
+            },
+            shouldRejectPromise:(shouldRejectPromise:boolean = true) => {
+                reject = shouldRejectPromise;
+            },
+            loginPromptFactory: (deferredCredentials:ng.IDeferred<ICredentials>, loginSuccessPromise:ng.IPromise<IUser>, currentUser:IUser):ng.IPromise<any> => {
+
+                let credentials:ICredentials = {
+                    username: fixtures.user.email,
+                    password: fixtures.user.password,
+                };
+
+                if (reject) {
+                    return $q.reject('rejected');
+                }
+
+                loginSuccess = loginSuccessPromise; //bind so the tests can attach a spy
+
+                deferredCredentials.notify(credentials);
+
+                loginSuccessPromise.then(() => {
+                }, null, (err) => {
+                    deferredCredentials.notify(credentials); //retry resolving creds
+                });
+
+                return $q.when(true); //immediately resolve
+            },
+        }
 
     });
 
@@ -286,6 +132,8 @@ describe('Service tests', () => {
 
         it('should be able to get user info once authenticated', () => {
 
+            ngJwtAuthService.user = fixtures.userResponse;
+
             let user = ngJwtAuthService.getUser();
             let userPromise = ngJwtAuthService.getPromisedUser();
 
@@ -317,7 +165,7 @@ describe('Service tests', () => {
             expect(ngJwtAuthService.getUser()).to.be.null;
 
             $httpBackend.expectGET('/any', (headers) => {
-                return !_.contains(headers, 'Authorization'); //Authorization header has been unset
+                return !_.includes(headers, 'Authorization'); //Authorization header has been unset
             }).respond('foobar');
 
             (<any>ngJwtAuthService).$http.get('/any');
@@ -331,11 +179,18 @@ describe('Service tests', () => {
 
     describe('Login listening', () => {
 
-        let mockListener = sinon.stub();
+        let mockListener;
+
+        beforeEach(() => {
+            mockListener = sinon.stub();
+            ngJwtAuthService.registerLoginListener(mockListener);
+        });
+
+        afterEach(() => {
+            mockListener.reset();
+        });
 
         it('should be able to register a login listener', () => {
-
-            ngJwtAuthService.registerLoginListener(mockListener);
 
             expect(mockListener).not.to.have.been.called;
 
@@ -360,11 +215,18 @@ describe('Service tests', () => {
 
     describe('Logout listening', () => {
 
-        let mockListener = sinon.stub();
+        let mockListener;
+
+        beforeEach(() => {
+            mockListener = sinon.stub();
+            ngJwtAuthService.registerLogoutListener(mockListener);
+        });
+
+        afterEach(() => {
+            mockListener.reset();
+        });
 
         it('should be able to register a logout listener', () => {
-
-            ngJwtAuthService.registerLogoutListener(mockListener);
 
             expect(mockListener).not.to.have.been.called;
 
@@ -389,7 +251,7 @@ describe('Service tests', () => {
 
             let authPromise = ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
 
-            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuthException);
 
             $httpBackend.flush();
 
@@ -402,7 +264,7 @@ describe('Service tests', () => {
 
             let authPromise = ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
 
-            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuthException);
 
             $httpBackend.flush();
 
@@ -415,7 +277,7 @@ describe('Service tests', () => {
 
             let authPromise = ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
 
-            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuthException);
 
             $httpBackend.flush();
 
@@ -427,7 +289,7 @@ describe('Service tests', () => {
 
             let authPromise = ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
 
-            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthCredentialsFailedException);
+            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuthCredentialsFailedException);
 
             $httpBackend.flush();
 
@@ -439,7 +301,7 @@ describe('Service tests', () => {
 
             let authPromise = ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
 
-            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+            expect(authPromise).to.eventually.be.rejectedWith(NgJwtAuthException);
 
             $httpBackend.flush();
 
@@ -463,216 +325,203 @@ describe('Service tests', () => {
 
     describe('Login prompt', () => {
 
-        let $q;
-        let rejectPromise = false;
-        let loginSuccess:ng.IPromise<any> = null;
-        let spy = {
-            loginPromptFactory: (deferredCredentials:ng.IDeferred<NgJwtAuth.ICredentials>, loginSuccessPromise:ng.IPromise<NgJwtAuth.IUser>, currentUser:NgJwtAuth.IUser): ng.IPromise<any> => {
 
-                let credentials:NgJwtAuth.ICredentials = {
-                    username: fixtures.user.email,
-                    password: fixtures.user.password,
-                };
-
-                if (rejectPromise){
-                    return $q.reject('rejected');
-                }
-
-                loginSuccess = loginSuccessPromise; //bind so the tests can attach a spy
-
-                deferredCredentials.notify(credentials);
-
-                loginSuccessPromise.then(() => {
-                }, null, (err) => {
-                    deferredCredentials.notify(credentials); //retry resolving creds
-                });
-
-                return $q.when(true); //immediately resolve
-            }
-        };
-
-        sinon.spy(spy, 'loginPromptFactory');
 
         beforeEach(() => {
+            sinon.spy(fixtures.loginPrompt, 'loginPromptFactory');
             $q = (<any>ngJwtAuthService).$q;
         });
 
-        it('should throw an exception when a login prompt factory is not set', () => {
-
-            let testLoginPromptFactoryFn = () => {
-                ngJwtAuthService.promptLogin();
-            };
-
-            expect(testLoginPromptFactoryFn).to.throw(NgJwtAuth.NgJwtAuthException);
-
+        afterEach(() => {
+            (<any>fixtures.loginPrompt.loginPromptFactory).reset();
         });
 
-        it('should be able to set a login prompt factory', () => {
+        describe('login factory registration', () => {
+            it('should throw an exception when a login prompt factory is not set', () => {
 
-            //set credential promise factory
-            ngJwtAuthService.registerLoginPromptFactory(spy.loginPromptFactory);
+                let testLoginPromptFactoryFn = () => {
+                    ngJwtAuthService.promptLogin();
+                };
 
-            expect(spy.loginPromptFactory).not.to.have.been.called;
+                expect(testLoginPromptFactoryFn).to.throw(NgJwtAuthException);
 
-        });
-
-        it('should not be able to re-set a login prompt factory', () => {
-
-            //set credential promise factory
-            let setFactoryFn = () => {
-                ngJwtAuthService.registerLoginPromptFactory(() => $q.when(true));
-            };
-
-
-            expect(setFactoryFn).to.throw(NgJwtAuth.NgJwtAuthException);
-
-        });
-
-        it('should prompt a login promise to be resolved when a 401 occurs, then retry the method with updated headers', () => {
-            $httpBackend.expectGET('/any').respond(401);
-
-            let $http = (<any>ngJwtAuthService).$http; //get the injected http method
-
-            //try to get a resource
-            $http.get('/any', {
-                headers: {
-                    Authorization: "Bearer " + fixtures.buildToken({signature:'old-token'}),
-                }
             });
 
-            let newToken = fixtures.buildToken({signature:'new-token'});
+            it('should be able to set a login prompt factory', () => {
 
-            $httpBackend.expectGET('/api/auth/login', (headers) => {
-                return headers['Authorization'] == fixtures.authBasic;
-            }).respond({token: newToken});
+                //set credential promise factory
+                ngJwtAuthService.registerLoginPromptFactory(fixtures.loginPrompt.loginPromptFactory);
 
-            $httpBackend.expectGET('/any', (headers) => {
-                return headers['Authorization'] == 'Bearer ' + newToken;
-            }).respond('ok');
+                expect(fixtures.loginPrompt.loginPromptFactory).not.to.have.been.called;
 
-            $httpBackend.flush();
-
-            expect(spy.loginPromptFactory).to.have.been.calledOnce;
-
+            });
         });
 
+        describe('login factory tests', () => {
 
-        it('should be able to wait for a user to authenticate to get a user object', () => {
+            beforeEach(() => {
 
-            ngJwtAuthService.logout(); //make sure that the service is not logged in.
-
-            $httpBackend.expectGET('/api/auth/login', (headers) => {
-                return headers['Authorization'] == fixtures.authBasic;
-            }).respond({token: fixtures.token});
-
-
-            let userPromise = ngJwtAuthService.getPromisedUser();
-
-            let loginStatusPromise = userPromise.then(() => {
-                return ngJwtAuthService.loggedIn;
+                //set credential promise factory
+                ngJwtAuthService.registerLoginPromptFactory(fixtures.loginPrompt.loginPromptFactory);
             });
 
-            expect(loginStatusPromise).eventually.to.be.true;
+            it('should not be able to re-set a login prompt factory', () => {
 
-            expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
+                //set credential promise factory
+                let setFactoryFn = () => {
+                    ngJwtAuthService.registerLoginPromptFactory(fixtures.loginPrompt.loginPromptFactory);
+                };
 
-            $httpBackend.flush();
+                expect(setFactoryFn).to.throw(NgJwtAuthException);
 
-            expect(spy.loginPromptFactory).to.have.been.calledTwice;
-
-        });
-
-        it('should prompt the login prompt factory for credentials when requested and log out when request rejected', () => {
-
-            rejectPromise = true;
-
-            let userPromise = ngJwtAuthService.promptLogin();
-
-            let loginStatusPromise = userPromise.then(() => {
-                return ngJwtAuthService.loggedIn;
             });
 
-            expect(userPromise).to.eventually.be.rejectedWith('rejected');
+            it('should prompt a login promise to be resolved when a 401 occurs, then retry the method with updated headers', () => {
+                $httpBackend.expectGET('/any').respond(401);
 
-            expect(spy.loginPromptFactory).to.have.been.calledThrice;
+                let $http = (<any>ngJwtAuthService).$http; //get the injected http method
 
-            expect(loginStatusPromise).eventually.to.be.false;
+                //try to get a resource
+                $http.get('/any', {
+                    headers: {
+                        Authorization: "Bearer " + fixtures.buildToken({signature:'old-token'}),
+                    }
+                });
 
-        });
+                let newToken = fixtures.buildToken({signature:'new-token'});
 
-        it('should prompt the login prompt factory for credentials when requested', () => {
+                $httpBackend.expectGET('/api/auth/login', (headers) => {
+                    return headers['Authorization'] == fixtures.authBasic;
+                }).respond({token: newToken});
 
-            rejectPromise = false;
+                $httpBackend.expectGET('/any', (headers) => {
+                    return headers['Authorization'] == 'Bearer ' + newToken;
+                }).respond('ok');
 
-            $httpBackend.expectGET('/api/auth/login', (headers) => {
-                return headers['Authorization'] == fixtures.authBasic;
-            }).respond({token: fixtures.token});
+                $httpBackend.flush();
 
-            let userPromise = ngJwtAuthService.promptLogin();
+                expect(fixtures.loginPrompt.loginPromptFactory).to.have.been.calledOnce;
 
-            expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
-
-            $httpBackend.flush();
-
-            expect(spy.loginPromptFactory).to.have.callCount(4);
-
-        });
-
-        it('should allow the user to retry their credentials when they get them wrong the first time', () => {
-
-            $httpBackend.expectGET('/api/auth/login', (headers) => {
-                return headers['Authorization'] == fixtures.authBasic;
-            }).respond(401); //fail their login first time
-
-            $httpBackend.expectGET('/api/auth/login', (headers) => {
-                return headers['Authorization'] == fixtures.authBasic;
-            }).respond({token: fixtures.token}); //pass it the second time
-
-            let userPromise = ngJwtAuthService.promptLogin();
-
-            expect(spy.loginPromptFactory).to.have.callCount(5);
-
-            expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
-
-            $httpBackend.flush();
-
-        });
-
-        it('should have only one error notification emitted for each repeated credential failure', (done) => {
-
-            $httpBackend.expectGET('/api/auth/login', (headers) => {
-                return headers['Authorization'] == fixtures.authBasic;
-            }).respond(401); //fail their login first time
-
-            $httpBackend.expectGET('/api/auth/login', (headers) => {
-                return headers['Authorization'] == fixtures.authBasic;
-            }).respond(401); //fail their login a second time
-
-            $httpBackend.expectGET('/api/auth/login', (headers) => {
-                return headers['Authorization'] == fixtures.authBasic;
-            }).respond({token: fixtures.token}); //pass it on the third go
-
-            let userPromise = ngJwtAuthService.promptLogin();
-
-            expect(spy.loginPromptFactory).to.have.callCount(6);
-
-            var progressSpy = sinon.spy();
-            loginSuccess.then(null, null, progressSpy);
-
-            userPromise.then(() => {
-                progressSpy.should.have.been.calledTwice;
-                progressSpy.should.have.been.calledWith(sinon.match.instanceOf(NgJwtAuth.NgJwtAuthException));
-                done();
             });
 
-            expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
 
-            $httpBackend.flush();
+            it('should be able to wait for a user to authenticate to get a user object', () => {
+
+                ngJwtAuthService.logout(); //make sure that the service is not logged in.
+
+                $httpBackend.expectGET('/api/auth/login', (headers) => {
+                    return headers['Authorization'] == fixtures.authBasic;
+                }).respond({token: fixtures.token});
+
+
+                let userPromise = ngJwtAuthService.getPromisedUser();
+
+                let loginStatusPromise = userPromise.then(() => {
+                    return ngJwtAuthService.loggedIn;
+                });
+
+                expect(loginStatusPromise).eventually.to.be.true;
+
+                expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
+
+                $httpBackend.flush();
+
+                expect(fixtures.loginPrompt.loginPromptFactory).to.have.been.calledOnce;
+
+            });
+
+            it('should prompt the login prompt factory for credentials when requested and log out when request rejected', () => {
+
+                fixtures.loginPrompt.shouldRejectPromise(true);
+
+                let userPromise = ngJwtAuthService.promptLogin();
+
+                let loginStatusPromise = userPromise.then(() => {
+                    return ngJwtAuthService.loggedIn;
+                });
+
+                expect(userPromise).to.eventually.be.rejectedWith('rejected');
+
+                expect(fixtures.loginPrompt.loginPromptFactory).to.have.been.calledOnce;
+
+                expect(loginStatusPromise).eventually.to.be.false;
+
+                fixtures.loginPrompt.shouldRejectPromise(false); //reset
+
+            });
+
+            it('should prompt the login prompt factory for credentials when requested', () => {
+
+                $httpBackend.expectGET('/api/auth/login', (headers) => {
+                    return headers['Authorization'] == fixtures.authBasic;
+                }).respond({token: fixtures.token});
+
+                let userPromise = ngJwtAuthService.promptLogin();
+
+                expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
+
+                $httpBackend.flush();
+
+                expect(fixtures.loginPrompt.loginPromptFactory).to.have.calledOnce;
+
+            });
+
+            it('should allow the user to retry their credentials when they get them wrong the first time', () => {
+
+                $httpBackend.expectGET('/api/auth/login', (headers) => {
+                    return headers['Authorization'] == fixtures.authBasic;
+                }).respond(401); //fail their login first time
+
+                $httpBackend.expectGET('/api/auth/login', (headers) => {
+                    return headers['Authorization'] == fixtures.authBasic;
+                }).respond({token: fixtures.token}); //pass it the second time
+
+                let userPromise = ngJwtAuthService.promptLogin();
+
+                expect(fixtures.loginPrompt.loginPromptFactory).to.have.calledOnce;
+
+                expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
+
+                $httpBackend.flush();
+
+            });
+
+            it('should have only one error notification emitted for each repeated credential failure', (done) => {
+
+                $httpBackend.expectGET('/api/auth/login', (headers) => {
+                    return headers['Authorization'] == fixtures.authBasic;
+                }).respond(401); //fail their login first time
+
+                $httpBackend.expectGET('/api/auth/login', (headers) => {
+                    return headers['Authorization'] == fixtures.authBasic;
+                }).respond(401); //fail their login a second time
+
+                $httpBackend.expectGET('/api/auth/login', (headers) => {
+                    return headers['Authorization'] == fixtures.authBasic;
+                }).respond({token: fixtures.token}); //pass it on the third go
+
+                let userPromise = ngJwtAuthService.promptLogin();
+
+                expect(fixtures.loginPrompt.loginPromptFactory).to.have.calledOnce;
+
+                let progressSpy = sinon.spy();
+                fixtures.loginPrompt.getLoginSuccessPromise().then(null, null, progressSpy);
+
+                userPromise.then(() => {
+                    progressSpy.should.have.been.calledTwice;
+                    progressSpy.should.have.been.calledWith(sinon.match.instanceOf(NgJwtAuthException));
+                    done();
+                });
+
+                expect(userPromise).to.eventually.deep.equal(fixtures.userResponse);
+
+                $httpBackend.flush();
+
+            });
 
         });
 
     });
-
 
     describe('Authenticate with token', () => {
 
@@ -703,7 +552,7 @@ describe('Service tests', () => {
                 ngJwtAuthService.refreshToken();
             };
 
-            expect(refreshFn).to.throw(NgJwtAuth.NgJwtAuthException); //if not logged it, exception should be thrown on attempt to refresh
+            expect(refreshFn).to.throw(NgJwtAuthException); //if not logged it, exception should be thrown on attempt to refresh
 
             $httpBackend.expectGET('/api/auth/login').respond({token: fixtures.token});
             ngJwtAuthService.authenticateCredentials(fixtures.user.email, fixtures.user.password);
@@ -739,7 +588,7 @@ describe('Service tests', () => {
 
             let refreshPromise = ngJwtAuthService.refreshToken();
 
-            expect(refreshPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+            expect(refreshPromise).to.eventually.be.rejectedWith(NgJwtAuthException);
 
             refreshPromise.catch(()=>{
                 expect((<any>ngJwtAuthService).refreshTimerPromise).to.be.null;
@@ -761,7 +610,7 @@ describe('Service tests', () => {
 
             let refreshPromise = ngJwtAuthService.refreshToken();
 
-            expect(refreshPromise).to.eventually.be.rejectedWith(NgJwtAuth.NgJwtAuthException);
+            expect(refreshPromise).to.eventually.be.rejectedWith(NgJwtAuthException);
 
             $httpBackend.flush();
 
@@ -791,7 +640,7 @@ describe('Service tests', () => {
                 ngJwtAuthService.loginAsUser('any');
             };
 
-            expect(expectedExceptionFn).to.throw(NgJwtAuth.NgJwtAuthException);
+            expect(expectedExceptionFn).to.throw(NgJwtAuthException);
         });
 
         it('should not be able to retrieve a bearer token if the user is not logged in', () => {
@@ -802,7 +651,7 @@ describe('Service tests', () => {
                 (<any>ngJwtAuthService).getBearerHeader();
             };
 
-            expect(expectedExceptionFn).to.throw(NgJwtAuth.NgJwtAuthException);
+            expect(expectedExceptionFn).to.throw(NgJwtAuthException);
         });
 
         /**
@@ -812,11 +661,12 @@ describe('Service tests', () => {
          */
         it('should be able to retrieve a token given a known user id', () => {
 
+            //set credential promise factory
+            ngJwtAuthService.registerLoginPromptFactory(fixtures.loginPrompt.loginPromptFactory);
 
             let userToImpersonate = fixtures.userResponse;
 
             userToImpersonate.userId = 2;
-            userToImpersonate._self = '/users/2';
 
             let expectedToken = fixtures.buildToken({
                 data: {
@@ -856,9 +706,13 @@ describe('Service tests', () => {
 
     });
 
-
     describe('API Response Authorization update', () => {
 
+        beforeEach(() => {
+
+            //set credential promise factory
+            ngJwtAuthService.registerLoginPromptFactory(fixtures.loginPrompt.loginPromptFactory);
+        });
 
         it('should update the request header when an Authorization-Update header is received', () => {
 
@@ -921,8 +775,8 @@ describe('Service tests', () => {
 
     describe('Cookie interaction', () => {
 
-        let originalConfig:NgJwtAuth.INgJwtAuthServiceConfig;
-        let config:NgJwtAuth.INgJwtAuthServiceConfig;
+        let originalConfig:INgJwtAuthServiceConfig;
+        let config:INgJwtAuthServiceConfig;
 
         beforeEach(() => {
             originalConfig = ngJwtAuthService.getConfig();
@@ -937,13 +791,16 @@ describe('Service tests', () => {
 
             config = ngJwtAuthService.getConfig();
 
+            //set credential promise factory
+            ngJwtAuthService.registerLoginPromptFactory(fixtures.loginPrompt.loginPromptFactory);
+
         });
 
         afterEach(() => {
             (<any>ngJwtAuthService).config = originalConfig; //restore
         });
 
-        it('should save a cookie when configured', () => {
+        it('should save a cookie when configured, and remove it when logging out', () => {
 
             ngJwtAuthService.logout(); //logout
 
@@ -961,30 +818,22 @@ describe('Service tests', () => {
 
             $httpBackend.flush();
 
-            let cookie = $cookies.get(config.cookie.name);
+            let cookieExists = $cookies.get(config.cookie.name);
 
-            expect(cookie).to.equal(token);
-
-        });
-
-        it('should have a valid expiry date', () => {
+            expect(cookieExists).to.equal(token);
 
             let expiry = $cookies.getObject(config.cookie.name).conf.expires;
 
             expect(expiry).to.be.instanceOf(Date);
 
-        });
-
-
-        it('should delete the cookie when logged out', () => {
-
             ngJwtAuthService.logout(); //logout
 
-            let cookie = $cookies.get(config.cookie.name);
+            let cookieMissing = $cookies.get(config.cookie.name);
 
-            expect(cookie).to.be.undefined;
+            expect(cookieMissing).to.be.undefined;
 
         });
+
 
 
         describe('Top level domain saving', () => {
@@ -1042,7 +891,7 @@ describe('Service tests', () => {
 
                 };
 
-                expect(expectedExceptionFn).to.throw(NgJwtAuth.NgJwtAuthException);
+                expect(expectedExceptionFn).to.throw(NgJwtAuthException);
 
             });
 
@@ -1056,12 +905,13 @@ describe('Service tests', () => {
 describe('Service Reloading', () => {
 
     let $httpBackend:ng.IHttpBackendService;
-    let ngJwtAuthService:NgJwtAuth.NgJwtAuthService;
+    let ngJwtAuthService:NgJwtAuthService;
     let $rootScope:ng.IRootScopeService;
+    let defaultAuthServiceProvider:NgJwtAuthServiceProvider;
 
     beforeEach(()=>{
 
-        module(function ($provide) {
+        angular.mock.module(function ($provide) {
 
             $provide.factory('$cookies', cookiesFactoryMock('example.com'));
 
@@ -1069,7 +919,9 @@ describe('Service Reloading', () => {
 
         });
 
-        module('ngJwtAuth');
+        angular.mock.module('ngJwtAuth', (_ngJwtAuthServiceProvider_) => {
+            defaultAuthServiceProvider = _ngJwtAuthServiceProvider_; //register injection of service provider
+        });
 
         inject((_$httpBackend_, _ngJwtAuthService_, _$rootScope_) => {
 
@@ -1082,9 +934,9 @@ describe('Service Reloading', () => {
         let $q = (<any>ngJwtAuthService).$q;
 
 
-        ngJwtAuthService.registerLoginPromptFactory((deferredCredentials:ng.IDeferred<NgJwtAuth.ICredentials>, loginSuccessPromise:ng.IPromise<NgJwtAuth.IUser>, currentUser:NgJwtAuth.IUser): ng.IPromise<any> => {
+        ngJwtAuthService.registerLoginPromptFactory((deferredCredentials:ng.IDeferred<ICredentials>, loginSuccessPromise:ng.IPromise<IUser>, currentUser:IUser): ng.IPromise<any> => {
 
-            let credentials:NgJwtAuth.ICredentials = {
+            let credentials:ICredentials = {
                 username: fixtures.user.email,
                 password: fixtures.user.password,
             };
@@ -1136,7 +988,7 @@ describe('Service Reloading', () => {
 
             let init = ngJwtAuthService.init();
 
-            expect(init).eventually.to.be.rejectedWith(sinon.match.instanceOf(NgJwtAuth.NgJwtAuthException));
+            expect(init).eventually.to.be.rejectedWith(sinon.match.instanceOf(NgJwtAuthException));
 
         });
 
@@ -1258,7 +1110,7 @@ describe('Service Reloading', () => {
 
     describe('Custom user factory', () => {
 
-        let mockUserFactory = (subClaim:string, tokenData:NgJwtAuth.IJwtClaims):ng.IPromise<NgJwtAuth.IUser> => {
+        let mockUserFactory = (subClaim:string, tokenData:IJwtClaims):ng.IPromise<IUser> => {
 
             let user = _.get(tokenData, '#user');
             (<any>user).custom = 'this is a custom property';

@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "target": "es5",
+        "noImplicitAny": false,
+        "removeComments": false,
+        "sourceMap": true,
+        "module": "commonjs",
+        "experimentalDecorators": true,
+        "outDir": "dist"
+    },
+    "version": "1.8.9"
+}

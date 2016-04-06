@@ -1,107 +1,75 @@
-/// <reference path="../typings/tsd.d.ts" />
+export interface IEndpointDefinition {
+    base?:string;
+    login?:string;
+    loginAsUser?:string;
+    tokenExchange?:string;
+    refresh?:string;
+}
 
-module NgJwtAuth {
+export interface ICookieConfig {
+    enabled:boolean;
+    name?:string;
+    topLevelDomain?:boolean;
+}
 
-    export interface INgJwtAuthService {
-        loggedIn: boolean;
-        rawToken:string;
-        getConfig():INgJwtAuthServiceConfig;
-        init():void;
-        isLoginMethod(url:string): boolean;
-        promptLogin():ng.IPromise<Object>;
-        getUser():Object;
-        getPromisedUser():ng.IPromise<Object>;
-        processNewToken(rawToken:string):ng.IPromise<IUser>;
-        loginAsUser(userIdentifier:string|number):ng.IPromise<IUser>;
-        authenticateCredentials(username:string, password:string):ng.IPromise<Object>;
-        validateToken(rawToken:string):boolean
-        exchangeToken(token:string):ng.IPromise<Object>;
-        requireCredentialsAndAuthenticate():ng.IPromise<Object>;
-        registerLoginPromptFactory(promiseFactory:ILoginPromptFactory):NgJwtAuthService;
-        registerUserFactory(userFactory:IUserFactory):NgJwtAuthService;
-        logout():void;
-    }
+export interface INgJwtAuthServiceConfig {
+    tokenLocation?:string;
+    tokenUser?:string;
+    apiEndpoints?:IEndpointDefinition;
+    storageKeyName?:string;
+    refreshBeforeSeconds?:number;
+    checkExpiryEverySeconds?:number;
+    cookie?:ICookieConfig;
+}
 
-    export interface INgJwtAuthServiceProvider {
-        configure(config:INgJwtAuthServiceConfig): NgJwtAuthServiceProvider;
-    }
+export interface IJwtClaims {
+    iss:string;
+    aud:string;
+    sub:string;
+    nbf?:number;
+    iat:number;
+    exp:number;
+    jti:string;
+}
 
-    export interface IEndpointDefinition {
-        base?: string;
-        login?: string;
-        loginAsUser?: string;
-        tokenExchange?: string;
-        refresh?: string;
-    }
+export interface IJwtToken {
 
-    export interface ICookieConfig {
-        enabled: boolean;
-        name?: string;
-        topLevelDomain?:boolean;
-    }
+    header:{
+        alg:string,
+        typ:string
+    };
+    data:IJwtClaims;
+    signature:string;
+}
 
-    export interface INgJwtAuthServiceConfig {
-        tokenLocation?: string;
-        tokenUser?: string;
-        apiEndpoints?: IEndpointDefinition;
-        storageKeyName?: string;
-        refreshBeforeSeconds?: number;
-        checkExpiryEverySeconds?: number;
-        cookie?:ICookieConfig;
-    }
+export interface IUser {
+    userId:any;
+    email:string,
+    firstName?:string,
+    lastName?:string,
+}
 
+export interface ICredentials {
+    username:string;
+    password:string;
+}
 
+export interface ILoginPromptFactory {
+    (deferredCredentials:ng.IDeferred<ICredentials>, loginSuccessPromise:ng.IPromise<IUser>, currentUser:IUser):ng.IPromise<any>;
+}
 
-    export interface IJwtClaims {
-        iss: string;
-        aud: string;
-        sub: string;
-        nbf?: number;
-        iat: number;
-        exp: number;
-        jti: string;
-    }
+export interface IUserFactory {
+    (subClaim:string, tokenData:IJwtClaims):ng.IPromise<IUser>;
+}
 
-    export interface IJwtToken {
+export interface IUserEventListener {
+    (user:IUser):void;
+}
 
-        header: {
-            alg: string,
-            typ: string
-        };
-        data: IJwtClaims;
-        signature: string;
-    }
+export interface IBase64Service {
+    encode(string:string):string;
+    decode(string:string):string;
 
-    export interface IUser {
-        userId: any;
-        email: string,
-        firstName?: string,
-        lastName?: string,
-    }
-
-    export interface ICredentials {
-        username: string;
-        password: string;
-    }
-
-    export interface ILoginPromptFactory {
-        (deferredCredentials:ng.IDeferred<ICredentials>, loginSuccessPromise:ng.IPromise<IUser>, currentUser:IUser): ng.IPromise<any>;
-    }
-
-    export interface IUserFactory {
-        (subClaim:string, tokenData:IJwtClaims): ng.IPromise<IUser>;
-    }
-
-    export interface IUserEventListener {
-        (user:IUser):void;
-    }
-
-    export interface IBase64Service {
-        encode(string:string):string;
-        decode(string:string):string;
-
-        urldecode(string:string):string;
-        urldecode(string:string):string;
-    }
-
+    urldecode(string:string):string;
+    urldecode(string:string):string;
 }

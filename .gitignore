@@ -4,3 +4,5 @@ node_modules
 reports
 tmp
 .idea
+typings
+dist

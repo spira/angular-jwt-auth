@@ -1,24 +1,36 @@
-sudo: false #use container based infrastructure
+sudo: false
 language: node_js
 node_js:
-  - "5.4.0"
-
+- 5.4.1
 addons:
   apt:
     sources:
-      - libnotify-bin
-
+    - libnotify-bin
 cache:
   directories:
-    - node_modules
-    - bower_components
-
+  - node_modules
+branches:
+  except:
+  - "/^v[0-9\\.]+/"
+before_install:
+- npm install -g pr-bumper
+- pr-bumper check
 install:
-  - travis_retry npm install -g gulp
-  - travis_retry npm install
-
+- travis_retry npm install -g gulp
+- travis_retry npm install
 script:
-  - gulp test
-
+- npm test
+- npm run build
 after_script:
-  - gulp coveralls
+- gulp coveralls
+before_deploy:
+- pr-bumper bump
+deploy:
+  provider: npm
+  on:
+    tags: true
+  api_key:
+    secure: aQCcMzb4VCbedVdkz75n7/hN+ovFz8iOKdApcA1VvyP2j/CudOyCbTr8BGB48K7YTs83ZYWeTSXSU/lC3/b8Z8C768nWW6gK9e15lx5+ENFBfMyRI5CY84z6AfW3dNB3vmUObKeEACSJGuchldKtPE1B2+Ysmw5h9qH9kEjoJpRxMalg2bSlbvA1ZMPjnLk4Mr0sOVPGtQaEtR7VZOmpQNxPfyTDEAFxZlMYjJOWFpH9987tkgyYmTI9n5J74zb8hQLwLEJ3D7GWOf/skJ37/IDOsqpncxOGGvqrvvC1uCJHAPm/Qx1vbrILv8bU5b08kfBP8Zbkf/4qfH/N7eeBu32CUU3yXCVh1WKW/eSeBwq7giP0YXPlEiFZrWVNdzJc2vmdR4ZihgTL2OOj+ThYIGhZWaJRhYUBOrJRYM5nhDkudOcDEylH3hLrLVZnzHJDrZ2yAtLyOfqRmHLTwITTEMO+RvzD5oPoYX69ZJ6EBn18Fr6LHlM1Xo3WlwuXugdC76fUM1UxtmW0OKNROCXF+zUHxc8lOBBHLhsI1pLR5R/khj1zuQwhYp5YL+ly2lxWhCR9DSySBWbbW4Yj7m8e0Sg7gKkcvx9JTzHSkcWfnvRJDXDk0FMZF9S71ldBwgPH2s9FjjU4lXMf0PglvTcJbQIxT/byMZCEnarFb3Fqe5s=
+env:
+  global:
+    secure: fR7p8Kvm6kvnh9A/o0UKFAIp7Bi/v8JsytkUfBo6zhQM7W2s26wmLIz87fowq7icVSbQ3ICh1jTyN50THyBkwXUYERNkqy5IfK0MZFE8UixWUH9b4XhW9LXfxwqfhqwGFEz7Ebm/0jlbpF+A6qOWhgt8LYfJ1yEcj9RxIomlwYPflCDxECQ545/AxMXoDNkh/qvQdwzO20pmfQFRfYtAtFmWKcAsQOuA00SpkH/3LP/Bg6OGF50SozFbj7/dSW7y8quLqUh48AWSbufOwB8ZPZRf9qV0SfunC5Feo3/ZnJ9kodJUjqwVZ90XZwSeH7dS0tDUqNn4KbQHFyyGboABR1eov/F8xOZqq5utLwqd0iAGQDWS+EQMZyRrLD5yFIqu28i+TRKoWJNSvY2QOIeoSTOEufk7Z5Scj88j273b19eclWQE5ztc9zfpWggquzp3RcSKinXC7OWvTdLFGcBb0wgbq0hzx431AsdcFd/81WptJZgIeMWzMT7zqQznhUn6lIGn7/mMyS4DADfJkYSRqcAYIySvgjCteFfmrURU2TJTtBZ9z0cHIXGm0n1cFftNHcvNSenqjX8S3w4uaTLYtVkoxFiZUd6R9hNnz2AnISTBKsn63qLym/4Q1+n3sjYMNbxNaplav66YjuFN5fuVXDyzmLCV51CX8mmqT4X29Ck=

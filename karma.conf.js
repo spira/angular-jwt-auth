@@ -1,32 +1,62 @@
+'use strict';
+
+var webpackConfig = require('./webpack/webpack.test.js');
+require('phantomjs-polyfill');
+webpackConfig.entry = {};
+
 module.exports = function(config) {
     config.set({
 
-        frameworks: ['chai-as-promised', 'mocha', 'sinon', 'sinon-chai'],
-        //plugins: ['karma-mocha', 'karma-phantomjs-launcher', 'karma-coverage', 'karma-sinon-chai'],
+        frameworks: ['mocha', 'chai', 'chai-as-promised', 'sinon-chai'],
 
-        preprocessors: {
-            'dist/**/*.js': ['coverage']
+        files: [
+            './node_modules/phantomjs-polyfill/bind-polyfill.js',
+            './src/test.ts'
+        ],
+
+
+        babelPreprocessor: {
+            options: {
+                presets: ['es2015']
+            }
         },
 
-        reporters: ['mocha', 'coverage'],
+        preprocessors: {
+            'src/test.ts': ['webpack'],
+            'src/**/!(*.spec)+(.js)': ['coverage']
+        },
+
+        webpackMiddleware: {
+            stats: {
+                chunkModules: false,
+                colors: true
+            }
+        },
+        webpack: webpackConfig,
+
 
         port: 9018,
         runnerPort: 9100,
         urlRoot: '/',
 
+        singleRun: true,
         autoWatch: false,
         browsers: [
-            'PhantomJS'
+            'PhantomJS',
+            // 'Chrome',
         ],
 
         client: {
             captureConsole: true,
             mocha: {
-                bail: true
+                // bail: true
             }
         },
 
         logLevel: config.LOG_INFO,
+
+
+        reporters: ['mocha', 'coverage'],
 
         coverageReporter: {
             // specify a common output directory
@@ -34,6 +64,7 @@ module.exports = function(config) {
             reporters: [
                 // reporters not supporting the `file` property
                 //{type: 'html', subdir: 'report-html'},
+                {type: 'text'},
                 {type: 'lcov', subdir: 'report-lcov'},
                 {type: 'clover', subdir: 'app'}
             ]
