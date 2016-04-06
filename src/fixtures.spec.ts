@@ -4,9 +4,12 @@ import * as moment from "moment";
 import {IJwtToken, IUser} from "./ngJwtAuthInterfaces";
 
 let seededChance:Chance.Chance = new Chance(1);
+
+let loadedToken:string;
+
 export const fixtures = {
+    loginPrompt:null,
     user: {
-        _self: '/users/1',
         userId: 1,
         email: 'joe.bloggs@example.com',
         firstName: seededChance.first(),
@@ -50,8 +53,10 @@ export const fixtures = {
     },
 
     get token(){
-
-        return fixtures.buildToken(); //no customisations
+        if (!loadedToken){
+            loadedToken = fixtures.buildToken(); //no customisations
+        }
+        return loadedToken; //this "caching" ensures the token is unchanged between tests if they take too long (otherwise the timestamps may differ)
     }
 };
 

@@ -667,7 +667,6 @@ describe('Service tests', () => {
             let userToImpersonate = fixtures.userResponse;
 
             userToImpersonate.userId = 2;
-            userToImpersonate._self = '/users/2';
 
             let expectedToken = fixtures.buildToken({
                 data: {
