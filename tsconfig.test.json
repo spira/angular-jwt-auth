@@ -15,7 +15,8 @@
         "dev",
         "typings/main.d.ts",
         "typings/main",
-        "reports"
+        "reports",
+        "examples"
     ],
     "version": "1.8.9"
 }
