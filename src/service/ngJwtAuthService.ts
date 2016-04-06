@@ -529,7 +529,7 @@ export class NgJwtAuthService {
      */
     private handleLogin(user:IUser):void {
 
-        _.invoke(this.loginListeners, _.call, null, user);
+        _.invokeMap(this.loginListeners, _.call, null, user);
 
     }
 
@@ -673,7 +673,7 @@ export class NgJwtAuthService {
         this.loggedIn = false;
 
         //call all logout listeners with user that is logged out
-        _.invoke(this.logoutListeners, _.call, null, this.user);
+        _.invokeMap(this.logoutListeners, _.call, null, this.user);
         this.user = null;
     }
 

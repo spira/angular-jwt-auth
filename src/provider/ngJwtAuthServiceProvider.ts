@@ -1,5 +1,6 @@
 import {INgJwtAuthServiceConfig, IEndpointDefinition} from "../ngJwtAuthInterfaces";
 import {NgJwtAuthService} from "../service/ngJwtAuthService";
+import * as _ from "lodash";
 
 export declare class Error {
     public name:string;

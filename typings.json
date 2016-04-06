@@ -7,12 +7,14 @@
     "chai-as-promised": "registry:dt/chai-as-promised#0.0.0+20160317120654",
     "chance": "registry:dt/chance#0.7.3+20160317120654",
     "jquery": "registry:dt/jquery#1.10.0+20160316155526",
-    "lodash": "registry:dt/lodash#3.10.0+20160330154726",
     "mocha": "registry:dt/mocha#2.2.5+20160317120654",
     "moment": "registry:dt/moment#2.8.0+20160316155526",
     "moment-node": "registry:dt/moment-node#2.11.1+20160329220348",
     "promises-a-plus": "registry:dt/promises-a-plus#0.0.0+20160317120654",
     "sinon": "registry:dt/sinon#1.16.0+20160317120654",
     "sinon-chai": "registry:dt/sinon-chai#2.7.0+20160317120654"
+  },
+  "dependencies": {
+    "lodash": "registry:npm/lodash#4.0.0+20160305082308"
   }
 }
