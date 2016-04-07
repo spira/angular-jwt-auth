@@ -4,7 +4,7 @@ import {INgJwtAuthServiceConfig} from "../ngJwtAuthInterfaces";
 
 import "angular";
 import "angular-mocks";
-import "../index" //@todo double check this is right
+import "../ngJwtAuth";
 
 let expect:Chai.ExpectStatic = chai.expect;
 

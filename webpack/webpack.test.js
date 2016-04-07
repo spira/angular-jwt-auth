@@ -1,7 +1,7 @@
 var loaders = require("./loaders");
 var webpack = require('webpack');
 module.exports = {
-    entry: ['./src/index.ts'],
+    entry: ['./src/ngJwtAuth.ts'],
     output: {
         filename: 'build.js',
         path: 'tmp'
