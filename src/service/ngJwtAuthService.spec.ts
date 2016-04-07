@@ -9,7 +9,7 @@ import * as _ from "lodash";
 import * as moment from "moment";
 import "angular";
 import "angular-mocks";
-import "../index" //@todo double check this is right
+import "../ngJwtAuth";
 
 import {cookiesFactoryMock, locationFactoryMock, fixtures} from "../fixtures.spec"
 

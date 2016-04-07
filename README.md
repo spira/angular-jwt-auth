@@ -4,7 +4,6 @@ Angular authentication with JSON Web tokens.
 [![Build Status](https://travis-ci.org/spira/angular-jwt-auth.svg?branch=master)](https://travis-ci.org/spira/angular-jwt-auth) 
 [![Coverage Status](https://coveralls.io/repos/spira/angular-jwt-auth/badge.svg?branch=master)](https://coveralls.io/r/spira/angular-jwt-auth?branch=master)
 [![Dependency Status](https://gemnasium.com/spira/angular-jwt-auth.svg)](https://gemnasium.com/spira/angular-jwt-auth)
-[![Bower version](https://badge.fury.io/bo/angular-jwt-auth.svg)](http://badge.fury.io/bo/angular-jwt-auth)
 [![npm version](https://badge.fury.io/js/angular-jwt-auth.svg)](http://badge.fury.io/js/angular-jwt-auth)
 
 ## Intro
