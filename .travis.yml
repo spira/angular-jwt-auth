@@ -18,6 +18,7 @@ before_install:
 install:
 - travis_retry npm install -g gulp
 - travis_retry npm install
+- travis_retry typings install
 script:
 - npm test
 - npm run build
