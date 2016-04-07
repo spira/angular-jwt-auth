@@ -3,7 +3,7 @@
   "version": "4.0.4",
   "description": "Angular JSON Web Token Authentication Module",
   "main": "dist/ngJwtAuth.js",
-  "typings": "dist/index.d.ts",
+  "typings": "dist/ngJwtAuth.d.ts",
   "license": "MIT",
   "repository": {
     "type": "git",
