@@ -10,7 +10,6 @@
     "url": "https://github.com/spira/angular-jwt-auth"
   },
   "scripts": {
-    "postinstall": "typings i",
     "build": "gulp build",
     "test": "karma start --NODE_ENV=test",
     "preversion": "npm test",
