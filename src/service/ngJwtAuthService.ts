@@ -35,7 +35,7 @@ export class NgJwtAuthService {
     public rawToken:string;
 
     /**
-     * Construct the service with dependencies injected
+     * Construct the service with dependencies injected.
      * @param config
      * @param $http
      * @param $q
