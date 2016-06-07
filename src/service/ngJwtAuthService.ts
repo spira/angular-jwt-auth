@@ -490,7 +490,9 @@ export class NgJwtAuthService {
                         deferredCredentials.resolve(user);
                         loginSuccess.resolve(user);
                     }, (err) => { //pass notification to loginSuccess
-                        this.userLoggedInPromise = null; //deregister the userLoggedInPromise
+                        if (!!this.userLoggedInPromise) { //deregister the userLoggedInPromise
+                            this.userLoggedInPromise = null;
+                        }
                         loginSuccess.notify(err);
                     });
                 })
@@ -676,6 +678,10 @@ export class NgJwtAuthService {
         //call all logout listeners with user that is logged out
         _.invokeMap(this.logoutListeners, _.call, null, this.user);
         this.user = null;
+
+        if (!!this.userLoggedInPromise) { //deregister the userLoggedInPromise
+            this.userLoggedInPromise = null;
+        }
     }
 
     /**
