@@ -490,6 +490,7 @@ export class NgJwtAuthService {
                         deferredCredentials.resolve(user);
                         loginSuccess.resolve(user);
                     }, (err) => { //pass notification to loginSuccess
+                        this.userLoggedInPromise = null; //deregister the userLoggedInPromise
                         loginSuccess.notify(err);
                     });
                 })
