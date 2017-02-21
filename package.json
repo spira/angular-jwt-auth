@@ -1,6 +1,6 @@
 {
   "name": "angular-jwt-auth",
-  "version": "4.0.10",
+  "version": "4.0.11",
   "description": "Angular JSON Web Token Authentication Module",
   "main": "dist/ngJwtAuth.js",
   "typings": "dist/ngJwtAuth.d.ts",
