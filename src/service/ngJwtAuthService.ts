@@ -721,4 +721,20 @@ export class NgJwtAuthService {
         return this.retrieveAndProcessToken(endpoint, authHeader);
     }
 
+    /**
+     * @returns boolean
+     */
+    public tokenHasExpired():boolean {
+
+        this.tokenData = this.readToken(this.rawToken);
+
+        if (!this.rawToken) {
+            return false;
+        }        
+        
+        let expiryDate = moment(this.tokenData.data.exp * 1000);
+
+        return expiryDate < moment();
+    }
+
 }
