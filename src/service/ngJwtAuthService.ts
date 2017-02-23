@@ -328,9 +328,7 @@ export class NgJwtAuthService {
 
         this.tokenData = this.readToken(rawToken);
 
-        let expiryDate = moment(this.tokenData.data.exp * 1000);
-
-        if (expiryDate < moment()) {
+        if (this.tokenHasExpired()) {
             throw new NgJwtAuthTokenExpiredException("Token has expired");
         }
 
@@ -719,6 +717,20 @@ export class NgJwtAuthService {
         let endpoint = this.getLoginAsUserEndpoint(userIdentifier);
 
         return this.retrieveAndProcessToken(endpoint, authHeader);
+    }
+
+    /**
+     * @returns boolean
+     */
+    public tokenHasExpired():boolean {
+
+        if (!this.rawToken) {
+            return false;
+        }
+
+        let expiryDate = moment(this.tokenData.data.exp * 1000);
+
+        return expiryDate < moment();
     }
 
 }
