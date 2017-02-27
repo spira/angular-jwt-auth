@@ -14,7 +14,6 @@ branches:
   - "/^v[0-9\\.]+/"
 before_install:
 - npm install -g pr-bumper
-- npm install -g buffer-shims
 - pr-bumper check
 install:
 - travis_retry npm install -g gulp
