@@ -72,7 +72,7 @@
     "run-sequence": "^1.1.1",
     "ts-loader": "^0.8.1",
     "typescript": "^1.8.9",
-    "typings": "^1.0.5",
+    "typings": "^0.7.12",
     "url-loader": "0.5.7",
     "wallaby-webpack": "0.0.11",
     "webpack": "^1.12.14"
