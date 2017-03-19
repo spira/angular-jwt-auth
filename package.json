@@ -1,6 +1,6 @@
 {
   "name": "angular-jwt-auth",
-  "version": "4.0.12",
+  "version": "4.0.13",
   "description": "Angular JSON Web Token Authentication Module",
   "main": "dist/ngJwtAuth.js",
   "typings": "dist/ngJwtAuth.d.ts",
@@ -29,7 +29,6 @@
     "babel-istanbul": "0.6.0",
     "browser-sync": "2.11.1",
     "browser-sync-webpack-plugin": "1.0.1",
-    "buffer-shims": "^1.0.0",
     "chance": "^1.0.1",
     "compression-webpack-plugin": "0.3.0",
     "del": "^1.2.0",
@@ -65,7 +64,6 @@
     "merge2": "^0.3.6",
     "minimatch": "^2.0.8",
     "mocha": "^2.2.5",
-    "phantomjs-polyfill": "0.0.2",
     "phantomjs-prebuilt": "^2.1.7",
     "raw-loader": "0.5.1",
     "requirejs": "^2.1.18",
