@@ -25,7 +25,7 @@ var gulpCore = require('gulp'),
 ;
 
 
-var tsDefinitions = './typings/browser/**/*.d.ts';
+var tsDefinitions = './typings/globals/**/*.d.ts';
 var sources = {
     app: {
         ts: [tsDefinitions, './src/**/*.ts', '!**/*.spec.ts', '!src/test.ts']
