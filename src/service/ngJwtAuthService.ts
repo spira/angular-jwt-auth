@@ -29,6 +29,8 @@ export class NgJwtAuthService {
     private refreshTimerPromise:ng.IPromise<any>;
     private tokenData:IJwtToken;
 
+    private topLevelDomainName:string;
+
     //public properties
     public user:IUser;
     public loggedIn:boolean = false;
@@ -409,8 +411,11 @@ export class NgJwtAuthService {
         this.$window.localStorage.removeItem(this.config.storageKeyName);
 
         if (this.config.cookie.enabled) {
-
-            this.$cookies.remove(this.config.cookie.name);
+            let options = undefined;
+            if (this.topLevelDomainName) {
+                options = {domain: this.topLevelDomainName}
+            }
+            this.$cookies.remove(this.config.cookie.name, options);
         }
 
         this.unsetJWTHeader();
@@ -588,6 +593,9 @@ export class NgJwtAuthService {
                 });
 
                 if (this.$cookies.get(cookieKey)) { //saving the cookie worked, it must be the top level domain
+                    if (testHostname && !this.topLevelDomainName) {
+                        this.topLevelDomainName = testHostname
+                    }
                     return; //so exit here
                 }
 
