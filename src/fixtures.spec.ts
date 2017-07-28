@@ -103,8 +103,15 @@ export function cookiesFactoryMock(allowDomain:string) {
                 return cookieStore[key];
             },
 
-            remove: (key) => {
-                delete cookieStore[key];
+            remove: (key, conf) => {
+                let cookie = cookieStore[key];
+                if (cookie && cookie.conf && cookie.conf.domain) {
+                    if (conf && conf.domain && conf.domain === cookie.conf.domain) {
+                        delete cookieStore[key];
+                    }
+                } else {
+                    delete cookieStore[key];
+                }
             }
         };
     };

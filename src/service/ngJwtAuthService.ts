@@ -135,7 +135,15 @@ export class NgJwtAuthService {
             ;
 
         //needs to refresh if the the next time we could refresh is after the configured refresh before date
-        return (latestRefresh <= nextRefreshOpportunity);
+        return (latestRefresh <= nextRefreshOpportunity || this.cookieIsMissing());
+    }
+
+    /**
+     * Check if there should be a cookie, but it is missing
+     * @returns {boolean}
+     */
+    private cookieIsMissing():boolean {
+        return this.config.cookie.enabled && !this.$cookies.get(this.config.cookie.name);
     }
 
     /**
@@ -409,8 +417,11 @@ export class NgJwtAuthService {
         this.$window.localStorage.removeItem(this.config.storageKeyName);
 
         if (this.config.cookie.enabled) {
-
-            this.$cookies.remove(this.config.cookie.name);
+            let options = undefined;
+            if (this.config.cookie.topLevelDomainName) {
+                options = {domain: this.config.cookie.topLevelDomainName}
+            }
+            this.$cookies.remove(this.config.cookie.name, options);
         }
 
         this.unsetJWTHeader();
@@ -573,8 +584,12 @@ export class NgJwtAuthService {
         let cookieKey = this.config.cookie.name,
             expires = new Date(tokenData.data.exp * 1000); //set the cookie expiry to the same as the jwt
 
-        if (this.config.cookie.topLevelDomain) {
-
+        if (this.config.cookie.topLevelDomainName) {
+            this.$cookies.put(cookieKey, rawToken, {
+                domain: this.config.cookie.topLevelDomainName,
+                expires: expires,
+            });
+        } else if (this.config.cookie.topLevelDomain) {
             let hostnameParts = this.$location.host().split('.');
             let segmentCount = 1;
             let testHostname = '';
@@ -588,6 +603,7 @@ export class NgJwtAuthService {
                 });
 
                 if (this.$cookies.get(cookieKey)) { //saving the cookie worked, it must be the top level domain
+                    this.config.cookie.topLevelDomainName = testHostname;
                     return; //so exit here
                 }
 

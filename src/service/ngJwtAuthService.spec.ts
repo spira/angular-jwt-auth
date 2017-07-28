@@ -856,7 +856,7 @@ describe('Service tests', () => {
 
             });
 
-            it('should be able to configure the cookie to be saved to the top level domain', () => {
+            it('should be able to configure the cookie to be saved to the top level domain and remove when logging out', () => {
 
                 expect(config.cookie.enabled).to.be.true; //check the service is configured to save cookies
 
@@ -872,12 +872,19 @@ describe('Service tests', () => {
 
                 $httpBackend.flush();
 
-                let cookie = $cookies.get(config.cookie.name);
+                let cookieExists = $cookies.get(config.cookie.name);
 
                 let cookieObject = $cookies.getObject(config.cookie.name);
 
-                expect(cookie).to.equal(token);
+                expect(cookieExists).to.equal(token);
                 expect(cookieObject.conf.domain).to.equal(cookieDomain);
+                expect(cookieObject.conf.expires).to.be.instanceOf(Date);
+
+                ngJwtAuthService.logout(); //logout
+
+                let cookieMissing = $cookies.get(config.cookie.name);
+
+                expect(cookieMissing).to.be.undefined;
 
             });
 
