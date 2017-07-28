@@ -135,7 +135,15 @@ export class NgJwtAuthService {
             ;
 
         //needs to refresh if the the next time we could refresh is after the configured refresh before date
-        return (latestRefresh <= nextRefreshOpportunity);
+        return (latestRefresh <= nextRefreshOpportunity || this.cookieIsMissing());
+    }
+
+    /**
+     * Check if there should be a cookie, but it is missing
+     * @returns {boolean}
+     */
+    private cookieIsMissing():boolean {
+        return this.config.cookie.enabled && !this.$cookies.get(this.config.cookie.name);
     }
 
     /**
