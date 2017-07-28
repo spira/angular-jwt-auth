@@ -56,6 +56,7 @@ export class NgJwtAuthServiceProvider implements ng.IServiceProvider {
                 enabled: false,
                 name: 'ngJwtAuthToken',
                 topLevelDomain: false,
+                topLevelDomainName: null,
             }
         };
 

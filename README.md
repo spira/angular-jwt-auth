@@ -198,6 +198,25 @@ namespace app.guest.login {
 }
 ```
 
+## Cookies
+
+Cookies are helpful for adding the authentication token to external, non angular, requests to an API.  For example, if
+you have an `<img>` tag that references a dynamic image on the API that requires authentication.  The browser can add
+the token in a cookie when making the image request.
+
+To enable cookies set `config.cookie.enabled = true`.
+
+You can optionally allow the cookie to be used for requests on other subdomains.  This is useful if your webapp is on
+one subdomain but your API is on a different subdomain.
+
+angular-jwt-auth can automatically find the top level domain (like `example.com`) or you can provide a specific domain
+name.  Note that your domain must be the top level domain (or a subdomain) of the location in the browser URL.
+
+To enable automatic top level domain detection set `config.cookie.topLevelDomain = true`.
+
+To set a specific top level domain name set `config.cookie.topLevelDomainName = "your.domain.name"`
+
+
 ## Todo
 * Better documentation with examples in typescript.
 * Site hosted on github showing off examples with material

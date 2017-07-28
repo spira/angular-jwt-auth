@@ -10,6 +10,7 @@ export interface ICookieConfig {
     enabled:boolean;
     name?:string;
     topLevelDomain?:boolean;
+    topLevelDomainName?:string;
 }
 
 export interface INgJwtAuthServiceConfig {

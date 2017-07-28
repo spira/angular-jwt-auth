@@ -29,8 +29,6 @@ export class NgJwtAuthService {
     private refreshTimerPromise:ng.IPromise<any>;
     private tokenData:IJwtToken;
 
-    private topLevelDomainName:string;
-
     //public properties
     public user:IUser;
     public loggedIn:boolean = false;
@@ -412,8 +410,8 @@ export class NgJwtAuthService {
 
         if (this.config.cookie.enabled) {
             let options = undefined;
-            if (this.topLevelDomainName) {
-                options = {domain: this.topLevelDomainName}
+            if (this.config.cookie.topLevelDomainName) {
+                options = {domain: this.config.cookie.topLevelDomainName}
             }
             this.$cookies.remove(this.config.cookie.name, options);
         }
@@ -578,8 +576,12 @@ export class NgJwtAuthService {
         let cookieKey = this.config.cookie.name,
             expires = new Date(tokenData.data.exp * 1000); //set the cookie expiry to the same as the jwt
 
-        if (this.config.cookie.topLevelDomain) {
-
+        if (this.config.cookie.topLevelDomainName) {
+            this.$cookies.put(cookieKey, rawToken, {
+                domain: this.config.cookie.topLevelDomainName,
+                expires: expires,
+            });
+        } else if (this.config.cookie.topLevelDomain) {
             let hostnameParts = this.$location.host().split('.');
             let segmentCount = 1;
             let testHostname = '';
@@ -593,9 +595,7 @@ export class NgJwtAuthService {
                 });
 
                 if (this.$cookies.get(cookieKey)) { //saving the cookie worked, it must be the top level domain
-                    if (testHostname && !this.topLevelDomainName) {
-                        this.topLevelDomainName = testHostname
-                    }
+                    this.config.cookie.topLevelDomainName = testHostname;
                     return; //so exit here
                 }
 
